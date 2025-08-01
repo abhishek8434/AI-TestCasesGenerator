@@ -1444,4 +1444,4 @@ def shorten_url():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(port=5005)
+    app.run(host='0.0.0.0', port=5005)
