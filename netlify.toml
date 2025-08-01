@@ -1,14 +1,23 @@
 # netlify.toml
 
 [build]
-  # This command tells Netlify to install the dependencies from requirements.txt
-  # into the functions directory.
   command = "pip install -r requirements.txt -t netlify/functions"
-  # This specifies the directory where your serverless functions are located.
   functions = "netlify/functions"
 
+# Add this entire section
+[functions]
+  # Include all necessary application files and folders
+  included_files = [
+      "app.py",
+      "templates/**",
+      "ai/**",
+      "azure_integration/**",
+      "config/**",
+      "jira/**",
+      "utils/**"
+  ]
+
 [[redirects]]
-  # This rule rewrites any request to the root of your site to trigger the 'api' function.
   from = "/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
