@@ -1,8 +1,19 @@
+# Initialize Sentry for file operations
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the file operations
+init_sentry("ai-test-case-generator-files")
+
 import os
-from typing import Optional, List, Dict
-import logging
 import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils.dataframe import dataframe_to_rows
 import re
+from datetime import datetime
+import uuid
+import logging
+from typing import Optional, List, Dict
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
