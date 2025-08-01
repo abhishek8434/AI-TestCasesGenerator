@@ -1,3 +1,9 @@
+# Initialize Sentry for Azure integration
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the Azure integration
+init_sentry("ai-test-case-generator-azure")
+
 import os
 import requests
 import base64
@@ -11,6 +17,7 @@ class AzureClient:
         self.azure_org = azure_config.get('org', AZURE_DEVOPS_ORG) if azure_config else AZURE_DEVOPS_ORG
         self.azure_project = azure_config.get('project', AZURE_DEVOPS_PROJECT) if azure_config else AZURE_DEVOPS_PROJECT
         self.azure_pat = azure_config.get('pat', AZURE_DEVOPS_PAT) if azure_config else AZURE_DEVOPS_PAT
+        self.last_error = None  # Store the last error message
         
         # Ensure azure_url is properly formatted
         if self.azure_url:
@@ -32,15 +39,23 @@ class AzureClient:
 
         # Validate required fields
         if not self.azure_url:
+            self.last_error = "Azure DevOps URL cannot be empty"
             print("❌ Azure DevOps URL cannot be empty")
             return None
             
         if not self.azure_org:
+            self.last_error = "Azure DevOps organization cannot be empty"
             print("❌ Azure DevOps organization cannot be empty")
             return None
             
         if not self.azure_project:
+            self.last_error = "Azure DevOps project cannot be empty"
             print("❌ Azure DevOps project cannot be empty")
+            return None
+            
+        if not self.azure_pat:
+            self.last_error = "Azure DevOps Personal Access Token cannot be empty"
+            print("❌ Azure DevOps Personal Access Token cannot be empty")
             return None
 
         results = []
@@ -72,8 +87,20 @@ class AzureClient:
                     })
                     print(f"✅ Successfully fetched work item {work_item_id}")
                 else:
-                    print(f"❌ Failed to fetch work item {work_item_id}: {response.status_code}")
+                    error_msg = f"Failed to fetch work item {work_item_id}: {response.status_code}"
+                    self.last_error = error_msg
+                    print(f"❌ {error_msg}")
             except Exception as e:
-                print(f"❌ Error processing work item {work_item_id}: {str(e)}")
+                error_msg = f"Error processing work item {work_item_id}: {str(e)}"
+                self.last_error = error_msg
+                print(f"❌ {error_msg}")
+                # Capture error in Sentry
+                capture_exception(e, {
+                    "work_item_id": work_item_id,
+                    "azure_url": self.azure_url,
+                    "azure_org": self.azure_org,
+                    "azure_project": self.azure_project,
+                    "response_status": getattr(response, 'status_code', None)
+                })
 
         return results
