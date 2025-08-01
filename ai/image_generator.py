@@ -129,7 +129,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
     logger.info(f"Image path: {image_path}")
     
     # List of models to try in order of preference
-    vision_models = ["gpt-4o", "gpt-4-vision-preview", "gpt-4-turbo-preview"]
+    vision_models = ["gpt-4o"]
     
     try:
         # Verify image exists
@@ -230,7 +230,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                 if "model_not_found" in last_error or "invalid_request_error" in last_error:
                     error_msg = f"Error with all OpenAI models for {test_type} test cases: {last_error}"
                     logger.error(error_msg)
-                    logger.error("Please check if your OpenAI account has access to GPT-4 models with vision capabilities.")
+                    logger.error("Please check if your OpenAI account has access to gpt-4o models with vision capabilities.")
                     raise ValueError("The OpenAI model required for image processing is not available. Please check your OpenAI account access.")
                 elif "authorization" in last_error.lower() or "api key" in last_error.lower():
                     error_msg = f"Authorization error for {test_type} test cases: {last_error}"
