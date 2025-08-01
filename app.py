@@ -1,10 +1,10 @@
+import os
 from flask import Flask, request, jsonify, send_file, render_template, after_this_request
 from flask_cors import CORS
 from jira.jira_client import fetch_issue
 from azure_integration.azure_client import AzureClient
 from ai.generator import generate_test_case
 from utils.file_handler import save_test_script, save_excel_report, extract_test_type_sections, parse_traditional_format
-import os
 import json
 import logging
 # Add at the top of the file
