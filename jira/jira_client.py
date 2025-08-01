@@ -1,3 +1,9 @@
+# Initialize Sentry for Jira integration
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the Jira integration
+init_sentry("ai-test-case-generator-jira")
+
 import requests
 from typing import Optional, Dict, Any
 from config.settings import JIRA_URL, JIRA_USER, JIRA_API_TOKEN
