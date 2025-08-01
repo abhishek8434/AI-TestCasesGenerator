@@ -14,17 +14,17 @@ import datetime
 import math
 import re
 
-# app = Flask(__name__)
-# CORS(app)
+app = Flask(__name__)
+CORS(app)
 
-# Get the absolute path of the directory the app.py file is in
-APP_ROOT = os.path.dirname(os.path.abspath(__file__))
+# # Get the absolute path of the directory the app.py file is in
+# APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-# Define the absolute path to the templates folder
-TEMPLATE_FOLDER = os.path.join(APP_ROOT, 'templates')
+# # Define the absolute path to the templates folder
+# TEMPLATE_FOLDER = os.path.join(APP_ROOT, 'templates')
 
-# Create the Flask app instance with the explicit template folder
-app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
+# # Create the Flask app instance with the explicit template folder
+# app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
 
 # Add this logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
