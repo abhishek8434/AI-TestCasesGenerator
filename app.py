@@ -1,30 +1,26 @@
-import os
+# Initialize Sentry before any other imports
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the main application
+init_sentry("ai-test-case-generator-main")
+
 from flask import Flask, request, jsonify, send_file, render_template, after_this_request
 from flask_cors import CORS
 from jira.jira_client import fetch_issue
 from azure_integration.azure_client import AzureClient
 from ai.generator import generate_test_case
+from ai.image_generator import generate_test_case_from_image
 from utils.file_handler import save_test_script, save_excel_report, extract_test_type_sections, parse_traditional_format
-import json
-import logging
-# Add at the top of the file
 from utils.mongo_handler import MongoHandler
-from config.settings import OPENAI_API_KEY
+import os
+import json
 import datetime
 import math
 import re
+import logging
 
 app = Flask(__name__)
 CORS(app)
-
-# # Get the absolute path of the directory the app.py file is in
-# APP_ROOT = os.path.dirname(os.path.abspath(__file__))
-
-# # Define the absolute path to the templates folder
-# TEMPLATE_FOLDER = os.path.join(APP_ROOT, 'templates')
-
-# # Create the Flask app instance with the explicit template folder
-# app = Flask(__name__, template_folder=TEMPLATE_FOLDER)
 
 # Add this logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -297,7 +293,7 @@ def generate():
                 # Reset the generation status
                 with generation_status['lock']:
                     generation_status['is_generating'] = False
-                return jsonify({'error': str(e)}), 500
+                return jsonify({'error': f'Image processing error: {str(e)}. Please ensure the image is clear and in a supported format (JPG, PNG, GIF).'}), 500
                 
         else:
             # Existing Jira/Azure logic
@@ -334,10 +330,15 @@ def generate():
                     # Get Jira configuration from request data
                     jira_config = data.get('jira_config')
                     logger.info(f"Fetching Jira issue for item_id: {item_id}")
-                    issue = fetch_issue(item_id, jira_config)
-                    if not issue:
-                        logger.warning(f"Failed to fetch Jira issue for {item_id}")
-                        continue
+                    
+                    try:
+                        issue = fetch_issue(item_id, jira_config)
+                        if not issue:
+                            logger.warning(f"Failed to fetch Jira issue for {item_id}")
+                            return jsonify({'error': f'Failed to fetch Jira issue {item_id}. Please check your credentials and ensure the issue exists.'}), 400
+                    except Exception as e:
+                        logger.error(f"Jira connection error for {item_id}: {str(e)}")
+                        return jsonify({'error': f'Jira connection error: {str(e)}. Please check your Jira configuration.'}), 500
                     
                     logger.info(f"Successfully fetched Jira issue {item_id}: {issue.get('key', 'Unknown')}")
                     
@@ -379,10 +380,26 @@ def generate():
                         azure_client = AzureClient(azure_config)
                     else:
                         azure_client = AzureClient()  # Fall back to environment variables
-                    work_items = azure_client.fetch_azure_work_items([item_id])
                     
-                    if not work_items or len(work_items) == 0:
-                        continue
+                    # Capture Azure-specific errors
+                    try:
+                        work_items = azure_client.fetch_azure_work_items([item_id])
+                        
+                        if not work_items or len(work_items) == 0:
+                            # Check if it's an authentication issue
+                            if hasattr(azure_client, 'last_error'):
+                                error_msg = azure_client.last_error
+                                if '401' in error_msg:
+                                    return jsonify({'error': 'Azure DevOps authentication failed. Please check your Personal Access Token (PAT) and ensure it has "Work Items (Read)" permissions.'}), 401
+                                elif '404' in error_msg:
+                                    return jsonify({'error': f'Work item {item_id} not found in Azure DevOps. Please verify the work item ID exists in your project.'}), 404
+                                else:
+                                    return jsonify({'error': f'Azure DevOps error: {error_msg}'}), 400
+                            else:
+                                return jsonify({'error': f'Failed to fetch work item {item_id} from Azure DevOps. Please check your configuration and try again.'}), 400
+                    except Exception as e:
+                        logger.error(f"Azure client error for item {item_id}: {str(e)}")
+                        return jsonify({'error': f'Azure DevOps connection error: {str(e)}'}), 500
                     
                     # Define work_item from the fetched items
                     work_item = work_items[0]
@@ -447,7 +464,15 @@ def generate():
             
             if not results:
                 logger.error("No results generated for any item IDs")
-                return jsonify({'error': 'Failed to generate test cases for any items'}), 400
+                # Provide more specific error messages based on the source type
+                if source_type == 'azure':
+                    return jsonify({'error': 'No Azure DevOps work items were successfully processed. Please check your credentials and work item IDs.'}), 400
+                elif source_type == 'jira':
+                    return jsonify({'error': 'No Jira issues were successfully processed. Please check your credentials and issue keys.'}), 400
+                elif source_type == 'image':
+                    return jsonify({'error': 'Failed to process the uploaded image. Please ensure the image is clear and readable.'}), 400
+                else:
+                    return jsonify({'error': 'Failed to generate test cases. Please check your input and try again.'}), 400
                 
             # Before returning the final response in Jira/Azure handler
             formatted_test_cases = []
@@ -480,6 +505,14 @@ def generate():
             
     except Exception as e:
         logger.error(f"Error during generation: {str(e)}", exc_info=True)
+        # Capture error in Sentry with context
+        capture_exception(e, {
+            "source_type": source_type,
+            "selected_types": selected_types,
+            "item_ids": item_ids,
+            "user_agent": request.headers.get('User-Agent', 'Unknown'),
+            "ip_address": request.remote_addr
+        })
         # Reset the generation status in case of errors
         with generation_status['lock']:
             generation_status['is_generating'] = False
@@ -1444,4 +1477,4 @@ def shorten_url():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5005)
+    app.run(host='0.0.0.0',port=5005)
