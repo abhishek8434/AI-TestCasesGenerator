@@ -1,14 +1,28 @@
-from openai import OpenAI
+# Initialize Sentry for AI module
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the AI generator
+init_sentry("ai-test-case-generator-ai")
+
+from langchain_openai import ChatOpenAI
+from langchain.callbacks.tracers.langchain import LangChainTracer
+import os
+import logging
 from config.settings import OPENAI_API_KEY
 from typing import Optional, List, Dict, Any
-import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client once at module level
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Set up LangSmith tracer
+tracer = LangChainTracer(project_name="openai-cost-tracking")
+llm = ChatOpenAI(
+    model="gpt-3.5-turbo",
+    temperature=0.7,
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    callbacks=[tracer]
+)
 
 def get_test_type_config(test_type: str) -> dict:
     """Get the configuration for a specific test type"""
@@ -97,20 +111,14 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
 
         try:
             logger.info(f"Sending request to OpenAI for {test_type} test cases")
-            response = client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": f"You are a QA engineer. Generate EXACTLY {config['count']} {test_type} test cases. Use {config['prefix']} as the prefix."
-                    },
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.7,
-                max_tokens=2000
-            )
-            
-            test_cases = response.choices[0].message.content.strip()
+            response = llm.invoke([
+                {
+                    "role": "system",
+                    "content": f"You are a QA engineer. Generate EXACTLY {config['count']} {test_type} test cases. Use {config['prefix']} as the prefix."
+                },
+                {"role": "user", "content": prompt}
+            ])
+            test_cases = response.content.strip()
             if test_cases:
                 logger.info(f"Generated {test_type} test cases successfully")
                 # Add a section header for each test type to help with parsing
@@ -121,6 +129,13 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
 
         except Exception as e:
             logger.error(f"Error generating {test_type} test cases: {str(e)}")
+            # Capture error in Sentry
+            capture_exception(e, {
+                "test_type": test_type,
+                "config": config,
+                "summary": summary,
+                "description_length": len(description) if description else 0
+            })
             continue
         
         logger.info(f"Completed generation for test type: {test_type}")
