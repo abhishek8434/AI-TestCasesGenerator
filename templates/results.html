@@ -1,0 +1,2987 @@
+<html lang="en" class="js-focus-visible" data-js-focus-visible="">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Generated Scenarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <style>
+        /* Replace existing loader styles with new circular loader styles */
+        .loader-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .percentage-loader {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .circular-loader {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            animation: circleRotate 1.5s linear infinite;
+        }
+
+        .loader-bg,
+        .loader-fg {
+            fill: none;
+            stroke-width: 10;
+            cx: 50;
+            cy: 50;
+            r: 45;
+        }
+
+        .loader-bg {
+            stroke: #ddd;
+        }
+
+        .loader-fg {
+            stroke: #FF3D00;
+            stroke-linecap: round;
+            transform-origin: center;
+            stroke-dasharray: 283;
+            /* Ensure at least a small part of the circle is always visible */
+            stroke-dashoffset: 252; /* Default to showing ~10% of the circle */
+            transition: stroke-dashoffset 0.3s ease;
+        }
+
+        /* Ensure at least part of the circle is visible even at 0% */
+        .loader-fg.visible-progress {
+            stroke-dashoffset: 275; /* Show a small part of the circle even at 0% */
+        }
+
+        .loader-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            z-index: 20;
+        }
+
+        .loader {
+            width: 175px;
+            height: 80px;
+            display: block;
+            margin: auto;
+            background-image: radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), radial-gradient(circle 50px at 50px 50px, #FFF 100%, transparent 0), radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), linear-gradient(#FFF 50px, transparent 0);
+            background-size: 50px 50px, 100px 76px, 50px 50px, 120px 40px;
+            background-position: 0px 30px, 37px 0px, 122px 30px, 25px 40px;
+            background-repeat: no-repeat;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* Keep existing loader animations */
+        .loader::after {
+            content: '';
+            left: 50%;
+            bottom: 0;
+            transform: translate(-50%, 0);
+            position: absolute;
+            border: 15px solid transparent;
+            border-top-color: #FF3D00;
+            box-sizing: border-box;
+            animation: fadePush 1s linear infinite;
+        }
+
+        .loader::before {
+            content: '';
+            left: 50%;
+            bottom: 30px;
+            transform: translate(-50%, 0);
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #FF3D00;
+            box-sizing: border-box;
+            animation: fadePush 1s linear infinite;
+        }
+
+        @keyframes fadePush {
+            0% {
+                transform: translate(-50%, -15px);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translate(-50%, 0px);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, 15px);
+                opacity: 0;
+            }
+        }
+
+        /* New styles for modern UI */
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20 20px;
+        }
+
+        a {
+            color: rgb(76, 171, 114);
+            text-decoration: none;
+            transition: all 0.3s ease !important;
+        }
+
+        a:hover {
+            font-weight: 700;
+            color: rgb(76, 171, 114);
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #041E2B;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .form-label i {
+            color: #61b984;
+        }
+
+        .form-control,
+        .form-select {
+            border-radius: 6px;
+            border: 1px solid #ced4da;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .btn-primary {
+            background-color: rgb(76, 171, 114);
+            border: 1px solid rgb(76, 171, 114);
+            padding: 8px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid rgba(4, 30, 43, 0.5);
+            color: rgb(4, 30, 43);
+            padding: 8px 22px;
+            font-size: 14px;
+
+        }
+
+        .btn {
+            border-radius: 4px;
+            font-weight: 400;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: rgb(76, 171, 114);
+            box-shadow: none;
+            color: rgb(76, 171, 114);
+            font-weight: 400;
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            font-weight: 400;
+            background-color: rgba(4, 30, 43, 0.1);
+            border-color: rgba(4, 30, 43, 0.5);
+            color: rgba(4, 30, 43, 1);
+            box-shadow: 0 14px 26px -12px rgba(4, 30, 43, 0.2), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(4, 30, 43, 0.2);
+        }
+
+        .btn:focus {
+            box-shadow: none !important;
+            font-weight: 400;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgb(76, 171, 114);
+            box-shadow: none;
+        }
+
+        div:has(input:focus)>.form-label,
+        div:has(select:focus)>.form-label {
+            color: rgb(76, 171, 114) !important;
+        }
+
+        h1 {
+            text-align: center;
+            color: #212529;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: rgba(4, 30, 43, 0.5);
+            margin-bottom: 0;
+        }
+
+        .help-text {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+
+
+        .header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            margin-bottom: 12px;
+        }
+
+        .logo>img {
+            max-height: 40px;
+        }
+
+        .center-content {
+            max-width: calc(100% - 456px);
+            flex: 1;
+        }
+
+        h1.main-title {
+            font-size: 1.8rem;
+            margin-bottom: 0;
+            color: #041E2B;
+        }
+
+        .card-body {
+            padding: 40px;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            color: #041E2B;
+        }
+
+        .form-text {
+            color: rgba(4, 30, 43, 0.5);
+            font-size: 13px;
+        }
+
+        ::placeholder {
+            color: rgba(4, 30, 43, 0.5) !important;
+        }
+
+        .form-check-input:checked {
+            background-color: rgb(76, 171, 114);
+            border-color: rgb(76, 171, 114);
+        }
+
+        .form-check-input:focus {
+            box-shadow: none;
+        }
+
+        .form-control,
+        .form-select,
+        .form-check-label {
+            font-size: 14px;
+        }
+
+        .status-select {
+            width: 100%;
+            min-width: 120px;
+            padding: 4px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+            color: #041E2B;
+        }
+
+        .status-select:focus {
+            border-color: rgb(76, 171, 114);
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(76, 171, 114, 0.25);
+        }
+
+        .status-select option {
+            padding: 8px;
+        }
+
+        .form-check {
+            flex: 0 0 calc(25% - 12px);
+            cursor: pointer;
+        }
+
+        .accordion-button {
+            background-color: rgba(4, 30, 43, 0.03);
+            border-color: rgba(4, 30, 43, 1);
+            color: rgba(4, 30, 43, 1);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: rgb(76, 171, 114);
+            color: rgb(76, 171, 114);
+        }
+
+        .accordion-button:not(.collapsed)::after {
+            background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%234cab72'><path fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/></svg>");
+            transform: rotate(-180deg);
+        }
+
+        .accordion-button:focus {
+            box-shadow: 0 0 0 .25rem rgba(76, 171, 114, .25);
+        }
+
+        .table {
+            font-size: 14px;
+            color: rgba(4, 30, 43, 0.7);
+        }
+
+        .table-striped>tbody>tr:nth-of-type(odd)>* {
+            color: rgba(4, 30, 43, 0.7);
+            --bs-table-accent-bg: rgba(4, 30, 43, 0.05);
+        }
+
+        .table thead>tr>th {
+            font-size: 15px;
+            color: rgba(4, 30, 43, 1);
+            text-transform: uppercase;
+            background-color: rgba(4, 30, 43, 0.1);
+        }
+
+        @media (min-width: 768px) {
+            .gap-md-0 {
+                gap: 0 !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .logo {
+                margin-bottom: 1rem;
+            }
+
+            .center-content {
+                text-align: center;
+                max-width: 100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .form-label i {
+                font-size: 1.2rem;
+            }
+
+            .form-control,
+            .form-select {
+                font-size: 0.9rem;
+            }
+
+        }
+
+        /* Style all button types to use the same green theme */
+        .btn-success,
+        .btn-info,
+        .btn-warning,
+        .btn-secondary {
+            background-color: rgb(76, 171, 114);
+            border: 1px solid rgb(76, 171, 114);
+            padding: 8px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #fff;
+            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
+        }
+
+        .btn-success:hover,
+        .btn-success:focus,
+        .btn-info:hover,
+        .btn-info:focus,
+        .btn-warning:hover,
+        .btn-warning:focus,
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: rgb(76, 171, 114);
+            box-shadow: none;
+            color: rgb(76, 171, 114);
+            font-weight: 400;
+        }
+
+        /* Style for the "Generate New" button in header */
+        .header .btn-primary {
+            background-color: rgb(76, 171, 114);
+            border: 1px solid rgb(76, 171, 114);
+            padding: 8px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #fff;
+            font-weight: 400;
+            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
+        }
+
+        .header .btn-primary:hover,
+        .header .btn-primary:focus {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: rgb(76, 171, 114);
+            color: rgb(76, 171, 114);
+            box-shadow: none;
+            font-weight: 400;
+        }
+
+        /* Add spinning animation CSS */
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Improved continuous rotation animation for the circular loader */
+        @keyframes circleRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .circular-animate {
+            animation: circleRotate 1.5s linear infinite;
+        }
+
+        /* Add a pulsating effect to make the loading indicator more noticeable */
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #FF3D00;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+        }
+
+        /* Add a continuously rotating spinner ring */
+        .spinner-ring {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                #FF3D00 0deg, 
+                rgba(255, 61, 0, 0.8) 90deg, 
+                rgba(255, 61, 0, 0.6) 180deg,
+                rgba(255, 61, 0, 0.4) 270deg,
+                rgba(255, 61, 0, 0.1) 360deg
+            );
+            animation: spinnerRotate 1.5s linear infinite;
+            z-index: 10;
+        }
+
+        @keyframes spinnerRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Make the progress circle semi-transparent to see the spinner behind it */
+        .circular-loader {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+            position: relative;
+            z-index: 5;
+        }
+    </style>
+</head>
+
+<body data-new-gr-c-s-check-loaded="14.1104.0" data-gr-ext-installed="">
+    <div class="container">
+        <div class="header flex-column align-items-center gap-4 gap-md-0">
+            <div class="logo">
+                <img src="/static/assets/images/eatance--logo.svg" alt="">
+            </div>
+            <div class="d-flex justify-content-between w-100">
+                <h1 class="main-title">AI-Powered Generated Scenarios</h1>
+                <a href="/" class="btn btn-primary">Generate New</a>
+            </div>
+        </div>
+
+        <div class="accordion" id="testCasesList"></div>
+    </div>
+
+    <!-- Share URL Modal -->
+    <div class="modal fade" id="shareUrlModal" tabindex="-1" aria-labelledby="shareUrlModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareUrlModalLabel">Share Test Cases</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Share this URL to give others access to these test cases:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="shareUrlInput" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyShareUrlBtn">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <div id="copySuccess" class="alert alert-success d-none">
+                        URL copied to clipboard!
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const filesParam = urlParams.get('files');
+            const urlKey = urlParams.get('key') || urlParams.get('token');
+
+            // Add debugging for URL parameters
+            console.log("=== URL PARAMETER DEBUGGING ===");
+            console.log("Raw URL:", window.location.href);
+            console.log("Files parameter:", filesParam);
+            console.log("URL Key:", urlKey);
+            console.log("Token parameter:", urlParams.get('token'));
+            console.log("Item IDs parameter:", urlParams.get('item_ids'));
+
+            // Check for URL key or token - required for all operations
+            if (!urlKey) {
+                document.getElementById('testCasesList').innerHTML =
+                    `<div class="alert alert-danger">No URL key found. Please ensure you have a valid URL.</div>`;
+                return;
+            }
+
+            // Store URL key in a global variable for use across functions
+            window.testCaseUrlKey = urlKey;
+
+            // Initialize files object
+            window.files = {};
+
+            // Try to parse file information from URL parameter first
+            let hasValidFiles = false;
+            
+            if (filesParam) {
+                try {
+                    console.log("Original files parameter:", filesParam);
+                    
+                    // Try parsing as JSON first
+                    try {
+                        // Decode before parsing if it contains URI components
+                        let decodedParam = filesParam;
+                        if (filesParam.includes('%')) {
+                            try {
+                                decodedParam = decodeURIComponent(filesParam);
+                                console.log("Decoded files param:", decodedParam);
+                            } catch (decodeError) {
+                                console.warn("Could not decode URL parameter:", decodeError);
+                            }
+                        }
+                        
+                        // Try to parse as JSON with proper error handling
+                        let filesData;
+                        try {
+                            filesData = JSON.parse(decodedParam);
+                            console.log("Successfully parsed files data as JSON:", filesData);
+                        } catch (jsonError) {
+                            console.warn("Could not parse as JSON, trying alternate methods:", jsonError);
+                            
+                            // Try to extract file paths using regex
+                            const regex = /test_.*?\.(xlsx|txt)/g;
+                            const matches = decodedParam.match(regex);
+                            
+                            if (matches && matches.length > 0) {
+                                console.log("Extracted file paths using regex:", matches);
+                                filesData = {};
+                                matches.forEach(match => {
+                                    const ext = match.split('.').pop();
+                                    filesData[ext] = match;
+                                });
+                            } else {
+                                // Try as comma-separated string
+                                const parts = decodedParam.split(',');
+                                if (parts.length > 0) {
+                                    filesData = {};
+                                    parts.forEach(part => {
+                                        if (part.includes('.')) {
+                                            const ext = part.split('.').pop();
+                                            if (ext) filesData[ext] = part;
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                        
+                        // Handle different possible formats of the filesData object
+                        if (filesData && typeof filesData === 'object' && filesData !== null) {
+                            console.log("Processing filesData object:", filesData);
+                            
+                            if (filesData.excel || filesData.txt) {
+                                // Format: {excel: "path.xlsx", txt: "path.txt"}
+                                console.log("Found flat file structure");
+                                if (filesData.excel) window.files['excel'] = filesData.excel;
+                                if (filesData.txt) window.files['txt'] = filesData.txt;
+                            } else {
+                                // Check if it's nested like {itemId: {excel: "path.xlsx"}}
+                                console.log("Checking for nested file structure");
+                                let foundNestedStructure = false;
+                                
+                                Object.keys(filesData).forEach(key => {
+                                    const value = filesData[key];
+                                    if (typeof value === 'object' && value !== null) {
+                                        // It's nested - this is the multiple item ID case
+                                        console.log(`Found nested structure for item ${key}:`, value);
+                                        if (value.excel || value.txt) {
+                                            foundNestedStructure = true;
+                                            if (!window.files[key]) window.files[key] = {};
+                                            if (value.excel) window.files[key].excel = value.excel;
+                                            if (value.txt) window.files[key].txt = value.txt;
+                                        }
+                                    } else if (typeof value === 'string') {
+                                        // It's a direct mapping like {excel: "path"}
+                                        console.log(`Found direct mapping: ${key} = ${value}`);
+                                        window.files[key] = value;
+                                    }
+                                });
+                                
+                                // If no nested structure was found, try to use the first level values
+                                if (!foundNestedStructure) {
+                                    console.log("No nested structure found, using direct values");
+                                    Object.keys(filesData).forEach(key => {
+                                        const value = filesData[key];
+                                        if (typeof value === 'string') {
+                                            window.files[key] = value;
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                        
+                    } catch (parseError) {
+                        console.error("All parsing methods failed:", parseError);
+                    }
+                    
+                    // Verify that file paths actually have values and aren't "undefined"
+                    Object.keys(window.files).forEach(key => {
+                        const value = window.files[key];
+                        if (typeof value === 'string') {
+                            if (!value || value === 'undefined') {
+                                console.warn(`Removing invalid file path for ${key}: ${value}`);
+                                delete window.files[key];
+                            }
+                        } else if (typeof value === 'object' && value !== null) {
+                            // For nested structure, check each file type
+                            Object.keys(value).forEach(fileType => {
+                                if (!value[fileType] || value[fileType] === 'undefined') {
+                                    console.warn(`Removing invalid file path for ${key}.${fileType}: ${value[fileType]}`);
+                                    delete value[fileType];
+                                }
+                            });
+                            // If no valid file types remain, remove the item
+                            if (Object.keys(value).length === 0) {
+                                console.warn(`Removing empty item: ${key}`);
+                                delete window.files[key];
+                            }
+                        }
+                    });
+                    
+                    // Log the final file paths to help with debugging
+                    console.log("Final file paths from URL param:", window.files);
+                    console.log("Files structure type:", typeof window.files);
+                    console.log("Files keys:", Object.keys(window.files));
+                    
+                    // Additional debugging for nested structure
+                    Object.keys(window.files).forEach(key => {
+                        const value = window.files[key];
+                        console.log(`File entry ${key}:`, typeof value, value);
+                        if (typeof value === 'object' && value !== null) {
+                            console.log(`  Nested structure for ${key}:`, Object.keys(value));
+                        }
+                    });
+                    
+                    // Check if we have valid file paths
+                    hasValidFiles = Object.keys(window.files).length > 0;
+                } catch (error) {
+                    console.error("Error parsing file data from URL:", error);
+                }
+            }
+
+            // If URL parameters didn't provide valid files, fetch from MongoDB
+            if (!hasValidFiles) {
+                console.log("No valid files from URL param, will fetch from MongoDB");
+                fetchFilesFromMongo(urlKey);
+            } else {
+                initializeUI();
+            }
+        });
+
+        // Function to fetch file paths from MongoDB
+        async function fetchFilesFromMongo(urlKey, retryCount = 0) {
+            const MAX_RETRIES = 10;
+            const RETRY_DELAY_MS = 2000;
+            try {
+                if (retryCount === 0) {
+                    document.getElementById('testCasesList').innerHTML = `<div class="alert alert-info">Loading test cases, please wait...</div>`;
+                }
+                console.log(`Fetching file paths from MongoDB for key: ${urlKey}, attempt ${retryCount + 1}`);
+                
+                // Create a global variable to store MongoDB data for later use
+                window.mongoData = null;
+                
+                // First try the mongo-document endpoint which has the most complete data
+                console.log("Trying to get data directly from MongoDB document");
+                try {
+                    const mongoResponse = await fetch(`/api/mongo-document/${urlKey}`);
+                    if (mongoResponse.ok) {
+                        const mongoData = await mongoResponse.json();
+                        console.log("MongoDB document data:", mongoData);
+                        
+                        // Store the MongoDB data globally for use in item ID extraction
+                        window.mongoData = mongoData;
+                        
+                        if (mongoData.success && mongoData.document && mongoData.document.test_data) {
+                            // Check different possible structures
+                            if (mongoData.document.test_data.files) {
+                                console.log("Found file paths in MongoDB document:", mongoData.document.test_data.files);
+                                window.files = mongoData.document.test_data.files;
+                                initializeUI();
+                                return;
+                            } else if (Array.isArray(mongoData.document.test_data)) {
+                                console.log("MongoDB document contains test data array, using direct data");
+                                // Store the test data directly
+                                window.testCases = { 
+                                    'excel': mongoData.document.test_data
+                                };
+                                // Set a flag to indicate we have direct test case data
+                                window.hasDirectTestData = true;
+                                window.files = { 'excel': 'direct-data' };
+                                initializeUI();
+                                return;
+                            }
+                        }
+                    }
+                } catch (mongoError) {
+                    console.error("Error fetching MongoDB document:", mongoError);
+                }
+                
+                // Try the shared-status endpoint which is faster
+                const statusResponse = await fetch(`/api/shared-status?key=${urlKey}&includeFiles=true`, {
+                    headers: { 'Cache-Control': 'no-cache' }
+                });
+                
+                if (statusResponse.ok) {
+                    const statusData = await statusResponse.json();
+                    console.log("Received status data from MongoDB:", statusData);
+                    
+                    if (statusData.files && Object.keys(statusData.files).length > 0) {
+                        console.log("Found file paths in status response:", statusData.files);
+                        window.files = statusData.files;
+                        initializeUI();
+                        return;
+                    } else if (statusData.test_data && Array.isArray(statusData.test_data)) {
+                        console.log("Status response contains test data array, using direct data");
+                        // Store the test data directly
+                        window.testCases = { 
+                            'excel': statusData.test_data
+                        };
+                        // Set a flag to indicate we have direct test case data
+                        window.hasDirectTestData = true;
+                        window.files = { 'excel': 'direct-data' };
+                        initializeUI();
+                        return;
+                    }
+                }
+                
+                // If that doesn't work, try getting the full document via view endpoint
+                console.log("Trying to fetch document from view endpoint");
+                const viewResponse = await fetch(`/view/${urlKey}?format=json`);
+                
+                if (viewResponse.ok) {
+                    try {
+                        const viewData = await viewResponse.json();
+                        console.log("Received view data from MongoDB:", viewData);
+                        
+                        if (viewData.test_data && viewData.test_data.files) {
+                            console.log("Found file paths in view response:", viewData.test_data.files);
+                            window.files = viewData.test_data.files;
+                            initializeUI();
+                            return;
+                        } else if (viewData.test_data && Array.isArray(viewData.test_data)) {
+                            console.log("View data contains test data array, using direct data");
+                            // Store the test data directly
+                            window.testCases = { 
+                                'excel': viewData.test_data
+                            };
+                            // Set a flag to indicate we have direct test case data
+                            window.hasDirectTestData = true;
+                            window.files = { 'excel': 'direct-data' };
+                            initializeUI();
+                            return;
+                        }
+                    } catch (jsonError) {
+                        // If it's not JSON, try to parse the HTML response for file paths
+                        console.warn("View endpoint returned HTML instead of JSON, will try to extract data");
+                        const htmlText = await viewResponse.text();
+                        const fileMatches = htmlText.match(/\/api\/download\/([^"']+\.(?:xlsx|txt))/g);
+                        
+                        if (fileMatches && fileMatches.length > 0) {
+                            const files = {};
+                            fileMatches.forEach(match => {
+                                const filePath = match.replace('/api/download/', '');
+                                const ext = filePath.split('.').pop();
+                                files[ext] = filePath;
+                            });
+                            
+                            if (Object.keys(files).length > 0) {
+                                console.log("Extracted file paths from HTML:", files);
+                                window.files = files;
+                                initializeUI();
+                                return;
+                            }
+                        }
+                        
+                        // Also try to extract direct test case data from HTML
+                        const tableMatches = htmlText.match(/<table[^>]*id="testCaseTable"[^>]*>([\s\S]*?)<\/table>/);
+                        if (tableMatches && tableMatches.length > 1) {
+                            console.log("Found test case table in HTML, using direct HTML");
+                            // Create a dummy container to hold the HTML
+                            const container = document.createElement('div');
+                            container.innerHTML = tableMatches[0];
+                            
+                            // Extract test case data
+                            const rows = container.querySelectorAll('tbody tr');
+                            const testCases = [];
+                            
+                            rows.forEach(row => {
+                                const cells = row.querySelectorAll('td');
+                                if (cells.length >= 3) {
+                                    const testCase = {
+                                        Title: cells[0].textContent.trim(),
+                                        Scenario: cells[1].textContent.trim(),
+                                        Steps: cells[2].textContent.trim(),
+                                        'Expected Result': cells.length > 3 ? cells[3].textContent.trim() : '',
+                                        Status: cells.length > 4 ? cells[4].textContent.trim() : ''
+                                    };
+                                    testCases.push(testCase);
+                                }
+                            });
+                            
+                            if (testCases.length > 0) {
+                                console.log(`Extracted ${testCases.length} test cases from HTML table`);
+                                window.testCases = { 
+                                    'excel': testCases
+                                };
+                                window.hasDirectTestData = true;
+                                window.files = { 'excel': 'direct-data' };
+                                initializeUI();
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                // FALLBACK - Generate file paths based on patterns and URL key
+                // This is a last resort if we can't get paths from MongoDB
+                console.log("No file paths found, trying to construct them from URL key pattern");
+                
+                // Format: test_image_20250611_191418_b0d03cca
+                const pattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (pattern.test(urlKey)) {
+                    const now = new Date();
+                    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                    
+                    // Extract the last 8 characters for a simpler identifier
+                    const shortId = urlKey.substring(urlKey.length - 8);
+                    
+                    // Create filenames with a predictable pattern
+                    const baseFilename = `test_${shortId}`;
+                    
+                    window.files = {
+                        'excel': `${baseFilename}.xlsx`,
+                        'txt': `${baseFilename}.txt`
+                    };
+                    
+                    console.log("Created fallback file paths:", window.files);
+                    initializeUI();
+                    return;
+                }
+                
+                // If all attempts fail, show error but try with direct test data
+                console.log("All attempts to get file paths failed, trying direct test data display");
+                window.testCases = { 
+                    'excel': [] // Empty array as placeholder
+                };
+                window.hasDirectTestData = true;
+                window.files = { 'excel': 'direct-data' };
+                
+                // Immediately try to load test cases from view endpoint
+                try {
+                    const directResponse = await fetch(`/view/${urlKey}`);
+                    if (directResponse.ok) {
+                        const htmlText = await directResponse.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(htmlText, 'text/html');
+                        
+                        // Try to extract test cases from the HTML
+                        const testCasesElement = doc.getElementById('testCaseTable');
+                        if (testCasesElement) {
+                            const testCaseRows = testCasesElement.querySelectorAll('tbody tr');
+                            const extractedTestCases = [];
+                            
+                            testCaseRows.forEach(row => {
+                                const cells = row.querySelectorAll('td');
+                                if (cells.length >= 3) {
+                                    const testCase = {
+                                        Title: cells[0].textContent.trim(),
+                                        Scenario: cells[1].textContent.trim(),
+                                        Steps: cells[2].textContent.trim(),
+                                        'Expected Result': cells.length > 3 ? cells[3].textContent.trim() : '',
+                                        Status: cells.length > 4 ? cells[4].textContent.trim() : ''
+                                    };
+                                    extractedTestCases.push(testCase);
+                                }
+                            });
+                            
+                            if (extractedTestCases.length > 0) {
+                                console.log(`Extracted ${extractedTestCases.length} test cases from HTML view`);
+                                window.testCases['excel'] = extractedTestCases;
+                            }
+                        }
+                    }
+                } catch (directError) {
+                    console.error("Error getting direct test case data:", directError);
+                }
+                
+                // If we reach the fallback and still have no data, retry if possible
+                if (
+                    (!window.files || Object.keys(window.files).length === 0 || (window.hasDirectTestData && (!window.testCases || !window.testCases['excel'] || window.testCases['excel'].length === 0)))
+                    && retryCount < MAX_RETRIES
+                ) {
+                    console.log(`No data found, retrying in ${RETRY_DELAY_MS / 1000} seconds... (attempt ${retryCount + 2} of ${MAX_RETRIES})`);
+                    setTimeout(() => fetchFilesFromMongo(urlKey, retryCount + 1), RETRY_DELAY_MS);
+                    return;
+                }
+                
+                initializeUI();
+                
+            } catch (error) {
+                console.error("Error fetching files from MongoDB:", error);
+                document.getElementById('testCasesList').innerHTML = 
+                    `<div class="alert alert-danger">Error retrieving file information: ${error.message}</div>`;
+            }
+        }
+
+        // Function to initialize the UI after we have file paths
+        function initializeUI() {
+            const testCasesList = document.getElementById('testCasesList');
+
+            // Global state to track loading
+            window.loadingState = {
+                isGenerating: true,
+                retryCount: 0,
+                maxRetries: 60, // 2 minutes (2s * 60)
+                loadedFiles: new Set(),
+                pollInterval: null,  // Add this to track the polling interval
+                directVerificationAttempted: false // Track if we've tried direct verification
+            };
+
+            // Group files by item ID rather than file type
+            const urlParams = new URLSearchParams(window.location.search);
+            let itemIds = urlParams.get('item_ids');
+            if (itemIds) {
+                try {
+                    // Handle comma-separated item IDs or JSON array
+                    if (itemIds.startsWith('[') && itemIds.endsWith(']')) {
+                        itemIds = JSON.parse(itemIds);
+                    } else {
+                        itemIds = itemIds.split(',').map(id => id.trim());
+                    }
+                } catch (e) {
+                    console.error("Error parsing item IDs:", e);
+                    itemIds = [];
+                }
+            } else {
+                // Try to extract item IDs from file paths or use default
+                itemIds = [];
+                
+                // Check if there's an item_id in MongoDB data
+                if (window.mongoData && window.mongoData.document && window.mongoData.document.test_data) {
+                    if (window.mongoData.document.item_ids && Array.isArray(window.mongoData.document.item_ids)) {
+                        itemIds = window.mongoData.document.item_ids;
+                        console.log("Using item IDs from MongoDB:", itemIds);
+                    } else if (window.mongoData.document.test_data.item_ids && Array.isArray(window.mongoData.document.test_data.item_ids)) {
+                        itemIds = window.mongoData.document.test_data.item_ids;
+                        console.log("Using item IDs from MongoDB test_data:", itemIds);
+                    } 
+                }
+                
+                // If still no item IDs, try to extract from filenames
+                if (itemIds.length === 0) {
+                    Object.entries(window.files).forEach(([fileType, filePath]) => {
+                        if (typeof filePath === 'string') {
+                            // Try to extract from patterns like test_KAN-1.xlsx or test_12345.xlsx
+                            let match = filePath.match(/test_([^\.]+)\./);
+                            if (match && match[1]) {
+                                // Avoid duplicates
+                                if (!itemIds.includes(match[1])) {
+                                    itemIds.push(match[1]);
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // If we still have no item IDs but we have "direct-data", look for item ID in test case data
+                if (itemIds.length === 0 && window.hasDirectTestData && window.testCases) {
+                    // Try to extract from test case titles
+                    const testData = window.testCases.excel || [];
+                    if (testData.length > 0) {
+                        if (testData[0].Title) {
+                            // Try to match patterns like "TC_KAN-1_01_..." or just "TC_KAN-1"
+                            const titleMatch = testData[0].Title.match(/^TC_([^_]+)/);
+                            if (titleMatch && titleMatch[1]) {
+                                itemIds.push(titleMatch[1]);
+                            }
+                        }
+                    }
+                }
+                
+                // Handle image-based test cases - extract name from the file path
+                if (itemIds.length === 0) {
+                    const filesParam = urlParams.get('files');
+                    if (filesParam && filesParam.includes('image')) {
+                        // For image-based tests, use a better name than just "image"
+                        const match = filesParam.match(/test_image_(\d+)/);
+                        if (match && match[1]) {
+                            // Use date format from the image filename
+                            itemIds.push(`Image-${match[1]}`);
+                        } else {
+                            itemIds.push("Image");
+                        }
+                    }
+                }
+                
+                // If all extraction attempts fail, use the file types as a last resort
+                if (itemIds.length === 0) {
+                    const keys = Object.keys(window.files);
+                    if (keys.includes('excel') || keys.includes('txt')) {
+                        // If we have Excel or TXT files, try to use a more descriptive name
+                        if (window.files.excel && window.files.excel.includes('test_')) {
+                            const nameMatch = window.files.excel.match(/test_([^\.]+)/);
+                            if (nameMatch && nameMatch[1]) {
+                                itemIds.push(nameMatch[1]);
+                            } else {
+                                itemIds.push("Item");
+                            }
+                        } else {
+                            itemIds.push("Item");
+                        }
+                    } else {
+                        // Use a generic name for unknown file types
+                        itemIds.push("Item");
+                    }
+                }
+            }
+
+            // Clean up item IDs - ensure they're properly formatted for display
+            itemIds = itemIds.map(id => {
+                // Make sure the ID is a string
+                id = String(id);
+                
+                // Clean up any special characters or formatting issues
+                let cleanId = id.trim();
+                
+                // For image files, use a nice format
+                if (cleanId.toLowerCase().includes('image')) {
+                    return cleanId.replace(/_/g, '-');
+                }
+                
+                return cleanId;
+            });
+
+            console.log("Final item IDs for display:", itemIds);
+
+            // Create a panel for each item ID
+            itemIds.forEach((itemId, index) => {
+                // Clean up item ID if needed (remove underscores, etc.)
+                const displayId = itemId.replace(/_/g, '-');
+                
+                // Get the specific files for this item ID
+                let excelFile = '';
+                let txtFile = '';
+                
+                if (window.files) {
+                    // Check if files structure is nested by item ID
+                    if (window.files[itemId]) {
+                        excelFile = window.files[itemId].excel || '';
+                        txtFile = window.files[itemId].txt || '';
+                    } else if (window.files[displayId]) {
+                        excelFile = window.files[displayId].excel || '';
+                        txtFile = window.files[displayId].txt || '';
+                    } else {
+                        // Fallback: look for files that contain the item ID
+                        Object.entries(window.files).forEach(([key, value]) => {
+                            if (typeof value === 'object' && value !== null) {
+                                // Nested structure
+                                if (key === itemId || key === displayId) {
+                                    excelFile = value.excel || '';
+                                    txtFile = value.txt || '';
+                                }
+                            } else if (typeof value === 'string') {
+                                // Check if the filename contains the item ID
+                                if (value.includes(itemId) || value.includes(displayId)) {
+                                    if (value.endsWith('.xlsx')) {
+                                        excelFile = value;
+                                    } else if (value.endsWith('.txt')) {
+                                        txtFile = value;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // If still not found, use the global files as fallback for single item
+                        if (!excelFile && !txtFile && itemIds.length === 1) {
+                            excelFile = window.files.excel || '';
+                            txtFile = window.files.txt || '';
+                        }
+                    }
+                }
+                
+                console.log(`Item ${itemId}: excel=${excelFile}, txt=${txtFile}`);
+                
+                // Force show buttons for debugging
+                console.log(`DEBUGGING: Forcing buttons to show for ${itemId}`);
+                
+                const accordionItem = document.createElement('div');
+                accordionItem.className = 'accordion-item';
+                accordionItem.innerHTML = `
+                <h2 class="accordion-header" id="heading${displayId}">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                            data-bs-target="#collapse${displayId}" aria-expanded="false" aria-controls="collapse${displayId}">
+                        Test Cases for ${displayId}
+                        <span id="status-${displayId}" class="ms-2">Generating test cases...</span>
+                    </button>
+                </h2>
+                <div id="collapse${displayId}" class="accordion-collapse collapse show" aria-labelledby="heading${displayId}" data-bs-parent="#testCasesList">
+                    <div class="accordion-body">
+                        <div class="mb-3">
+                            <div class="btn-group d-flex gap-2" id="buttons-${displayId}" style="display: flex !important;">
+                                <a href="/api/download/${excelFile}" class="btn btn-success" id="excel-${displayId}" style="display: inline-block !important;">Download Excel</a>
+                                <a href="/api/download/${txtFile}" class="btn btn-info" id="txt-${displayId}" style="display: inline-block !important;">Download TXT</a>
+                                
+                                <button class="btn btn-warning" id="copy-table-${displayId}" onclick="copyTestCaseTable('${displayId}')">Copy Table</button>
+                                <button class="btn btn-secondary" id="copy-${displayId}" onclick="copyTestCaseUrl('${displayId}')">Copy URL</button>
+                                <button class="btn btn-primary" id="share-${displayId}" onclick="shareTestCase('${displayId}')">Share URL</button>
+                            </div>
+                        </div>
+                        <div id="testCaseTable${displayId}" class="table-container">
+                            <div class="text-center">Loading test cases...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                testCasesList.appendChild(accordionItem);
+                console.log(`Created accordion item for ${displayId}`);
+
+                // Store the file paths for this item for later use
+                if (!window.itemFiles) window.itemFiles = {};
+                window.itemFiles[displayId] = {
+                    excel: excelFile,
+                    txt: txtFile
+                };
+
+                // Automatically load test cases
+                // For item IDs, we always load Excel data for display
+                loadTestCases(displayId, 'excel');
+            });
+
+            // Start with direct file verification immediately
+            verifyFiles();
+
+            // Also check generation status via API
+            checkGenerationStatus();
+
+            // Apply saved status values after test cases are loaded
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        const statusSelects = document.querySelectorAll('.status-select');
+                        if (statusSelects.length > 0) {
+                            console.log('Status selects found, applying saved values');
+                            applyStatusValues();
+                            updateDownloadLinks();
+                        }
+                    }
+                });
+            });
+            
+            // Start observing the document for added nodes
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            // Fallback 1: After 2 seconds, try to show content again
+            setTimeout(function () {
+                if (window.loadingState.isGenerating) {
+                    console.log("First fallback timeout - attempting to show content");
+                    verifyFiles();
+                }
+                
+                // Try to apply status values again after a delay
+                applyStatusValues();
+            }, 2000); // 2 seconds
+
+            // Fallback 2: After 5 seconds, enable download buttons directly
+            setTimeout(function () {
+                console.log("Second fallback timeout - enabling download buttons directly");
+                enableDownloadButtons();
+                
+                // Try to apply status values once more
+                applyStatusValues();
+            }, 5000); // 5 seconds
+            
+            // Start polling for status updates from shared views
+            setupStatusPolling();
+        }
+
+        // Function to stop polling
+        function stopPolling() {
+            console.log('Stopping polling');
+            if (window.loadingState.pollInterval) {
+                clearTimeout(window.loadingState.pollInterval);
+                window.loadingState.pollInterval = null;
+            }
+            window.loadingState.isGenerating = false;
+        }
+
+        async function checkGenerationStatus() {
+            // If we're no longer generating, stop checking
+            if (!window.loadingState.isGenerating) {
+                console.log("Generation status check stopped - no longer generating");
+                return;
+            }
+
+            if (window.loadingState.retryCount >= window.loadingState.maxRetries) {
+                showError('Generation timeout, but you can still access available files.');
+                enableDownloadButtons();
+                return;
+            }
+
+            try {
+                // Get item IDs from the files object
+                const itemIds = Object.keys(window.files).join(',');
+                const response = await fetch(`/api/generation-status?items=${itemIds}`);
+                if (!response.ok) throw new Error('Failed to check generation status');
+
+                const status = await response.json();
+
+                // Update progress for each item
+                Object.entries(window.files).forEach(([itemId]) => {
+                    const statusSpan = document.getElementById(`status-${itemId}`);
+                    // Make sure progress is a valid number, defaulting to '' (no percentage) if invalid
+                    let progress = status.progress_percentage;
+                    
+                    // Check if progress is a valid number and between 0-100
+                    if (typeof progress !== 'number' || isNaN(progress) || progress < 0 || progress > 100) {
+                        // Don't show percentage if invalid
+                        statusSpan.innerHTML = 'Generating test cases...';
+                    } else {
+                        // Only show percentage if it's a valid number
+                        progress = Math.round(progress);
+                        // Calculate offset ensuring at least 10% is visible at 0%
+                        const dashOffset = progress === 0 ? 252 : progress === 100 ? 0 : 283 - (progress / 100) * 283;
+                        statusSpan.innerHTML = `Generating... ${progress}% complete`;
+                    }
+                });
+
+                // Check if generation is complete and files are ready
+                if (!status.is_generating && status.files_ready) {
+                    await verifyFiles();
+                    return;
+                }
+
+                // Also check directly for files every few retries
+                if (window.loadingState.retryCount % 3 === 0) {
+                    console.log("Periodically checking for files directly");
+                    await verifyFiles();
+                }
+
+                // If still generating or files not ready, continue checking
+                window.loadingState.retryCount++;
+                window.loadingState.pollInterval = setTimeout(checkGenerationStatus, 2000);
+            } catch (error) {
+                console.error('Error checking generation status:', error);
+                window.loadingState.retryCount++;
+                window.loadingState.pollInterval = setTimeout(checkGenerationStatus, 5000);
+
+                // Try direct verification on error
+                if (!window.loadingState.directVerificationAttempted) {
+                    window.loadingState.directVerificationAttempted = true;
+                    console.log("Status API error - trying direct verification");
+                    await verifyFiles();
+                }
+            }
+        }
+
+        async function verifyFiles() {
+            console.log('Verifying files directly:', window.files);
+
+            // Reset retry count to avoid premature timeout
+            window.loadingState.retryCount = 0;
+
+            let anyFileVerified = false;
+
+            // Handle direct data from MongoDB
+            if (window.hasDirectTestData) {
+                console.log("Using direct test data from MongoDB, no need to verify files");
+                anyFileVerified = true;
+                
+                // Extract item ID from test data if possible
+                let itemId = "Item";
+                const testData = window.testCases.excel || [];
+                if (testData.length > 0 && testData[0].Title) {
+                    const titleMatch = testData[0].Title.match(/^TC_([^_]+)/);
+                    if (titleMatch && titleMatch[1]) {
+                        itemId = titleMatch[1];
+                    }
+                }
+                
+                // Update status and buttons for the item
+                const buttons = document.getElementById(`buttons-${itemId}`);
+                const excelBtn = document.getElementById(`excel-${itemId}`);
+                const txtBtn = document.getElementById(`txt-${itemId}`);
+                const copyBtn = document.getElementById(`copy-${itemId}`);
+                const shareBtn = document.getElementById(`share-${itemId}`);
+                const statusSpan = document.getElementById(`status-${itemId}`);
+
+                // Show all buttons container
+                if (buttons) buttons.style.display = 'flex';
+
+                // Only show copy and share buttons for direct data (no download)
+                if (excelBtn) excelBtn.style.display = 'none';
+                if (txtBtn) txtBtn.style.display = 'none';
+                if (copyBtn) copyBtn.style.display = 'inline-block';
+                if (shareBtn) shareBtn.style.display = 'inline-block';
+
+                if (statusSpan) statusSpan.innerHTML = '✓ Complete';
+
+                // Automatically load test cases
+                loadTestCases(itemId, 'excel');
+                
+                window.loadingState.isGenerating = false;
+                stopPolling();
+                return;
+            }
+
+            // Get all item IDs from URL or extract from filenames
+            const urlParams = new URLSearchParams(window.location.search);
+            let itemIds = urlParams.get('item_ids');
+            if (itemIds) {
+                try {
+                    if (itemIds.startsWith('[') && itemIds.endsWith(']')) {
+                        itemIds = JSON.parse(itemIds);
+                    } else {
+                        itemIds = itemIds.split(',').map(id => id.trim());
+                    }
+                } catch (e) {
+                    console.error("Error parsing item IDs:", e);
+                    itemIds = [];
+                }
+            } else {
+                // Try to extract item IDs from file paths
+                itemIds = [];
+                Object.entries(window.files).forEach(([key, value]) => {
+                    if (typeof value === 'object' && value !== null) {
+                        // Nested structure - key is the item ID
+                        if (!itemIds.includes(key)) {
+                            itemIds.push(key);
+                        }
+                    } else if (typeof value === 'string') {
+                        // Flat structure - try to extract from filename
+                        const match = value.match(/test_([^\.]+)\./);
+                        if (match && match[1] && !itemIds.includes(match[1])) {
+                            itemIds.push(match[1]);
+                        }
+                    }
+                });
+                
+                // If no item IDs extracted, use "Item" as fallback
+                if (itemIds.length === 0) {
+                    itemIds = ["Item"];
+                }
+            }
+
+            console.log('Verifying files for item IDs:', itemIds);
+
+            // Verify files for each item ID
+            for (const itemId of itemIds) {
+                try {
+                    const displayId = itemId.replace(/_/g, '-');
+                    
+                    // Get the file paths for this specific item
+                    let excelFile = '';
+                    let txtFile = '';
+                    
+                    // Check if we have item-specific files stored
+                    if (window.itemFiles && window.itemFiles[displayId]) {
+                        excelFile = window.itemFiles[displayId].excel;
+                        txtFile = window.itemFiles[displayId].txt;
+                    } else {
+                        // Try to get from window.files structure
+                        if (window.files[itemId]) {
+                            excelFile = window.files[itemId].excel || '';
+                            txtFile = window.files[itemId].txt || '';
+                        } else if (window.files[displayId]) {
+                            excelFile = window.files[displayId].excel || '';
+                            txtFile = window.files[displayId].txt || '';
+                        } else {
+                            // Fallback for single item case
+                            if (itemIds.length === 1) {
+                                excelFile = window.files.excel || '';
+                                txtFile = window.files.txt || '';
+                            }
+                        }
+                    }
+                    
+                    console.log(`Verifying files for ${itemId}: excel=${excelFile}, txt=${txtFile}`);
+                    
+                    // Try to verify Excel file first
+                    let excelVerified = false;
+                    let txtVerified = false;
+                    
+                    if (excelFile) {
+                        try {
+                            const excelResponse = await fetch(`/api/content/${excelFile}`);
+                            excelVerified = excelResponse.ok;
+                            console.log(`Excel file check for ${itemId}: ${excelVerified}`);
+                        } catch (e) {
+                            console.warn(`Error checking Excel file for ${itemId}:`, e);
+                        }
+                    }
+                    
+                    if (txtFile) {
+                        try {
+                            const txtResponse = await fetch(`/api/content/${txtFile}`);
+                            txtVerified = txtResponse.ok;
+                            console.log(`TXT file check for ${itemId}: ${txtVerified}`);
+                        } catch (e) {
+                            console.warn(`Error checking TXT file for ${itemId}:`, e);
+                        }
+                    }
+                    
+                    // If either file is available, show buttons and load test cases
+                    if (excelVerified || txtVerified) {
+                        anyFileVerified = true;
+
+                        const buttons = document.getElementById(`buttons-${displayId}`);
+                        const excelBtn = document.getElementById(`excel-${displayId}`);
+                        const txtBtn = document.getElementById(`txt-${displayId}`);
+                        const copyBtn = document.getElementById(`copy-${displayId}`);
+                        const shareBtn = document.getElementById(`share-${displayId}`);
+                        const statusSpan = document.getElementById(`status-${displayId}`);
+
+                        // Show all buttons container
+                        if (buttons) buttons.style.display = 'flex';
+
+                        // Show individual buttons based on file availability
+                        if (excelBtn) {
+                            excelBtn.style.display = excelVerified ? 'inline-block' : 'none';
+                            if (excelVerified) {
+                                excelBtn.href = `/api/download/${excelFile}`;
+                            }
+                        }
+                        if (txtBtn) {
+                            txtBtn.style.display = txtVerified ? 'inline-block' : 'none';
+                            if (txtVerified) {
+                                txtBtn.href = `/api/download/${txtFile}`;
+                            }
+                        }
+                        if (copyBtn) copyBtn.style.display = 'inline-block';
+                        if (shareBtn) shareBtn.style.display = 'inline-block';
+
+                        if (statusSpan) statusSpan.innerHTML = '✓ Complete';
+
+                        // Load test cases (prefer Excel for display)
+                        if (excelVerified) {
+                            loadTestCases(displayId, 'excel');
+                        } else if (txtVerified) {
+                            loadTestCases(displayId, 'txt');
+                        }
+                    } else {
+                        console.warn(`No files verified for ${itemId}, but will still show buttons`);
+                        // Even if files aren't verified, show the buttons (they might work)
+                        const buttons = document.getElementById(`buttons-${displayId}`);
+                        const excelBtn = document.getElementById(`excel-${displayId}`);
+                        const txtBtn = document.getElementById(`txt-${displayId}`);
+                        const copyBtn = document.getElementById(`copy-${displayId}`);
+                        const shareBtn = document.getElementById(`share-${displayId}`);
+                        const statusSpan = document.getElementById(`status-${displayId}`);
+
+                        if (buttons) buttons.style.display = 'flex';
+                        if (excelBtn && excelFile) {
+                            excelBtn.style.display = 'inline-block';
+                            excelBtn.href = `/api/download/${excelFile}`;
+                        }
+                        if (txtBtn && txtFile) {
+                            txtBtn.style.display = 'inline-block';
+                            txtBtn.href = `/api/download/${txtFile}`;
+                        }
+                        if (copyBtn) copyBtn.style.display = 'inline-block';
+                        if (shareBtn) shareBtn.style.display = 'inline-block';
+                        if (statusSpan) statusSpan.innerHTML = '✓ Files Ready';
+                        
+                        // Try to load test cases anyway
+                        loadTestCases(displayId, 'excel');
+                        anyFileVerified = true; // Consider it verified for UI purposes
+                    }
+                } catch (error) {
+                    console.error(`Error verifying files for ${itemId}:`, error);
+                }
+            }
+
+            // Show content if any file was verified
+            if (anyFileVerified) {
+                console.log("At least one file was verified successfully, stopping polling");
+                window.loadingState.isGenerating = false;
+                stopPolling();
+            } else {
+                console.warn("No files were successfully verified - will retry");
+            }
+
+            // As a final fallback, always enable download buttons after verification attempts
+            setTimeout(enableDownloadButtons, 500);
+        }
+
+        function showContent() {
+            console.log('Showing content for files:', window.files);
+
+            // First, set the global state to indicate generation is complete
+            window.loadingState.isGenerating = false;
+
+            // Process each file entry
+            Object.entries(window.files).forEach(([itemId, filePath]) => {
+                try {
+                    // Get the necessary elements by ID
+                    const statusSpan = document.getElementById(`status-${itemId}`);
+                    const buttons = document.getElementById(`buttons-${itemId}`);
+                    const downloadBtn = document.getElementById(`${itemId}-${itemId}`);
+
+                    // Update status message
+                    if (statusSpan) statusSpan.innerHTML = '✓ Complete';
+
+                    // Update header status
+                    updateHeaderStatus(itemId);
+
+                    // Show the action buttons if they exist
+                    if (buttons) buttons.style.display = 'flex';
+                    if (downloadBtn) downloadBtn.style.display = 'inline-block';
+
+                    console.log(`Showing buttons for ${itemId}`);
+
+                    // Automatically load test cases
+                    loadTestCases(itemId);
+
+                    // Try to expand the accordion
+                    const accordionButton = document.querySelector(`button[data-bs-target="#collapse${itemId}"]`);
+                    if (accordionButton && accordionButton.classList.contains('collapsed')) {
+                        try {
+                            accordionButton.click();
+                            console.log(`Expanded accordion for ${itemId}`);
+                        } catch (err) {
+                            console.warn(`Could not expand accordion for ${itemId}:`, err);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error updating UI for ${itemId}:`, error);
+                }
+            });
+        }
+
+        function showError(message) {
+            Object.entries(window.files).forEach(([itemId]) => {
+                const statusSpan = document.getElementById(`status-${itemId}`);
+                statusSpan.innerHTML = '❌ Error';
+
+                // Add error message but don't completely replace container content
+                const container = document.getElementById(`testCaseTable${itemId}`);
+                if (container.innerHTML.indexOf('alert-danger') === -1) {
+                    container.innerHTML = `<div class="alert alert-danger">${message}</div>` + container.innerHTML;
+                }
+            });
+            window.loadingState.isGenerating = false;
+        }
+
+        // Modified function to load test cases - now accepts itemId and fileType
+        async function loadTestCases(itemId, fileType = 'excel') {
+            console.log(`Loading test cases for ${itemId} from ${fileType}`);
+
+            // Get container and verify it exists
+            const container = document.getElementById(`testCaseTable${itemId}`);
+            if (!container) {
+                console.error(`Error: Could not find container for test cases with ID: testCaseTable${itemId}`);
+                return;
+            }
+
+            try {
+                // Check if we already have direct test data from MongoDB
+                if (window.hasDirectTestData && window.testCases && window.testCases[fileType]) {
+                    console.log(`Using direct test data from MongoDB for ${itemId}`);
+                    const data = { content: window.testCases[fileType] };
+                    
+                    // Display content based on type
+                    if (Array.isArray(data.content)) {
+                        console.log(`Displaying ${data.content.length} test cases from direct data`);
+                        if (data.content.length > 0) {
+                            try {
+                                const table = createTestCaseTable(data.content);
+                                container.innerHTML = '';
+                                container.appendChild(table);
+                                
+                                // Apply any saved status values immediately after table is created
+                                setTimeout(() => {
+                                    applyStatusValues();
+                                    updateDownloadLinks();
+                                }, 50);
+                                
+                                // Update status to show completion
+                                const statusSpan = document.getElementById(`status-${itemId}`);
+                                if (statusSpan) statusSpan.innerHTML = '✓ Complete';
+                                
+                                // Show success message
+                                console.log("Successfully loaded test cases from direct data");
+                                return;
+                            } catch (tableError) {
+                                console.error('Error creating table from direct data:', tableError);
+                                container.innerHTML = `
+                                <div class="alert alert-warning">
+                                    <p>Error displaying test case table from direct data. Showing raw data instead.</p>
+                                </div>
+                                <pre class="bg-light p-3">${JSON.stringify(data.content, null, 2)}</pre>
+                            `;
+                                return;
+                            }
+                        } else {
+                            container.innerHTML = '<div class="alert alert-info">No test cases found in the direct data.</div>';
+                            return;
+                        }
+                    }
+                }
+                
+                // Try getting data from MongoDB first as it might have a better structure
+                const url_key = window.testCaseUrlKey;
+                let data;
+                
+                if (url_key) {
+                    console.log(`Attempting to fetch test data from MongoDB with key: ${url_key}`);
+                    try {
+                        const mongoResponse = await fetch(`/api/shared-status?key=${url_key}`, {
+                            headers: {
+                                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                                'Pragma': 'no-cache',
+                                'Expires': '0'
+                            },
+                            cache: 'no-store'
+                        });
+                        
+                        if (mongoResponse.ok) {
+                            const mongoData = await mongoResponse.json();
+                            console.log('MongoDB data retrieved:', mongoData);
+                            
+                            if (mongoData && mongoData.test_data && Array.isArray(mongoData.test_data)) {
+                                console.log(`Using structured data from MongoDB with ${mongoData.test_data.length} records`);
+                                data = { content: mongoData.test_data };
+                            }
+                        }
+                    } catch (mongoError) {
+                        console.warn('Error fetching data from MongoDB, falling back to file content:', mongoError);
+                    }
+                }
+                
+                // If we couldn't get data from MongoDB, fall back to file content
+                if (!data && window.itemFiles && window.itemFiles[itemId]) {
+                    // Get the file path for this item ID and file type
+                    const filePath = window.itemFiles[itemId][fileType];
+                    if (!filePath) {
+                        throw new Error(`No ${fileType} file path found for item ${itemId}`);
+                    }
+                    
+                    // Log the actual file path being used
+                    console.log(`Using file path for ${itemId} ${fileType}: ${filePath}`);
+                    
+                    // Fetch test cases using the correct file path with cache busting
+                    const timestamp = Date.now();
+                    console.log(`Fetching test cases from: /api/content/${filePath}?t=${timestamp}`);
+                    const response = await fetch(`/api/content/${filePath}?t=${timestamp}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        },
+                        cache: 'no-store'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+
+                    data = await response.json();
+                    console.log(`File data received for ${itemId}:`, data);
+                } else if (!data && window.files[fileType]) {
+                    // Fallback to global files structure for backwards compatibility
+                    const filePath = window.files[fileType];
+                    if (!filePath) {
+                        throw new Error(`No file path found for ${fileType}`);
+                    }
+                    
+                    // Log the actual file path being used
+                    console.log(`Using global file path for ${fileType}: ${filePath}`);
+                    
+                    // Fetch test cases using the correct file path with cache busting
+                    const timestamp = Date.now();
+                    console.log(`Fetching test cases from: /api/content/${filePath}?t=${timestamp}`);
+                    const response = await fetch(`/api/content/${filePath}?t=${timestamp}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        },
+                        cache: 'no-store'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+
+                    data = await response.json();
+                    console.log('File data received:', data);
+                }
+
+                // If we have data, display it
+                if (data) {
+                // Handle error in the response
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Store test cases for sharing
+                if (!window.testCases) window.testCases = {};
+                window.testCases[itemId] = data.content;
+
+                // Display content based on type
+                if (Array.isArray(data.content)) {
+                    console.log(`Received ${data.content.length} test cases`);
+                    if (data.content.length > 0) {
+                        try {
+                            const table = createTestCaseTable(data.content);
+                            container.innerHTML = '';
+                            container.appendChild(table);
+                            
+                            // Apply any saved status values immediately after table is created
+                            console.log(`Table created for ${itemId}, applying saved status values...`);
+                            setTimeout(() => {
+                                applyStatusValues();
+                                updateDownloadLinks();
+                            }, 50);
+                            
+                            // Update status to show completion
+                            const statusSpan = document.getElementById(`status-${itemId}`);
+                            if (statusSpan) statusSpan.innerHTML = '✓ Complete';
+                            
+                        } catch (tableError) {
+                            console.error('Error creating table:', tableError);
+                            container.innerHTML = `
+                        <div class="alert alert-warning">
+                            <p>Error displaying test case table. Showing raw data instead.</p>
+                        </div>
+                        <pre class="bg-light p-3">${JSON.stringify(data.content, null, 2)}</pre>
+                    `;
+                        }
+                    } else {
+                        container.innerHTML = '<div class="alert alert-info">No test cases found in the file.</div>';
+                    }
+                } else {
+                    console.error('Data content is not an array:', data.content);
+                    container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <p>Unexpected data format. Showing raw data instead.</p>
+                    </div>
+                    <pre class="bg-light p-3">${JSON.stringify(data, null, 2)}</pre>
+                `;
+                    }
+                } else {
+                    container.innerHTML = '<div class="alert alert-warning">No data available for this item.</div>';
+                }
+            } catch (error) {
+                console.error('Error loading test cases:', error);
+                container.innerHTML = `<div class="alert alert-danger">Error loading test cases: ${error.message}</div>`;
+            }
+        }
+
+        // Extract test case ID from row
+        function extractTestCaseId(row, index) {
+            // Priority 1: Use title as the ID since the user has unique titles
+            if (row['Title']) {
+                console.log(`Using Title as ID: ${row['Title']}`);
+                return row['Title'];
+            }
+            
+            // Priority 2: Use existing Test Case ID field
+            if (row['Test Case ID']) {
+                console.log(`Using Test Case ID field: ${row['Test Case ID']}`);
+                return row['Test Case ID'];
+            }
+            
+            // Priority 3: Use test_case_id field
+            if (row['test_case_id']) {
+                console.log(`Using test_case_id field: ${row['test_case_id']}`);
+                return row['test_case_id'];
+            }
+            
+            // Priority 4: Fallback to generated ID based on index
+            console.log(`Using generated ID for row ${index}: TC_KAN-1_${index + 2}`);
+            return `TC_KAN-1_${index + 2}`;
+        }
+
+        function createTestCaseTable(content) {
+            try {
+                const table = document.createElement('table');
+                table.className = 'table table-striped';
+                table.setAttribute('data-loaded', 'true');
+
+                // Log the first row of data to see structure
+                if (content && content.length > 0) {
+                    console.log("Sample test case data:", content[0]);
+                }
+
+                // Add Status to desired order
+                const desiredOrder = ['Title', 'Scenario', 'Steps', 'Expected Result', 'Status'];
+
+                // Create table header
+                const thead = document.createElement('thead');
+                thead.innerHTML = `
+            <tr>
+                ${desiredOrder.map(header => `<th>${header}</th>`).join('')}
+            </tr>
+        `;
+                table.appendChild(thead);
+
+                // Create table body
+                const tbody = document.createElement('tbody');
+
+                // Special handling for test cases with "Steps to reproduce" pattern
+                let hasStepsToReproduce = false;
+                if (content && content.length > 0) {
+                    // Check for presence of "Steps to reproduce" in any field
+                    Object.values(content[0]).forEach(value => {
+                        if (typeof value === 'string' && value.includes('Steps to reproduce')) {
+                            hasStepsToReproduce = true;
+                            console.log("Detected 'Steps to reproduce' format");
+                        }
+                    });
+                }
+
+                // Process each row
+                content.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+
+                    // Special parsing for Steps to reproduce pattern
+                    if (hasStepsToReproduce) {
+                        // Try to extract steps from description or other text fields
+                        for (const [key, value] of Object.entries(row)) {
+                            if (typeof value === 'string' && value.includes('Steps to reproduce')) {
+                                try {
+                                    const stepsMatch = value.match(/Steps to reproduce:([\s\S]*?)Expected Result:/);
+                                    if (stepsMatch && stepsMatch[1]) {
+                                        const stepsList = stepsMatch[1].trim().split(/\n|\r\n/).filter(s => s.trim());
+                                        row['Steps'] = stepsList;
+                                        console.log(`Extracted ${stepsList.length} steps from text`);
+                                    }
+                                    
+                                    const resultMatch = value.match(/Expected Result:([\s\S]*?)(?:Actual Result:|Priority:|$)/);
+                                    if (resultMatch && resultMatch[1]) {
+                                        row['Expected Result'] = resultMatch[1].trim();
+                                        console.log(`Extracted Expected Result from text`);
+                                    }
+                                } catch (e) {
+                                    console.error("Error parsing steps:", e);
+                                }
+                            }
+                        }
+                    }
+
+                    desiredOrder.forEach(header => {
+                        const td = document.createElement('td');
+                        if (header === 'Status') {
+                            // Get test case ID
+                            let testCaseId = extractTestCaseId(row, index);
+                            console.log(`Using test case ID: ${testCaseId} for row ${index}`);
+
+                            // Create status dropdown
+                            const currentStatus = row.Status || '';
+                            td.innerHTML = `
+                        <select class="form-select status-select" 
+                                data-original-value="${currentStatus}" 
+                                data-test-case-id="${testCaseId}">
+                            <option value="" ${!currentStatus ? 'selected' : ''}>Select Status</option>
+                            <option value="Pass" ${currentStatus === 'Pass' ? 'selected' : ''}>Pass</option>
+                            <option value="Fail" ${currentStatus === 'Fail' ? 'selected' : ''}>Fail</option>
+                            <option value="Blocked" ${currentStatus === 'Blocked' ? 'selected' : ''}>Blocked</option>
+                            <option value="Not Tested" ${currentStatus === 'Not Tested' ? 'selected' : ''}>Not Tested</option>
+                        </select>
+                    `;
+                        } else if (header === 'Steps') {
+                            // Try multiple fields for steps data
+                            const value = row[header] || row['Test Steps'] || row['steps'] || row['Steps to reproduce'] || [];
+                            
+                            if (value === null || value === undefined) {
+                                td.innerHTML = '<em>Not provided</em>';
+                            } else if (Array.isArray(value)) {
+                                const listHtml = value.map((step, idx) =>
+                                    `<div>${idx + 1}. ${step}</div>`
+                                ).join('');
+                                td.innerHTML = listHtml || '<em>No steps provided</em>';
+                            } else if (typeof value === 'string') {
+                                // Check if the string already has numbered steps
+                                if (/^\d+\.\s/.test(value)) {
+                                    // Already numbered, just add line breaks
+                                    td.innerHTML = value.replace(/\n/g, '<br>');
+                                } else {
+                                    // Split by newlines and number each step
+                                    const steps = value.split(/\n|\r\n/).filter(s => s.trim());
+                                    if (steps.length > 0) {
+                                        const listHtml = steps.map((step, idx) =>
+                                            `<div>${idx + 1}. ${step}</div>`
+                                        ).join('');
+                                        td.innerHTML = listHtml;
+                                    } else {
+                                        td.innerHTML = value.replace(/\n/g, '<br>') || '<em>No steps provided</em>';
+                                    }
+                                }
+                            } else if (typeof value === 'object') {
+                                try {
+                                    td.innerHTML = JSON.stringify(value);
+                                } catch (e) {
+                                    td.innerHTML = '<em>Complex value</em>';
+                                }
+                            } else {
+                                td.innerHTML = String(value).replace(/\n/g, '<br>') || '<em>No steps provided</em>';
+                            }
+                        } else {
+                            const value = row[header];
+                            if (value === null || value === undefined) {
+                                td.innerHTML = '<em>Not provided</em>';
+                            } else if (Array.isArray(value)) {
+                                const listHtml = value.map((step, idx) =>
+                                    `<div>${idx + 1}. ${step}</div>`
+                                ).join('');
+                                td.innerHTML = listHtml;
+                            } else if (typeof value === 'object') {
+                                try {
+                                    td.innerHTML = JSON.stringify(value);
+                                } catch (e) {
+                                    td.innerHTML = '<em>Complex value</em>';
+                                }
+                            } else {
+                                td.innerHTML = String(value).replace(/\n/g, '<br>');
+                            }
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+                table.appendChild(tbody);
+                
+                return table;
+            } catch (error) {
+                console.error('Error creating test case table:', error);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger';
+                errorDiv.textContent = 'Error creating table: ' + error.message;
+                return errorDiv;
+            }
+        }
+
+        // Function to directly enable download buttons, regardless of other status
+        function enableDownloadButtons() {
+            console.log('Enabling all download buttons directly');
+            
+            // Find all item IDs in the DOM
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                const buttonText = header.querySelector('button').textContent;
+                const match = buttonText.match(/Test Cases for (.+?)(?:\s|$)/);
+                if (match && match[1]) {
+                    const itemId = match[1];
+                    const displayId = itemId.replace(/_/g, '-');
+                    
+                    // Get the file paths for this specific item
+                    let excelFile = '';
+                    let txtFile = '';
+                    
+                    // Check if we have item-specific files stored
+                    if (window.itemFiles && window.itemFiles[displayId]) {
+                        excelFile = window.itemFiles[displayId].excel;
+                        txtFile = window.itemFiles[displayId].txt;
+                    } else {
+                        // Try to get from window.files structure
+                        if (window.files[itemId]) {
+                            excelFile = window.files[itemId].excel || '';
+                            txtFile = window.files[itemId].txt || '';
+                        } else if (window.files[displayId]) {
+                            excelFile = window.files[displayId].excel || '';
+                            txtFile = window.files[displayId].txt || '';
+                        } else {
+                            // Fallback for single item case
+                            excelFile = window.files.excel || '';
+                            txtFile = window.files.txt || '';
+                        }
+                    }
+                    
+                    console.log(`Enabling buttons for ${itemId}: excel=${excelFile}, txt=${txtFile}`);
+                    
+                    const buttons = document.getElementById(`buttons-${displayId}`);
+                    const excelBtn = document.getElementById(`excel-${displayId}`);
+                    const txtBtn = document.getElementById(`txt-${displayId}`);
+                    const copyBtn = document.getElementById(`copy-${displayId}`);
+                    const shareBtn = document.getElementById(`share-${displayId}`);
+                    const statusSpan = document.getElementById(`status-${displayId}`);
+
+                    if (buttons) buttons.style.display = 'flex';
+                    
+                    // Only show download buttons if we have the corresponding file paths
+                    if (excelBtn && excelFile) {
+                        excelBtn.style.display = 'inline-block';
+                        excelBtn.href = `/api/download/${excelFile}`;
+                    }
+                    if (txtBtn && txtFile) {
+                        txtBtn.style.display = 'inline-block';
+                        txtBtn.href = `/api/download/${txtFile}`;
+                    }
+                    
+                    if (copyBtn) copyBtn.style.display = 'inline-block';
+                    if (shareBtn) shareBtn.style.display = 'inline-block';
+                    if (statusSpan) statusSpan.innerHTML = '✓ Files Ready';
+                }
+            });
+        }
+
+        // Update header status after content is loaded
+        function updateHeaderStatus(itemId) {
+            const headerStatus = document.querySelector(`#heading${itemId} button span`);
+            if (headerStatus) {
+                headerStatus.innerHTML = '✓ Complete';
+            }
+        }
+
+        // Improved localStorage persistence for status values
+        function saveStatusesToLocalStorage() {
+            const statusValues = {};
+            const statusSelects = document.querySelectorAll('.status-select');
+            
+            statusSelects.forEach(select => {
+                const testCaseId = select.getAttribute('data-test-case-id');
+                const status = select.value;
+                if (testCaseId && status) {
+                    statusValues[testCaseId] = status;
+                }
+            });
+            
+            const urlKey = window.testCaseUrlKey;
+            if (urlKey) {
+                const storageKey = `status_values_${urlKey}`;
+                console.log(`Saving statuses to localStorage with key "${storageKey}":`, statusValues);
+                localStorage.setItem(storageKey, JSON.stringify(statusValues));
+            }
+        }
+
+        // Apply saved status values to the UI as soon as possible
+        function applyStatusValues() {
+            const urlKey = window.testCaseUrlKey;
+            if (!urlKey) {
+                console.warn('Cannot apply status values: No URL key found');
+                return;
+            }
+            
+            try {
+                const storageKey = `status_values_${urlKey}`;
+                const saved = localStorage.getItem(storageKey);
+                console.log(`Checking localStorage for key "${storageKey}":`, saved);
+                
+                if (saved) {
+                    const statusValues = JSON.parse(saved);
+                    console.log('Loaded statuses from localStorage:', statusValues);
+                    
+                    // Apply to all select elements
+                    const statusSelects = document.querySelectorAll('.status-select');
+                    console.log(`Found ${statusSelects.length} status select elements to update`);
+                    
+                    let appliedCount = 0;
+                    statusSelects.forEach(select => {
+                        const testCaseId = select.getAttribute('data-test-case-id');
+                        if (testCaseId && statusValues[testCaseId]) {
+                            select.value = statusValues[testCaseId];
+                            select.setAttribute('data-original-value', statusValues[testCaseId]);
+                            appliedCount++;
+                        }
+                    });
+                    
+                    console.log(`Applied ${appliedCount} saved status values`);
+                    
+                    // Update download links with saved status values
+                    updateDownloadLinks();
+                    return true;
+                } else {
+                    console.log('No saved status values found in localStorage');
+                }
+            } catch (e) {
+                console.error('Error applying saved statuses:', e);
+            }
+            return false;
+        }
+
+        // Direct status collection from DOM - improved to always get latest values
+        function collectStatusValues() {
+            const statusValues = {};
+            const statusSelects = document.querySelectorAll('.status-select');
+            
+            statusSelects.forEach(select => {
+                const testCaseId = select.getAttribute('data-test-case-id');
+                const status = select.value;
+                if (testCaseId && status) {
+                    statusValues[testCaseId] = status;
+                }
+            });
+            
+            console.log('Collected status values:', statusValues);
+            return statusValues;
+        }
+
+        // Improved download links update function with forced refresh
+        function updateDownloadLinks() {
+            // Get fresh status values directly from DOM elements
+            const statusSelects = document.querySelectorAll('.status-select');
+            const freshStatusValues = {};
+            
+            statusSelects.forEach(select => {
+                const testCaseId = select.getAttribute('data-test-case-id');
+                const status = select.value;
+                if (testCaseId && status) {
+                    freshStatusValues[testCaseId] = status;
+                }
+            });
+            
+            const statusParam = encodeURIComponent(JSON.stringify(freshStatusValues));
+            
+            // Update Excel download links
+            const excelBtns = document.querySelectorAll('[id^="excel-"]');
+            excelBtns.forEach(btn => {
+                if (btn && window.files.excel) {
+                    const itemId = btn.id.replace('excel-', '');
+                    const originalUrl = `/api/download/${window.files.excel}`;
+                    const newUrl = `${originalUrl}?status=${statusParam}&filename=test_${itemId}.xlsx&t=${Date.now()}`;
+                    btn.setAttribute('href', newUrl);
+                }
+            });
+            
+            // Update TXT download links
+            const txtBtns = document.querySelectorAll('[id^="txt-"]');
+            txtBtns.forEach(btn => {
+                if (btn && window.files.txt) {
+                    const itemId = btn.id.replace('txt-', '');
+                    const originalUrl = `/api/download/${window.files.txt}`;
+                    const newUrl = `${originalUrl}?status=${statusParam}&filename=test_${itemId}.txt&t=${Date.now()}`;
+                    btn.setAttribute('href', newUrl);
+                }
+            });
+        }
+
+        async function copyTestCaseTable(itemId) {
+            const container = document.getElementById(`testCaseTable${itemId}`);
+            if (!container) {
+                alert('Error: Could not find test case container');
+                return;
+            }
+
+            // Force collection of the latest status values directly from the DOM
+            const currentStatusValues = collectStatusValues();
+            console.log('Status values for copy table:', currentStatusValues);
+
+            // If test cases haven't been loaded yet, load them
+            if (!window.testCases || !window.testCases[itemId]) {
+                try {
+                    // First check if we have excel test cases to use
+                    if (window.testCases && window.testCases.excel) {
+                        // Use excel data for this item
+                        window.testCases[itemId] = window.testCases.excel;
+                        console.log(`Using existing excel test data for ${itemId}`);
+                    } else if (window.files.excel) {
+                        // Fetch test cases data from the excel file
+                        const response = await fetch(`/api/content/${window.files.excel}`);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    if (!window.testCases) window.testCases = {};
+                    window.testCases[itemId] = data.content;
+                    } else {
+                        throw new Error(`No test case data found for ${itemId}`);
+                    }
+                } catch (error) {
+                    console.error('Error loading test cases:', error);
+                    alert('Failed to load test cases for copying. Please try again.');
+                    return;
+                }
+            }
+
+            // Get the original test data
+            const testData = window.testCases[itemId];
+            if (!testData || !Array.isArray(testData) || testData.length === 0) {
+                alert('No valid test case data found');
+                return;
+            }
+
+            // Create a dual format for compatibility with both Excel and email
+            const desiredOrder = ['Title', 'Scenario', 'Steps', 'Expected Result', 'Status'];
+            
+            // Create an HTML table for better email/message display
+            let htmlTable = '<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px;">\n';
+            
+            // Add header row
+            htmlTable += '<tr style="background-color: #f2f2f2; font-weight: bold;">';
+            desiredOrder.forEach(header => {
+                htmlTable += `<th style="border: 1px solid #ddd; padding: 8px; text-align: left;">${header}</th>`;
+            });
+            htmlTable += '</tr>\n';
+            
+            // Add data rows
+            testData.forEach((testCase, index) => {
+                // Apply alternating row colors for better readability
+                const rowStyle = index % 2 === 0 ? 'background-color: #ffffff;' : 'background-color: #f9f9f9;';
+                htmlTable += `<tr style="${rowStyle}">`;
+                
+                desiredOrder.forEach(header => {
+                    let value = '';
+                    
+                    if (header === 'Status') {
+                        // Get current status from DOM values directly
+                        const testCaseId = testCase['Title'] || '';
+                        value = currentStatusValues[testCaseId] || testCase['Status'] || '';
+                    } else if (header === 'Title') {
+                        value = testCase['Title'] || '';
+                    } else if (header === 'Steps') {
+                        // Format steps with proper numbering
+                        let stepsValue = testCase['Steps'] || testCase['Test Steps'] || testCase['steps'] || '';
+                        
+                        if (Array.isArray(stepsValue)) {
+                            value = stepsValue.map((step, idx) => `${idx + 1}. ${step}`).join('<br>');
+                        } else {
+                            value = String(stepsValue || 'Not provided');
+                        }
+                    } else {
+                        value = testCase[header] || 'Not provided';
+                    }
+                    
+                    // Clean and format the value for HTML
+                    if (typeof value === 'object' && !Array.isArray(value)) {
+                        try {
+                            value = JSON.stringify(value);
+                        } catch (e) {
+                            value = 'Complex value';
+                        }
+                    }
+                    
+                    // Preserve line breaks in HTML but clean up other special characters
+                    const formattedValue = String(value)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/\n/g, '<br>');
+                        
+                    htmlTable += `<td style="border: 1px solid #ddd; padding: 8px; text-align: left;">${formattedValue}</td>`;
+                });
+                
+                htmlTable += '</tr>\n';
+            });
+            
+            htmlTable += '</table>';
+            
+            // Also create a plain-text tab-delimited version for Excel pasting
+            let plainText = desiredOrder.join('\t') + '\n';
+            
+            testData.forEach(testCase => {
+                const row = desiredOrder.map(header => {
+                    if (header === 'Status') {
+                        const testCaseId = testCase['Title'] || '';
+                        return currentStatusValues[testCaseId] || testCase['Status'] || '';
+                    } else if (header === 'Title') {
+                        return testCase['Title'] || '';
+                    } else if (header === 'Steps') {
+                        let steps = testCase['Steps'] || testCase['Test Steps'] || testCase['steps'] || '';
+                        if (Array.isArray(steps)) {
+                            return steps.map((step, idx) => `${idx + 1}. ${step}`).join(' ');
+                        }
+                        return steps;
+                    } else {
+                        return testCase[header] || '';
+                    }
+                });
+                
+                plainText += row.map(cell => String(cell).replace(/\t/g, ' ').replace(/\n/g, ' ')).join('\t') + '\n';
+            });
+
+            try {
+                // We're using the ClipboardItem API to set both HTML and text formats
+                if (navigator.clipboard.write && ClipboardItem) {
+                    const clipboardContent = new ClipboardItem({
+                        'text/html': new Blob([htmlTable], {type: 'text/html'}),
+                        'text/plain': new Blob([plainText], {type: 'text/plain'})
+                    });
+                    
+                    await navigator.clipboard.write([clipboardContent]);
+                } else {
+                    // Fallback to setting just text if the ClipboardItem API is not available
+                    await navigator.clipboard.writeText(plainText);
+                }
+
+                // Show feedback on the correct button
+                const copyBtn = document.getElementById(`copy-table-${itemId}`);
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.classList.remove('btn-warning');
+                copyBtn.classList.add('btn-success');
+
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.classList.remove('btn-success');
+                    copyBtn.classList.add('btn-warning');
+                }, 2000);
+            } catch (err) {
+                console.error('Clipboard error:', err);
+                alert('Failed to copy test cases: ' + err.message);
+            }
+        }
+
+        async function copyTestCaseUrl(itemId) {
+            try {
+                // Get the latest status values
+                const currentStatusValues = collectStatusValues();
+                console.log('Status values for copy URL:', currentStatusValues);
+                
+                // Make sure test cases are loaded first
+                if (!window.testCases || !window.testCases[itemId]) {
+                    // Show loading indicator
+                    const copyBtn = document.getElementById(`copy-${itemId}`);
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'Loading...';
+                    copyBtn.disabled = true;
+
+                    try {
+                        // First check if we have excel test cases to use
+                        if (window.testCases && window.testCases.excel) {
+                            // Use excel data for this item
+                            window.testCases[itemId] = window.testCases.excel;
+                            console.log(`Using existing excel test data for ${itemId}`);
+                        } else if (window.files.excel) {
+                            // Fetch test cases data from the excel file
+                            const response = await fetch(`/api/content/${window.files.excel}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        if (!window.testCases) window.testCases = {};
+                        window.testCases[itemId] = data.content;
+                        } else {
+                            throw new Error(`No test case data found for ${itemId}`);
+                        }
+                    } finally {
+                        // Restore button state
+                        copyBtn.textContent = originalText;
+                        copyBtn.disabled = false;
+                    }
+                }
+
+                // Update status values in the test cases
+                const testCasesWithStatus = window.testCases[itemId].map(tc => {
+                    const title = tc['Title'] || '';
+                    if (title && currentStatusValues[title]) {
+                        return {...tc, Status: currentStatusValues[title]};
+                    }
+                    return tc;
+                });
+
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_data: testCasesWithStatus,
+                        item_id: itemId,
+                        status_values: currentStatusValues
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    await navigator.clipboard.writeText(data.share_url);
+
+                    // Show feedback
+                    const copyBtn = document.getElementById(`copy-${itemId}`);
+                    const originalText = copyBtn.textContent;
+                    copyBtn.textContent = 'URL Copied!';
+                    setTimeout(() => {
+                        copyBtn.textContent = originalText;
+                    }, 2000);
+                } else {
+                    alert('Failed to generate URL: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error generating URL:', error);
+                alert('Error generating URL: ' + error.message);
+            }
+        }
+
+        async function shareTestCase(itemId) {
+            try {
+                // Show loading state
+                const shareBtn = document.getElementById(`share-${itemId}`);
+                if (!shareBtn) {
+                    alert('Share button not found');
+                    return;
+                }
+
+                // Original button text
+                const originalText = shareBtn.textContent;
+                
+                // Update button to loading state
+                shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sharing...';
+                shareBtn.disabled = true;
+                
+                // First, check if test cases are loaded and fetch if needed
+                if (!window.testCases || !window.testCases[itemId]) {
+                    try {
+                        // First check if we have excel test cases to use
+                        if (window.testCases && window.testCases.excel) {
+                            // Use excel data for this item
+                            window.testCases[itemId] = window.testCases.excel;
+                            console.log(`Using existing excel test data for ${itemId}`);
+                        } else if (window.files.excel) {
+                            // Fetch test cases data from the excel file
+                            const response = await fetch(`/api/content/${window.files.excel}`);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        if (!window.testCases) window.testCases = {};
+                        window.testCases[itemId] = data.content;
+                        } else {
+                            throw new Error(`No test case data found for ${itemId}`);
+                        }
+                    } catch (error) {
+                        console.error('Error loading test cases for sharing:', error);
+                        alert('Failed to load test cases for sharing. Please try again.');
+                        shareBtn.innerHTML = originalText;
+                        shareBtn.disabled = false;
+                        return;
+                    }
+                }
+
+                // Get current status values to include with the share
+                const statusValues = collectStatusValues();
+                
+                // Create the share request
+                const urlKey = window.testCaseUrlKey;
+                const shareRequest = {
+                    key: urlKey,
+                    status_values: statusValues,
+                    test_data: window.testCases[itemId],
+                    item_id: itemId
+                };
+                
+                // Send the share request
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(shareRequest)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                
+                const shareData = await response.json();
+                
+                if (shareData.success && shareData.share_url) {
+                    // Show the modal with the share URL
+                    const shareUrlInput = document.getElementById('shareUrlInput');
+                    shareUrlInput.value = shareData.share_url;
+                    
+                    // Initialize the modal if not already done
+                    const shareModal = new bootstrap.Modal(document.getElementById('shareUrlModal'));
+                    shareModal.show();
+                    
+                    // Setup copy button functionality
+                    const copyBtn = document.getElementById('copyShareUrlBtn');
+                    const copySuccess = document.getElementById('copySuccess');
+                    
+                    copyBtn.onclick = async () => {
+                        try {
+                            await navigator.clipboard.writeText(shareData.share_url);
+                            copySuccess.classList.remove('d-none');
+                            setTimeout(() => copySuccess.classList.add('d-none'), 2000);
+                        } catch (err) {
+                            console.error('Failed to copy:', err);
+                            alert('Failed to copy URL. Please copy it manually.');
+                        }
+                    };
+                    
+                    // Reset share button
+                    shareBtn.innerHTML = originalText;
+                    shareBtn.disabled = false;
+                } else {
+                    throw new Error(shareData.error || 'Failed to create share URL');
+                }
+            } catch (error) {
+                console.error('Error sharing test case:', error);
+                alert(`Failed to share test case: ${error.message}`);
+                
+                // Reset button state
+                const shareBtn = document.getElementById(`share-${itemId}`);
+                if (shareBtn) {
+                    shareBtn.textContent = 'Share URL';
+                    shareBtn.disabled = false;
+                }
+            }
+        }
+
+        // Add polling for status updates
+        function setupStatusPolling() {
+            console.log('Setting up status polling');
+            
+            // Immediately poll once on page load
+            pollForStatusUpdates();
+            
+            // Then poll for status updates every 5 seconds (more frequent than before)
+            const pollInterval = setInterval(pollForStatusUpdates, 5000);
+            
+            // Store the interval ID so it can be cleared if needed
+            window.statusPollInterval = pollInterval;
+        }
+
+        // Separate function to poll for status updates that can be called immediately
+        async function pollForStatusUpdates() {
+            if (!window.testCaseUrlKey) {
+                console.log('No URL key available, skipping status poll');
+                return;
+            }
+            
+            try {
+                console.log('Polling for status updates...');
+                
+                // Add cache-busting parameter to prevent caching
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/shared-status?key=${window.testCaseUrlKey}&t=${timestamp}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status_values && Object.keys(data.status_values).length > 0) {
+                        console.log('Received updated status values:', data.status_values);
+                        
+                        // Apply status updates and get whether any changes were made
+                        const updatesApplied = applyStatusValuesFromServer(data.status_values);
+                        
+                        // Also update localStorage with these values
+                        mergeWithLocalStorage(data.status_values);
+                        
+                        // Update download links if any values were updated
+                        if (updatesApplied) {
+                            console.log('Status values were updated, refreshing download links');
+                            updateDownloadLinks();
+                        }
+                    } else {
+                        console.log('No status values received from server');
+                    }
+                } else {
+                    console.error('Error response from status API:', response.status);
+                }
+            } catch (error) {
+                console.error('Error polling for status updates:', error);
+            }
+        }
+
+        // Apply status values fetched from server, only updating if values are different
+        function applyStatusValuesFromServer(statusValues) {
+            const statusSelects = document.querySelectorAll('.status-select');
+            let updatesApplied = false;
+            
+            statusSelects.forEach(select => {
+                const testCaseId = select.getAttribute('data-test-case-id');
+                if (testCaseId && statusValues[testCaseId] && select.value !== statusValues[testCaseId]) {
+                    console.log(`Updating status for ${testCaseId} to ${statusValues[testCaseId]} (was: ${select.value})`);
+                    select.value = statusValues[testCaseId];
+                    select.setAttribute('data-original-value', statusValues[testCaseId]);
+                    updatesApplied = true;
+                }
+            });
+            
+            if (updatesApplied) {
+                console.log('Status updates were applied from server');
+            }
+            
+            return updatesApplied;
+        }
+
+        // Merge server status values with localStorage
+        function mergeWithLocalStorage(statusValues) {
+            try {
+                const urlKey = window.testCaseUrlKey;
+                if (!urlKey) return;
+                
+                const storageKey = `status_values_${urlKey}`;
+                const savedStr = localStorage.getItem(storageKey);
+                let savedValues = savedStr ? JSON.parse(savedStr) : {};
+                
+                // Merge with new values (server values take precedence)
+                const mergedValues = {...savedValues, ...statusValues};
+                
+                // Save back to localStorage
+                localStorage.setItem(storageKey, JSON.stringify(mergedValues));
+                console.log('Updated localStorage with merged status values');
+            } catch (e) {
+                console.error('Error merging status with localStorage:', e);
+            }
+        }
+
+        // The implementation of updateTestCaseStatus with immediate download link update
+        async function updateTestCaseStatus(testCaseId, status, event) {
+            const select = event.target;
+            const originalValue = select.getAttribute('data-original-value') || '';
+
+            // Skip update if status is empty
+            if (!status) {
+                console.log('Empty status selected, skipping update');
+                return;
+            }
+
+            try {
+                // Use the stored URL key
+                const urlKey = window.testCaseUrlKey;
+
+                console.log('Update Status Request - Identifier:', testCaseId);
+                console.log('Update Status Request - Status:', status);
+                console.log('Update Status Request - URL Key:', urlKey);
+
+                // Get the test case ID from the data attribute if not provided or undefined
+                if (!testCaseId || testCaseId === "undefined") {
+                    testCaseId = select.getAttribute('data-test-case-id');
+                    console.log('Using test case ID from data attribute:', testCaseId);
+                }
+
+                if (!testCaseId || testCaseId === "undefined" || testCaseId === 'N/A') {
+                    console.error('Test Case identifier is undefined or empty');
+                    throw new Error('Test Case identifier is missing or invalid. Cannot update status.');
+                }
+
+                if (!urlKey) {
+                    console.error('URL Key is undefined or empty');
+                    throw new Error('URL key is missing. Please reload the page with a valid URL.');
+                }
+
+                select.disabled = true;
+
+                // Format the request data to match backend expectations
+                const requestData = {
+                    test_case_id: testCaseId, // Using the title as the identifier
+                    status: status,
+                    key: urlKey
+                };
+
+                console.log('Sending request data:', JSON.stringify(requestData));
+
+                const response = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response status text:', response.statusText);
+
+                if (!response.ok) {
+                    let errorMessage = 'Failed to update status';
+                    try {
+                        const errorData = await response.json();
+                        console.error('Error response data:', errorData);
+                        errorMessage = errorData.message || errorData.error || errorMessage;
+                    } catch (jsonError) {
+                        console.error('Error parsing error response:', jsonError);
+                        // Try to get response text if JSON parsing fails
+                        try {
+                            const textResponse = await response.text();
+                            console.error('Error response text:', textResponse);
+                        } catch (textError) {
+                            console.error('Could not get response text:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                // Update was successful
+                select.setAttribute('data-original-value', status);
+                
+                // Save to localStorage
+                saveStatusesToLocalStorage();
+                
+                // Force a sync with MongoDB to ensure all status values are up to date
+                try {
+                    await fetch(`/api/debug/force-sync?key=${urlKey}&t=${Date.now()}`);
+                    console.log('Force-synced status values with MongoDB');
+                } catch (syncError) {
+                    console.warn('Failed to force-sync with MongoDB:', syncError);
+                }
+                
+                // Immediately update download links with the new status
+                // Get all the current status values directly from the DOM
+                const freshStatusValues = {};
+                const statusSelects = document.querySelectorAll('.status-select');
+                statusSelects.forEach(s => {
+                    const id = s.getAttribute('data-test-case-id');
+                    const val = s.value;
+                    if (id && val) {
+                        freshStatusValues[id] = val;
+                    }
+                });
+                
+                // Update download links with fresh status values
+                const statusParam = encodeURIComponent(JSON.stringify(freshStatusValues));
+                
+                // Update all download links with the latest values
+                Object.entries(window.files).forEach(([itemId, filePath]) => {
+                    const downloadBtn = document.getElementById(`${itemId}-${itemId}`);
+                    
+                    if (downloadBtn) {
+                        const originalUrl = downloadBtn.getAttribute('href').split('?')[0];
+                        const newUrl = `${originalUrl}?status=${statusParam}&filename=test_${itemId}.${itemId}&t=${Date.now()}`;
+                        downloadBtn.setAttribute('href', newUrl);
+                        console.log(`Updated Download link with fresh status values`);
+                    }
+                });
+
+                // Show success message
+                const successMessage = document.createElement('div');
+                successMessage.className = 'alert alert-success position-fixed top-0 start-50 translate-middle-x mt-3';
+                successMessage.style.zIndex = '1000';
+                successMessage.textContent = 'Status updated successfully';
+                document.body.appendChild(successMessage);
+
+                setTimeout(() => successMessage.remove(), 3000);
+
+            } catch (error) {
+                console.error('Error updating status:', error);
+                alert(error.message || 'Failed to update status. Please try again.');
+                select.value = originalValue; // Revert to original value
+            } finally {
+                select.disabled = false;
+            }
+        }
+
+        // Add event listener to update download links immediately when status changes
+        document.addEventListener('change', function(e) {
+            if (e.target.classList.contains('status-select')) {
+                e.target.setAttribute('data-previous-value', e.target.value);
+                const testCaseId = e.target.getAttribute('data-test-case-id');
+                console.log('Status changed for test case ID:', testCaseId);
+                console.log('New status:', e.target.value);
+                
+                // Save to localStorage immediately on change
+                saveStatusesToLocalStorage();
+                
+                // Update download links IMMEDIATELY when status changes
+                updateDownloadLinks();
+                
+                // Call the update function to send to server
+                updateTestCaseStatus(testCaseId, e.target.value, e);
+            }
+        });
+
+        // Ensure status values are reapplied when table is opened
+        document.addEventListener('click', function(e) {
+            // If clicking on accordion header to expand
+            if (e.target && e.target.classList.contains('accordion-button')) {
+                setTimeout(() => {
+                    applyStatusValues();
+                    updateDownloadLinks();
+                }, 200);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to parse URL parameters
+            function getUrlParams() {
+                const params = new URLSearchParams(window.location.search);
+                const key = params.get('key') || params.get('token');
+                console.log('Parsing URL params - key:', key);
+                
+                // Always try to parse URL parameters if they exist
+                const files = params.get('files');
+                const itemIds = params.get('item_ids');
+                console.log('Raw URL params - files:', files, 'itemIds:', itemIds);
+                
+                if (files) {
+                    try {
+                        const parsedFiles = JSON.parse(decodeURIComponent(files));
+                        const parsedItemIds = JSON.parse(decodeURIComponent(itemIds || '[]'));
+                        console.log('Parsed params:', { files: parsedFiles, item_ids: parsedItemIds });
+                        return {
+                            files: parsedFiles,
+                            item_ids: parsedItemIds,
+                            key: key // Include the key if it exists
+                        };
+                    } catch (e) {
+                        console.error('Error parsing URL parameters:', e);
+                        return null;
+                    }
+                }
+                
+                // If no files parameter but we have server-side params, use those
+                if (!files && window.urlParams) {
+                    console.log('Using server-side params:', window.urlParams);
+                    return window.urlParams;
+                }
+                
+                console.log('No valid parameters found');
+                return null;
+            }
+
+            // Function to create shortened URL
+            async function createShortenedUrl() {
+                const params = getUrlParams();
+                console.log('URL params to shorten:', params);
+                if (!params) {
+                    console.error('No valid params to shorten');
+                    return;
+                }
+
+                try {
+                    console.log('Sending request to shorten URL...');
+                    const response = await fetch('/api/shorten-url', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(params)
+                    });
+
+                    console.log('Shorten URL response status:', response.status);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Error response:', errorText);
+                        throw new Error(`Failed to create shortened URL: ${errorText}`);
+                    }
+
+                    const data = await response.json();
+                    console.log('Shortened URL response:', data);
+                    
+                    if (data.shortened_url) {
+                        console.log('Updating URL to:', data.shortened_url);
+                        // Get the full URL by combining current origin with shortened path
+                        const fullUrl = window.location.origin + data.shortened_url;
+                        // Update the browser's URL without reloading the page
+                        window.history.replaceState({}, '', fullUrl);
+                        // Also update window.urlParams to match the new URL
+                        window.urlParams = params;
+                    } else {
+                        console.error('No shortened_url in response');
+                    }
+                } catch (error) {
+                    console.error('Error creating shortened URL:', error);
+                }
+            }
+
+            // If we have URL parameters but no key/token, create a shortened URL
+            const params = new URLSearchParams(window.location.search);
+            const key = params.get('key') || params.get('token');
+            console.log('Current key:', key);
+            console.log('Key length:', key ? key.length : 0);
+            console.log('Has files:', params.has('files'));
+            
+            // Shorten URL if we have files parameter and either no key or a long key (>8 chars)
+            if (params.has('files') && (!key || key.length > 8)) {
+                console.log('Triggering URL shortening...');
+                createShortenedUrl();
+            } else {
+                console.log('URL shortening conditions not met:', {
+                    hasFiles: params.has('files'),
+                    hasKey: !!key,
+                    keyLength: key ? key.length : 0
+                });
+            }
+
+            // Debug logging
+            console.log('URL Parameters:', getUrlParams());
+            console.log('Server-side params:', window.urlParams);
+        });
+    </script>
+
+    <!-- Add server-side parameters to window object -->
+    <script>
+        window.urlParams = JSON.parse("{{ url_params|tojson|safe if url_params else 'null' }}");
+    </script>
+</body>
+
+</html>
