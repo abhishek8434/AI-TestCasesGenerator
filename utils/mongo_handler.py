@@ -1,9 +1,20 @@
+# Initialize Sentry for MongoDB operations
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the MongoDB operations
+init_sentry("ai-test-case-generator-mongodb")
+
+import pymongo
 from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+from bson import ObjectId
+import json
+from datetime import datetime, timedelta
+import hashlib
+import string
+import random
+import logging
 from config.settings import MONGODB_URI, MONGODB_DB
 import uuid
-from datetime import datetime
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +27,7 @@ class MongoHandler:
             self.db = self.client[MONGODB_DB]
             self.collection = self.db.test_cases
             logger.info("Successfully connected to MongoDB")
-        except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+        except (pymongo.errors.ConnectionFailure, pymongo.errors.ServerSelectionTimeoutError) as e:
             logger.error(f"Failed to connect to MongoDB: {str(e)}")
             raise Exception("Could not connect to MongoDB. Please check your connection settings.")
 
