@@ -1,6 +1,12 @@
+# Initialize Sentry for configuration
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the configuration
+init_sentry("ai-test-case-generator-config")
+
 import os
-from dotenv import load_dotenv
 import logging
+from dotenv import load_dotenv
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -33,21 +39,8 @@ AZURE_DEVOPS_PAT = os.getenv("AZURE_DEVOPS_PAT", "")
 AZURE_DEVOPS_WORKITEM_ID = os.getenv("AZURE_DEVOPS_WORKITEM_ID", "")
 
 
-# Check for missing variables
-required_vars = [
-    AZURE_DEVOPS_URL, AZURE_DEVOPS_ORG, AZURE_DEVOPS_PROJECT, 
-    AZURE_DEVOPS_PAT, AZURE_DEVOPS_WORKITEM_ID, BASE_URL,
-    JIRA_URL, JIRA_USER, JIRA_API_TOKEN
-]
-
-missing_vars = [name for name, value in zip([
-    "AZURE_DEVOPS_URL", "AZURE_DEVOPS_ORG", "AZURE_DEVOPS_PROJECT", 
-    "AZURE_DEVOPS_PAT", "AZURE_DEVOPS_WORKITEM_ID", "BASE_URL",
-    "JIRA_URL", "JIRA_USER", "JIRA_API_TOKEN"
-], required_vars) if value is None]
-
-if missing_vars:
-    raise EnvironmentError(f"⚠️ Missing environment variables: {', '.join(missing_vars)}")
+# Only check for required variables (OpenAI API key is already handled above)
+# Azure, Jira, and other settings are optional and can be configured through the frontend
 
 
 # MongoDB settings
