@@ -1,3 +1,4 @@
+# requirements.txt
 openai>=1.0.0
 requests
 selenium
@@ -9,3 +10,4 @@ flask
 flask-cors
 openpyxl
 pymongo
+mangum 
