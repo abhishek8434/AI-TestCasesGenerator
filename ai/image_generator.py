@@ -1,27 +1,35 @@
+# Initialize Sentry for Image AI module
+from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+
+# Initialize Sentry for the Image AI generator
+init_sentry("ai-test-case-generator-image")
+
 from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain.callbacks.tracers.langchain import LangChainTracer
 from config.settings import OPENAI_API_KEY
 from typing import Optional, List
 import base64
 import requests
 import os
-import logging
 import sys
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Initialize OpenAI client once at module level with better error handling
-try:
-    if not OPENAI_API_KEY or OPENAI_API_KEY == "your_openai_api_key_here":
-        logger.error("⚠️ Invalid or missing OPENAI_API_KEY in environment variables")
-        client = None
-    else:
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        logger.info("OpenAI client initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing OpenAI client: {e}")
-    client = None
+# Set up LangSmith tracer
+tracer = LangChainTracer(project_name="openai-cost-tracking")
+llm = ChatOpenAI(
+    model="gpt-4o",  # Default to gpt-4o, will fallback to others if needed
+    temperature=0.7,
+    openai_api_key=OPENAI_API_KEY,
+    callbacks=[tracer]
+)
+
+# Keep the original client for backward compatibility
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 def encode_image_from_url(image_url: str) -> Optional[str]:
     """Encode image from URL to base64."""
@@ -111,9 +119,9 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
         logger.error("No test types selected for test case generation")
         return None
     
-    # Check if client is initialized
-    if client is None:
-        error_msg = "OpenAI client not initialized. Please check your API key in the .env file."
+    # Check if API key is initialized
+    if not OPENAI_API_KEY or OPENAI_API_KEY == "your_openai_api_key_here":
+        error_msg = "⚠️ Invalid or missing OPENAI_API_KEY in environment variables"
         logger.error(error_msg)
         raise ValueError(error_msg)
 
@@ -172,32 +180,35 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                 try:
                     logger.info(f"Sending request to OpenAI Vision API using model {model} for {test_type} test cases")
                     
-                    # Use a simpler prompt and fewer tokens to avoid timeouts and errors
-                    response = client.chat.completions.create(
+                    # Update to use LangChain tracer instead of direct OpenAI API
+                    current_llm = ChatOpenAI(
                         model=model,
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": f"You are a QA engineer generating test cases from the provided image."
-                            },
-                            {
-                                "role": "user",
-                                "content": [
-                                    {"type": "text", "text": prompt},
-                                    {
-                                        "type": "image_url",
-                                        "image_url": {
-                                            "url": f"data:image/jpeg;base64,{base64_image}"
-                                        }
-                                    }
-                                ]
-                            }
-                        ],
-                        max_tokens=1500,
-                        temperature=0.7
+                        temperature=0.7,
+                        openai_api_key=OPENAI_API_KEY,
+                        max_tokens=3000,
+                        callbacks=[tracer]  # Add tracer for cost tracking
                     )
                     
-                    test_cases = response.choices[0].message.content.strip()
+                    response = current_llm.invoke([
+                        {
+                            "role": "system",
+                            "content": f"You are a QA engineer generating test cases from the provided image."
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
+                                    }
+                                }
+                            ]
+                        }
+                    ])
+                    
+                    test_cases = response.content.strip()
                     if test_cases:
                         logger.info(f"Successfully generated {test_type} test cases using model {model}")
                         # Add a section header for each test type to help with parsing
@@ -242,5 +253,11 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
 
     except Exception as e:
         logger.error(f"Error in generate_test_case_from_image: {str(e)}", exc_info=True)
+        # Capture error in Sentry
+        capture_exception(e, {
+            "image_path": image_path,
+            "selected_types": selected_types,
+            "vision_models": vision_models
+        })
         # Re-raise the exception with the error message
         raise ValueError(f"Failed to generate test cases from image: {str(e)}")
