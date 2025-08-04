@@ -84,7 +84,7 @@ def generate():
             return jsonify({'error': 'Please select at least one test case type'}), 400
 
         # Get source type and item IDs for tracking
-        source_type = request.form.get('sourceType') if request.form else request.json.get('sourceType')
+        source_type = data.get('sourceType') if data else None
         
         # Update generation status
         with generation_status['lock']:
@@ -133,19 +133,10 @@ def generate():
                 # Import the image generator
                 from ai.image_generator import generate_test_case_from_image
                 
-                # Verify OpenAI API key
-                if not OPENAI_API_KEY or OPENAI_API_KEY == "your_openai_api_key_here":
-                    # Clean up the image
-                    if os.path.exists(image_path):
-                        os.remove(image_path)
-                    # Reset generation status
-                    with generation_status['lock']:
-                        generation_status['is_generating'] = False
-                    # Return error for missing API key
-                    return render_template('error.html', error_message="OpenAI API key is missing or invalid."), 400
+                # The API key verification is now handled inside the image generator function
+                # No need to check here as the function will handle it properly
                 
-                # Get selected test case types
-                selected_types = request.form.getlist('testCaseTypes[]')
+                # Use the already processed selected_types
                 if not selected_types:
                     os.remove(image_path)  # Clean up if validation fails
                     # Reset the generation status
@@ -1350,11 +1341,12 @@ def verify_api_key():
     """
     Endpoint to verify if the OpenAI API key is configured correctly
     """
-    from config.settings import OPENAI_API_KEY
     import openai
     import json
     
     try:
+        # Get API key using lazy loading
+        from config.settings import OPENAI_API_KEY
         # Check if API key exists
         if not OPENAI_API_KEY or OPENAI_API_KEY == "your_openai_api_key_here" or OPENAI_API_KEY == "missing_api_key":
             return jsonify({
@@ -1364,19 +1356,20 @@ def verify_api_key():
             }), 400
             
         # Try to initialize the client
-        openai.api_key = OPENAI_API_KEY
+        from openai import OpenAI
+        client = OpenAI(api_key=OPENAI_API_KEY)
         
         # Test the API key with a simple models list request
         try:
-            response = openai.Model.list()
+            response = client.models.list()
             
             # Check if we get a valid response
             if response:
-                # Check if GPT-4 or GPT-4o models are available
+                # Check if gpt-3.5-turbo or gpt-3.5-turbo models are available
                 available_models = [model.id for model in response.data]
                 vision_models = [model for model in available_models 
-                                if model.startswith('gpt-4') and 
-                                ('vision' in model or model == 'gpt-4o' or model == 'gpt-4-turbo')]
+                                if model.startswith('gpt-4o') and 
+                                ('vision' in model or model == 'gpt-4o' or model == 'gpt-4o-mini')]
                 
                 if vision_models:
                     return jsonify({
@@ -1388,7 +1381,7 @@ def verify_api_key():
                     return jsonify({
                         'status': 'warning',
                         'message': 'API key is valid but no vision models are available',
-                        'details': 'Your OpenAI account may not have access to GPT-4 Vision models',
+                        'details': 'Your OpenAI account may not have access to gpt-4o Vision models',
                         'available_models': available_models[:10]  # Just show a few to avoid too much data
                     }), 200
             else:
