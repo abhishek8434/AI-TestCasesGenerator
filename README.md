@@ -25,33 +25,66 @@ This project automates the generation of detailed Selenium test cases in Python 
 ## Project Structure
 
 ```tree
-├── .env                    # Environment variables
-├── .gitignore              # Git ignore file
-├── README.md               # Project documentation
-├── app.py                  # Flask application
-├── requirements.txt        # Python dependencies
-├── ai/                     # AI integration
-│   ├── generator.py        # Test case generation
-│   └── image_generator.py  # Image processing
-├── azure_integration/      # Azure DevOps integration
-│   ├── __init__.py         # Azure integration module
-│   ├── azure_client.py     # Azure client
-│   └── pipeline.py         # Azure pipeline
-├── config/                 # Configuration
-│   └── settings.py         # Configuration settings
-├── jira/                   # Jira integration
-│   └── jira_client.py      # Jira client
-├── templates/              # HTML templates
-│   ├── index.html          # Main page
-│   ├── results.html        # Result page
-│   └── view.html           # View page
-├── tests/                  # Test cases
-│   ├── generated/          # Generated test cases
-│   └── images/             # Uploaded images
-├── utils/                  # Utility functions
-│   ├── file_handler.py     # File handling utilities
-│   ├── logger.py           # Logging utility
-│   └── mongo_handler.py    # MongoDB utility
+AI-TestCaseGenerator-linkissue/
+├── 📄 app.py                          # Main Flask application entry point
+├── 📄 requirements.txt                # Python dependencies
+├── 📄 README.md                       # Project documentation
+├── 📄 .gitignore                      # Git ignore rules
+├── 📄 .env                           # Environment variables (not in git)
+├── 📄 FOLDER_STRUCTURE.md            # This file - folder structure documentation
+│
+├── 📁 ai/                            # AI/ML related modules
+│   ├── 📄 __init__.py
+│   ├── 📄 generator.py               # Text-based test case generation
+│   └── 📄 image_generator.py         # Image-based test case generation
+│
+├── 📁 azure_integration/             # Azure DevOps integration
+│   ├── 📄 __init__.py
+│   ├── 📄 azure_client.py            # Azure DevOps API client
+│   └── 📄 pipeline.py                # Pipeline and work item handling
+│
+├── 📁 config/                        # Configuration management
+│   ├── 📄 __init__.py
+│   └── 📄 settings.py                # Environment variables and settings
+│
+├── 📁 jira/                          # Jira integration
+│   ├── 📄 __init__.py
+│   └── 📄 jira_client.py             # Jira API client
+│
+├── 📁 static/                        # Static assets (CSS, JS, images)
+│   ├── 📁 assets/
+│   │   └── 📁 images/
+│   │       ├── 📄 favicon.png        # Website favicon
+│   │       └── 📄 eatance--logo.svg  # Company logo
+│   └── 📁 js/                        # JavaScript files (currently empty)
+│
+├── 📁 templates/                     # HTML templates
+│   ├── 📄 index.html                 # Main landing page
+│   ├── 📄 results.html               # Test case results page
+│   ├── 📄 view.html                  # Shared test case view
+│   └── 📄 error.html                 # Error page template
+│
+├── 📁 tests/                         # Test files and generated content
+│   ├── 📁 generated/                 # Generated test case files
+│   │   ├── 📄 test_KAN-1.xlsx        # Excel test case files
+│   │   ├── 📄 test_KAN-1.txt         # Text test case files
+│   │   ├── 📄 test_image_*.xlsx      # Image-based test cases
+│   │   └── 📄 test_image_*.txt       # Image-based test cases
+│   └── 📁 images/                    # Test images (currently empty)
+│
+├── 📁 uploads/                       # User uploaded files
+│
+├── 📁 results/                       # Screenshots of the sites
+│
+├── 📁 utils/                         # Utility modules
+│   ├── 📄 __init__.py
+│   ├── 📄 file_handler.py            # File operations and parsing
+│   ├── 📄 logger.py                  # Logging configuration
+│   ├── 📄 mongo_handler.py           # MongoDB database operations
+│   └── 📄 sentry_config.py           # Sentry error tracking
+│
+├── 📁 myenv/                         # Python virtual environment
+└── 📁 .git/                          # Git repository data
 ```
 
 
