@@ -7,7 +7,6 @@ init_sentry("ai-test-case-generator-image")
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.tracers.langchain import LangChainTracer
-from config.settings import OPENAI_API_KEY
 from typing import Optional, List
 import base64
 import requests
@@ -21,15 +20,15 @@ logger = logging.getLogger(__name__)
 
 # Set up LangSmith tracer
 tracer = LangChainTracer(project_name="openai-cost-tracking")
-llm = ChatOpenAI(
-    model="gpt-4o",  # Default to gpt-4o, will fallback to others if needed
-    temperature=0.7,
-    openai_api_key=OPENAI_API_KEY,
-    callbacks=[tracer]
-)
 
-# Keep the original client for backward compatibility
-client = OpenAI(api_key=OPENAI_API_KEY)
+def get_openai_api_key():
+    """Get OpenAI API key from settings"""
+    try:
+        from config.settings import OPENAI_API_KEY
+        return OPENAI_API_KEY
+    except Exception as e:
+        logger.error(f"Error loading OpenAI API key: {e}")
+        return None
 
 def encode_image_from_url(image_url: str) -> Optional[str]:
     """Encode image from URL to base64."""
@@ -119,8 +118,9 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
         logger.error("No test types selected for test case generation")
         return None
     
-    # Check if API key is initialized
-    if not OPENAI_API_KEY or OPENAI_API_KEY == "your_openai_api_key_here":
+    # Get API key
+    api_key = get_openai_api_key()
+    if not api_key or api_key == "your_openai_api_key_here" or api_key == "missing_api_key":
         error_msg = "⚠️ Invalid or missing OPENAI_API_KEY in environment variables"
         logger.error(error_msg)
         raise ValueError(error_msg)
@@ -180,11 +180,11 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                 try:
                     logger.info(f"Sending request to OpenAI Vision API using model {model} for {test_type} test cases")
                     
-                    # Update to use LangChain tracer instead of direct OpenAI API
+                    # Create LLM instance with API key
                     current_llm = ChatOpenAI(
                         model=model,
                         temperature=0.7,
-                        openai_api_key=OPENAI_API_KEY,
+                        openai_api_key=api_key,
                         max_tokens=3000,
                         callbacks=[tracer]  # Add tracer for cost tracking
                     )
