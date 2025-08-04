@@ -331,12 +331,22 @@ class MongoHandler:
             raise Exception("Failed to save URL data to database")
 
     def get_url_data(self, short_key):
-        """Retrieve URL parameters by short key"""
+        """
+        Retrieve URL parameters by short key
+        """
         try:
-            document = self.collection.find_one({"_id": short_key, "type": "shortened_url"})
+            # Search by _id instead of short_key since all documents have short_key: None
+            document = self.collection.find_one({"_id": short_key})
             if document:
-                return document["url_params"]
+                # Check for test_data field first (new format), then url_params (old format)
+                if 'test_data' in document:
+                    return document.get('test_data')
+                elif 'url_params' in document:
+                    return document.get('url_params')
+                else:
+                    # If neither exists, return the document itself
+                    return document
             return None
         except Exception as e:
-            logger.error(f"Error retrieving URL data: {str(e)}")
+            logger.error(f"Error retrieving URL data: {e}")
             return None
