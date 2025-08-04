@@ -512,22 +512,42 @@ def generate():
 @app.route('/api/download/<path:filename>')
 def download_file(filename):
     try:
-        file_path = os.path.join(os.path.dirname(__file__), 'tests', 'generated', filename)
+        # Handle cloud deployment paths
+        base_dir = os.path.dirname(__file__)
+        generated_dir = os.path.join(base_dir, 'tests', 'generated')
+        
+        # Ensure the generated directory exists
+        if not os.path.exists(generated_dir):
+            os.makedirs(generated_dir, exist_ok=True)
+            logger.info(f"Created generated directory: {generated_dir}")
+        
+        file_path = os.path.join(generated_dir, filename)
+        
+        # Log the file path for debugging
+        logger.info(f"Attempting to download file: {file_path}")
+        
         if not os.path.exists(file_path):
-            return jsonify({'error': 'File not found'}), 404
+            logger.error(f"File not found: {file_path}")
+            # Try to find the file by searching for it in the generated directory
+            logger.info(f"Searching for file in: {generated_dir}")
+            
+            matching_files = []
+            if os.path.exists(generated_dir):
+                for file in os.listdir(generated_dir):
+                    if filename in file:
+                        matching_files.append(file)
+            
+            if matching_files:
+                # Use the first matching file
+                filename = matching_files[0]
+                file_path = os.path.join(generated_dir, filename)
+                logger.info(f"Found matching file: {filename}")
+            else:
+                logger.error(f"No matching files found for: {filename}")
+                return jsonify({'error': 'File not found'}), 404
         
         # Check if status values were provided
         status_values = request.args.get('status')
-        
-        # # Log status values for debugging
-        # if status_values:
-        #     try:
-        #         status_dict = json.loads(status_values)
-        #         logger.info(f"DOWNLOAD FILE: Received {len(status_dict)} status values: {status_dict}")
-        #     except Exception as e:
-        #         logger.error(f"DOWNLOAD FILE: Error parsing status values: {e}")
-        # else:
-        #     logger.info("DOWNLOAD FILE: No status values provided")
         
         # Check if a custom filename was provided
         custom_filename = request.args.get('filename')
@@ -638,7 +658,7 @@ def download_file(filename):
         return response
     except Exception as e:
         logger.error(f"Error downloading file: {e}")
-        return jsonify({'error': str(e)}), 404
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/content/<path:filename>')
 def get_file_content(filename):
@@ -650,20 +670,29 @@ def get_file_content(filename):
             logger.error(f"Invalid filename: '{filename}'")
             return jsonify({'error': 'Invalid filename provided'}), 400
             
+        # Handle cloud deployment paths
+        base_dir = os.path.dirname(__file__)
+        generated_dir = os.path.join(base_dir, 'tests', 'generated')
+        
+        # Ensure the generated directory exists
+        if not os.path.exists(generated_dir):
+            os.makedirs(generated_dir, exist_ok=True)
+            logger.info(f"Created generated directory: {generated_dir}")
+            
         # Check if the file exists in the generated directory
-        file_path = os.path.join(os.path.dirname(__file__), 'tests', 'generated', filename)
+        file_path = os.path.join(generated_dir, filename)
         logger.info(f"Looking for file at: {file_path}")
         
         if not os.path.exists(file_path):
             # Try to find the file by searching for it in the generated directory
-            generated_dir = os.path.join(os.path.dirname(__file__), 'tests', 'generated')
             logger.info(f"File not found at exact path, searching in {generated_dir}")
             
             # Check if filename contains any part of actual files in the directory
             matching_files = []
-            for file in os.listdir(generated_dir):
-                if filename in file:
-                    matching_files.append(file)
+            if os.path.exists(generated_dir):
+                for file in os.listdir(generated_dir):
+                    if filename in file:
+                        matching_files.append(file)
             
             if matching_files:
                 # Use the first matching file
@@ -851,20 +880,58 @@ mongo_handler = MongoHandler()
 @app.route('/api/share', methods=['POST'])
 def share_test_case():
     try:
-        data = request.json
+        # Handle both JSON and form data for cloud compatibility
+        if request.is_json:
+            data = request.json
+        else:
+            # Fallback for form data
+            data = request.form.to_dict()
+            # Try to parse JSON strings in form data
+            for key, value in data.items():
+                if isinstance(value, str) and value.startswith('{'):
+                    try:
+                        data[key] = json.loads(value)
+                    except:
+                        pass
+        
+        logger.info(f"Share request data: {data}")
+        
         test_data = data.get('test_data')
         item_id = data.get('item_id')
+        status_values = data.get('status_values', {})
+        
         if not test_data:
             return jsonify({'error': 'No test data provided'}), 400
 
+        # Ensure we have a valid MongoDB handler
+        if not mongo_handler:
+            logger.error("MongoDB handler not initialized")
+            return jsonify({'error': 'Database connection error'}), 500
+
+        # Save the test case with status values
         url_key = mongo_handler.save_test_case(test_data, item_id)
-        share_url = f"{request.host_url}view/{url_key}"
+        
+        # If status values were provided, save them too
+        if status_values:
+            try:
+                mongo_handler.update_status_dict(url_key, status_values)
+                logger.info(f"Saved status values for {url_key}: {status_values}")
+            except Exception as e:
+                logger.error(f"Error saving status values: {e}")
+                # Continue without status values if there's an error
+        
+        # Create the share URL
+        share_url = f"{request.host_url.rstrip('/')}/view/{url_key}"
+        
+        logger.info(f"Generated share URL: {share_url}")
         
         return jsonify({
             'success': True,
-            'share_url': share_url
+            'share_url': share_url,
+            'url_key': url_key
         })
     except Exception as e:
+        logger.error(f"Error in share_test_case: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/view/<url_key>')
@@ -1335,6 +1402,45 @@ def debug_force_sync():
     except Exception as e:
         logger.error(f"Error during force sync: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+@app.route('/health')
+def health_check():
+    """Health check endpoint for cloud deployment"""
+    try:
+        # Check MongoDB connection
+        mongo_status = "OK"
+        try:
+            if mongo_handler:
+                # Try a simple operation
+                mongo_handler.collection.find_one()
+            else:
+                mongo_status = "Not initialized"
+        except Exception as e:
+            mongo_status = f"Error: {str(e)}"
+        
+        # Check file system
+        fs_status = "OK"
+        try:
+            base_dir = os.path.dirname(__file__)
+            generated_dir = os.path.join(base_dir, 'tests', 'generated')
+            if not os.path.exists(generated_dir):
+                os.makedirs(generated_dir, exist_ok=True)
+        except Exception as e:
+            fs_status = f"Error: {str(e)}"
+        
+        return jsonify({
+            'status': 'healthy',
+            'timestamp': datetime.datetime.now().isoformat(),
+            'mongodb': mongo_status,
+            'filesystem': fs_status,
+            'environment': 'production' if os.getenv('RENDER') else 'development'
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'unhealthy',
+            'error': str(e),
+            'timestamp': datetime.datetime.now().isoformat()
+        }), 500
 
 @app.route('/api/verify-api-key')
 def verify_api_key():
