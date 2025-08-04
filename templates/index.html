@@ -953,8 +953,7 @@
                     if (retryCount >= maxRetries) {
                         updateLoader(100);
                         alert('Generation is taking too long. You will be redirected to the results page.');
-                        const itemIdsParam = itemIds ? `&item_ids=${encodeURIComponent(JSON.stringify(itemIds))}` : '';
-                        window.location.href = `/results?files=${encodeURIComponent(JSON.stringify(result.files))}&key=${window.generatedUrlKey}${itemIdsParam}`;
+                        window.location.href = `/results?token=${window.generatedUrlKey}`;
                         return;
                     }
 
@@ -967,9 +966,8 @@
                         const finalAnimation = setInterval(() => {
                             if (currentProgress >= 100) {
                                 clearInterval(finalAnimation);
-                                // Use the stored URL key for redirection and include item IDs
-                                const itemIdsParam = itemIds ? `&item_ids=${encodeURIComponent(JSON.stringify(itemIds))}` : '';
-                                window.location.href = `/results?files=${encodeURIComponent(JSON.stringify(result.files))}&key=${window.generatedUrlKey}${itemIdsParam}`;
+                                // Use the stored URL key for redirection
+                                window.location.href = `/results?token=${window.generatedUrlKey}`;
                                 return;
                             }
                             currentProgress += 2;
@@ -982,8 +980,7 @@
                     if (retryCount >= maxRetries) {
                         updateLoader(100);
                         alert('Generation is taking too long. You will be redirected to the results page.');
-                        const itemIdsParam = itemIds ? `&item_ids=${encodeURIComponent(JSON.stringify(itemIds))}` : '';
-                        window.location.href = `/results?files=${encodeURIComponent(JSON.stringify(result.files))}&key=${window.generatedUrlKey}${itemIdsParam}`;
+                        window.location.href = `/results?token=${window.generatedUrlKey}`;
                         return;
                     }
 
