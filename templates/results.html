@@ -2541,13 +2541,23 @@
 
                 // Get current status values to include with the share
                 const statusValues = collectStatusValues();
+                console.log('Status values for share URL:', statusValues);
+                
+                // Update status values in the test cases
+                const testCasesWithStatus = window.testCases[itemId].map(tc => {
+                    const title = tc['Title'] || '';
+                    if (title && statusValues[title]) {
+                        return {...tc, Status: statusValues[title]};
+                    }
+                    return tc;
+                });
                 
                 // Create the share request
                 const urlKey = window.testCaseUrlKey;
                 const shareRequest = {
                     key: urlKey,
                     status_values: statusValues,
-                    test_data: window.testCases[itemId],
+                    test_data: testCasesWithStatus,
                     item_id: itemId
                 };
                 
