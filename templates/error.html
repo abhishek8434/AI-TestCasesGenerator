@@ -8,75 +8,147 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="shortcut icon" href="/static/assets/images/favicon.png">
     <style>
+        /* Modern UI Styles from your design */
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .error-container {
-            background: white;
-            border-radius: 15px;
-            padding: 3rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            max-width: 500px;
-            width: 90%;
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: none;
+            margin-top: 2rem;
+        }
+
+        .card-body {
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            padding: 24px 0;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 24px;
+        }
+
+        .logo > img {
+            max-height: 40px;
+        }
+
+        .center-content {
+            flex: 1;
+        }
+
+        h1.main-title {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #041E2B;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: rgba(4, 30, 43, 0.5);
+            margin-bottom: 0;
+        }
+
+        /* Error Specific Styles */
         .error-icon {
             font-size: 4rem;
-            color: #dc3545;
+            color: #dc3545; /* Bootstrap's danger color */
             margin-bottom: 1rem;
         }
+
         .error-title {
             color: #dc3545;
             font-size: 2rem;
             font-weight: bold;
             margin-bottom: 1rem;
         }
+
         .error-message {
-            color: #6c757d;
+            color: #6c757d; /* Bootstrap's secondary text color */
             font-size: 1.1rem;
             margin-bottom: 2rem;
             line-height: 1.6;
         }
-        .btn-home {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
+
+        /* Button Styles */
+        .btn-primary {
+            background-color: rgb(76, 171, 114);
+            border: 1px solid rgb(76, 171, 114);
             padding: 12px 30px;
-            border-radius: 25px;
+            border-radius: 6px;
+            font-size: 1rem;
             font-weight: 600;
+            color: white;
             text-decoration: none;
             display: inline-block;
             transition: all 0.3s ease;
+            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
         }
-        .btn-home:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-            color: white;
-            text-decoration: none;
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: rgb(76, 171, 114);
+            box-shadow: none;
+            color: rgb(76, 171, 114);
+        }
+
+        @media (max-width: 767px) {
+            .header {
+                flex-direction: column;
+                align-items: center;
+            }
+            .logo {
+                margin-bottom: 1rem;
+            }
+            .center-content {
+                text-align: center;
+                max-width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="error-container">
-        <div class="error-icon">
-            <i class="bi bi-exclamation-triangle"></i>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <a href="/"><img src="/static/assets/images/favicon.png" alt="Logo"></a>
+            </div>
+            <div class="center-content">
+                <h1 class="main-title">AI-Powered Test Case Automation</h1>
+                <p class="subtitle mb-0">Error Page</p>
+            </div>
+        </header>
+        <div class="card">
+            <div class="card-body">
+                <div class="error-icon">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <h2 class="error-title">Oops! Something went wrong</h2>
+                <p class="error-message">
+                    {% if error_message %}
+                        {{ error_message }}
+                    {% else %}
+                        An unexpected error occurred. Please try again or contact support if the problem persists.
+                    {% endif %}
+                </p>
+                <a href="/" class="btn btn-primary">
+                    <i class="bi bi-house"></i> Go Back Home
+                </a>
+            </div>
         </div>
-        <h1 class="error-title">Oops! Something went wrong</h1>
-        <p class="error-message">
-            {% if error_message %}
-                {{ error_message }}
-            {% else %}
-                An unexpected error occurred. Please try again or contact support if the problem persists.
-            {% endif %}
-        </p>
-        <a href="/" class="btn-home">
-            <i class="bi bi-house"></i> Go Back Home
-        </a>
     </div>
 </body>
-</html> 
+</html>
