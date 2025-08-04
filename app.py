@@ -44,11 +44,11 @@ def results():
             return render_template('results.html', url_params=url_params)
         else:
             logger.warning(f"No data found for key/token: {short_key}")
+            # Return error page instead of falling back to long URL
+            return render_template('error.html', error_message="The requested test case data could not be found. The link may have expired or been invalid."), 404
     
-    # If no short key/token or not found, proceed with normal URL parameters
-    all_params = dict(request.args)
-    logger.info(f"Using direct URL parameters: {all_params}")
-    return render_template('results.html', url_params=all_params)
+    # If no short key/token provided, return error
+    return render_template('error.html', error_message="Invalid URL. Please use a valid test case link."), 400
 
 
 # Add at the top of the file with other imports
