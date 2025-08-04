@@ -8,7 +8,6 @@ from langchain_openai import ChatOpenAI
 from langchain.callbacks.tracers.langchain import LangChainTracer
 import os
 import logging
-from config.settings import OPENAI_API_KEY
 from typing import Optional, List, Dict, Any
 
 # Set up logging
@@ -17,12 +16,15 @@ logger = logging.getLogger(__name__)
 
 # Set up LangSmith tracer
 tracer = LangChainTracer(project_name="openai-cost-tracking")
-llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
-    temperature=0.7,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-    callbacks=[tracer]
-)
+
+def get_openai_api_key():
+    """Get OpenAI API key from settings"""
+    try:
+        from config.settings import OPENAI_API_KEY
+        return OPENAI_API_KEY
+    except Exception as e:
+        logger.error(f"Error loading OpenAI API key: {e}")
+        return None
 
 def get_test_type_config(test_type: str) -> dict:
     """Get the configuration for a specific test type"""
@@ -110,8 +112,23 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
         """
 
         try:
+            # Get API key
+            api_key = get_openai_api_key()
+            if not api_key or api_key == "your_openai_api_key_here" or api_key == "missing_api_key":
+                error_msg = "⚠️ Invalid or missing OPENAI_API_KEY in environment variables"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
+            # Create LLM instance with API key
+            current_llm = ChatOpenAI(
+                model="gpt-3.5-turbo",
+                temperature=0.7,
+                openai_api_key=api_key,
+                callbacks=[tracer]
+            )
+            
             logger.info(f"Sending request to OpenAI for {test_type} test cases")
-            response = llm.invoke([
+            response = current_llm.invoke([
                 {
                     "role": "system",
                     "content": f"You are a QA engineer. Generate EXACTLY {config['count']} {test_type} test cases. Use {config['prefix']} as the prefix."
