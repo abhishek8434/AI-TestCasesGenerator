@@ -1,7 +1,10 @@
 from openai import OpenAI
-from config.settings import OPENAI_API_KEY, BASE_URL
+from config.settings import BASE_URL
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+def get_openai_client():
+    """Get OpenAI client with API key"""
+    from config.settings import OPENAI_API_KEY
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 class AzurePipeline:
     def generate_test_case(self, description, base_url=None):
@@ -48,6 +51,7 @@ class AzurePipeline:
             """
 
             try:
+                client = get_openai_client()
                 response = client.chat.completions.create(
                     model="gpt-3.5-turbo",
                     messages=[
