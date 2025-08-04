@@ -1023,6 +1023,9 @@
         function initializeUI() {
             const testCasesList = document.getElementById('testCasesList');
 
+            // Clear the loading message since we're now initializing the UI
+            testCasesList.innerHTML = '';
+
             // Global state to track loading
             window.loadingState = {
                 isGenerating: true,
