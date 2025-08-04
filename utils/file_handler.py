@@ -203,7 +203,7 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
     logger.info(f"Parsing test cases with default section: {default_section}")
     
     # Special handling for test cases without clear delimiters - try to extract full test case blocks
-    if "Title:" in test_cases and "Steps to reproduce:" in test_cases:
+    if ("Title:" in test_cases and "Steps to reproduce:" in test_cases) or ("Steps to reproduce:" in test_cases and re.search(r'TC_[A-Z]+_\d+', test_cases)):
         logger.info("Detected standard test case format with Title and Steps to reproduce")
         # Split by blank lines to find test case boundaries
         # This handles cases where test cases are separated by blank lines
@@ -213,50 +213,61 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
             if not block or len(block) < 10:  # Skip empty or very short blocks
                 continue
                 
-            # Check if this looks like a test case
-            if "Title:" in block:
+            # Check if this looks like a test case - either has Title: or starts with TC_ pattern
+            if "Title:" in block or re.match(r'TC_[A-Z]+_\d+', block.strip()):
                 test_case = {}
                 test_case['Section'] = default_section
                 
-                # Extract title
+                # Extract title - handle both "Title:" format and direct TC_ pattern
                 title_match = re.search(r'Title:\s*(.*?)(?:\n|$)', block)
                 if title_match:
                     test_case['Title'] = title_match.group(1).strip()
+                else:
+                    # Try to extract title from the first line if it starts with TC_ pattern
+                    first_line = block.split('\n')[0].strip()
+                    if re.match(r'TC_[A-Z]+_\d+', first_line):
+                        test_case['Title'] = first_line
                 
                 # Extract scenario
                 scenario_match = re.search(r'Scenario:\s*(.*?)(?:\n|$)', block)
                 if scenario_match:
                     test_case['Scenario'] = scenario_match.group(1).strip()
                 
-                # Extract steps
-                steps_match = re.search(r'Steps to reproduce:([\s\S]*?)Expected Result:', block)
+                # Extract steps - improved regex to handle multi-line steps
+                steps_match = re.search(r'Steps to reproduce:\s*\n([\s\S]*?)(?=\n\s*Expected Result:|$)', block)
                 if steps_match:
                     steps_text = steps_match.group(1).strip()
                     # Try to split steps by numbered lines or bullet points
-                    step_lines = re.findall(r'(?:^|\n)\s*(?:\d+\.\s*|\*\s*|\-\s*)(.*?)(?=\n\s*(?:\d+\.\s*|\*\s*|\-\s*)|$)', steps_text)
+                    step_lines = re.findall(r'(?:^|\n)\s*(?:\d+\.\s*|\*\s*|\-\s*)(.*?)(?=\n\s*(?:\d+\.\s*|\*\s*|\-\s*)|$)', steps_text, re.MULTILINE)
                     if step_lines:
-                        test_case['Steps'] = step_lines
+                        test_case['Steps'] = [step.strip() for step in step_lines if step.strip()]
                     else:
-                        # If no clear step delimiters, just use the whole text
-                        test_case['Steps'] = [steps_text]
+                        # If no clear step delimiters, split by newlines and filter out empty lines
+                        steps = [step.strip() for step in steps_text.split('\n') if step.strip()]
+                        test_case['Steps'] = steps
                 
                 # Extract expected result
-                expected_match = re.search(r'Expected Result:\s*(.*?)(?:Actual Result:|Priority:|$)', block, re.DOTALL)
+                expected_match = re.search(r'Expected Result:\s*(.*?)(?:\n\s*Actual Result:|Priority:|$)', block, re.DOTALL)
                 if expected_match:
                     test_case['Expected Result'] = expected_match.group(1).strip()
                 
                 # Extract actual result if present
-                actual_match = re.search(r'Actual Result:\s*(.*?)(?:Priority:|$)', block, re.DOTALL)
+                actual_match = re.search(r'Actual Result:\s*(.*?)(?:\n\s*Priority:|$)', block, re.DOTALL)
                 if actual_match:
-                    test_case['Actual Result'] = actual_match.group(1).strip()
+                    actual_result = actual_match.group(1).strip()
+                    # Only set if it's not empty and doesn't contain "Priority:"
+                    if actual_result and not actual_result.startswith('Priority:'):
+                        test_case['Actual Result'] = actual_result
                 
                 # Extract priority if present
                 priority_match = re.search(r'Priority:\s*(.*?)(?:\n|$)', block)
                 if priority_match:
                     test_case['Priority'] = priority_match.group(1).strip()
                 
-                test_data.append(test_case)
-                logger.debug(f"Extracted test case: {test_case['Title']}")
+                # Only add test case if it has a title
+                if test_case.get('Title'):
+                    test_data.append(test_case)
+                    logger.debug(f"Extracted test case: {test_case['Title']}")
                 
         if test_data:
             logger.info(f"Extracted {len(test_data)} test cases using block parsing")
