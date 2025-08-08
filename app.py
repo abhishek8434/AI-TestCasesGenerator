@@ -28,7 +28,14 @@ logger = logging.getLogger(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # Add cache-busting timestamp
+    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    return render_template('index.html', timestamp=timestamp)
+
+@app.route('/test')
+def test():
+    logger.info("=== TEST ENDPOINT CALLED ===")
+    return jsonify({'message': 'Server is working!', 'timestamp': datetime.datetime.now().strftime('%Y%m%d%H%M%S')})
 
 @app.route('/results')
 def results():
@@ -66,7 +73,10 @@ generation_status = {
 @app.route('/api/generate', methods=['POST'])
 def generate():
     try:
+        logger.info("=== GENERATE ENDPOINT CALLED ===")
         data = request.json if request.is_json else request.form
+        logger.info(f"Request data type: {type(data)}")
+        logger.info(f"Request data: {data}")
         
         # Get test case types with proper fallback
         selected_types = []
@@ -364,12 +374,23 @@ def generate():
                             all_types_processed = False
                             
                 elif source_type == 'azure':
+                    logger.info("=== AZURE SECTION ENTERED ===")
                     # Get Azure configuration from request data
                     azure_config = data.get('azure_config')
+                    logger.info(f"Azure config received: {azure_config}")
+                    logger.info(f"Azure config type: {type(azure_config)}")
+                    
+                    if azure_config:
+                        logger.info(f"Azure config keys: {list(azure_config.keys()) if isinstance(azure_config, dict) else 'Not a dict'}")
+                        logger.info(f"Azure config values: {list(azure_config.values()) if isinstance(azure_config, dict) else 'Not a dict'}")
+                    
                     # Only use frontend config if it exists and all required values are present
                     if azure_config and all(azure_config.values()):
-                        azure_client = AzureClient(azure_config)
+                        logger.info(f"Using frontend Azure config: {azure_config}")
+                        azure_client = AzureClient(azure_config=azure_config)
                     else:
+                        logger.info("Using environment variables for Azure config")
+                        logger.info(f"Reason: azure_config exists: {bool(azure_config)}, all values present: {all(azure_config.values()) if azure_config else False}")
                         azure_client = AzureClient()  # Fall back to environment variables
                     
                     # Capture Azure-specific errors
@@ -1575,5 +1596,193 @@ def shorten_url():
         logger.error(f"Error creating shortened URL: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/verify-jira', methods=['POST'])
+def verify_jira_connection():
+    """Verify Jira connection and credentials"""
+    try:
+        data = request.json
+        jira_url = data.get('jiraUrl', '').strip()
+        jira_user = data.get('jiraUser', '').strip()
+        jira_token = data.get('jiraToken', '').strip()
+        
+        if not jira_url or not jira_user or not jira_token:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Add https:// if missing
+        if not jira_url.startswith(('http://', 'https://')):
+            jira_url = 'https://' + jira_url
+        
+        # Test connection by fetching user info
+        from jira.jira_client import JiraClient
+        jira_client = JiraClient(jira_url, jira_user, jira_token)
+        
+        # Try to get current user info
+        user_info = jira_client.get_current_user()
+        
+        if user_info:
+            logger.info(f"Jira connection successful for user: {user_info.get('displayName', 'Unknown')}")
+            return jsonify({
+                'success': True,
+                'message': 'Connection successful',
+                'user': user_info.get('displayName', 'Unknown')
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Could not authenticate with Jira'}), 401
+            
+    except Exception as e:
+        logger.error(f"Jira verification error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/verify-azure', methods=['POST'])
+def verify_azure_connection():
+    """Verify Azure DevOps connection and credentials"""
+    try:
+        data = request.json
+        azure_url = data.get('azureUrl', '').strip()
+        azure_org = data.get('azureOrg', '').strip()
+        azure_project = data.get('azureProject', '').strip()
+        azure_pat = data.get('azurePat', '').strip()
+        
+        if not azure_url or not azure_org or not azure_project or not azure_pat:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Add https:// if missing
+        if not azure_url.startswith(('http://', 'https://')):
+            azure_url = 'https://' + azure_url
+        
+        # Test connection by fetching project info
+        from azure_integration.azure_client import AzureClient
+        azure_client = AzureClient(azure_url, azure_org, azure_pat)
+        
+        # Try to get project info
+        project_info = azure_client.get_project(azure_project)
+        
+        if project_info:
+            logger.info(f"Azure connection successful for project: {project_info.get('name', 'Unknown')}")
+            return jsonify({
+                'success': True,
+                'message': 'Connection successful',
+                'project': project_info.get('name', 'Unknown')
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Could not authenticate with Azure DevOps'}), 401
+            
+    except Exception as e:
+        logger.error(f"Azure verification error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/fetch-jira-items', methods=['POST'])
+def fetch_jira_items():
+    """Fetch recent Jira items for suggestions"""
+    try:
+        data = request.json
+        jira_url = data.get('jiraUrl', '').strip()
+        jira_user = data.get('jiraUser', '').strip()
+        jira_token = data.get('jiraToken', '').strip()
+        
+        if not jira_url or not jira_user or not jira_token:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Add https:// if missing
+        if not jira_url.startswith(('http://', 'https://')):
+            jira_url = 'https://' + jira_url
+        
+        from jira.jira_client import JiraClient
+        jira_client = JiraClient(jira_url, jira_user, jira_token)
+        
+        # Fetch recent issues (last 50)
+        issues = jira_client.get_recent_issues(limit=50)
+        
+        if issues:
+            # Format items for suggestions
+            items = []
+            for issue in issues:
+                items.append({
+                    'id': issue.get('key', ''),
+                    'title': issue.get('fields', {}).get('summary', ''),
+                    'type': issue.get('fields', {}).get('issuetype', {}).get('name', 'Issue'),
+                    'status': issue.get('fields', {}).get('status', {}).get('name', '')
+                })
+            
+            logger.info(f"Fetched {len(items)} Jira items for suggestions")
+            return jsonify({
+                'success': True,
+                'items': items
+            })
+        else:
+            return jsonify({'success': False, 'error': 'No issues found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Error fetching Jira items: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/fetch-azure-items', methods=['POST'])
+def fetch_azure_items():
+    """Fetch recent Azure DevOps work items for suggestions"""
+    try:
+        data = request.json
+        logger.info(f"Received Azure data: {data}")
+        
+        azure_url = data.get('azureUrl', '').strip()
+        azure_org = data.get('azureOrg', '').strip()
+        azure_project = data.get('azureProject', '').strip()
+        azure_pat = data.get('azurePat', '').strip()
+        
+        logger.info(f"Processed Azure fields - URL: '{azure_url}', Org: '{azure_org}', Project: '{azure_project}', PAT: {'*' * len(azure_pat) if azure_pat else 'None'}")
+        
+        if not azure_url or not azure_org or not azure_project or not azure_pat:
+            logger.error(f"Missing Azure fields - URL: {bool(azure_url)}, Org: {bool(azure_org)}, Project: {bool(azure_project)}, PAT: {bool(azure_pat)}")
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        # Add https:// if missing
+        if not azure_url.startswith(('http://', 'https://')):
+            azure_url = 'https://' + azure_url
+        
+        from azure_integration.azure_client import AzureClient
+        azure_client = AzureClient(azure_url, azure_org, azure_pat)
+        
+        # Set the project for this operation
+        azure_client.azure_project = azure_project
+        
+        # Test project access first
+        logger.info(f"Testing Azure project access: {azure_project}")
+        project_info = azure_client.get_project(azure_project)
+        if not project_info:
+            logger.error(f"Failed to access Azure project: {azure_project}")
+            return jsonify({'success': False, 'error': f'Cannot access project {azure_project}. Please check your permissions.'}), 403
+        
+        logger.info(f"Successfully accessed Azure project: {project_info.get('name', azure_project)}")
+        
+        # Fetch recent work items (last 50)
+        logger.info(f"Fetching Azure work items for project: {azure_project}")
+        work_items = azure_client.get_recent_work_items(azure_project, limit=50)
+        logger.info(f"Retrieved {len(work_items) if work_items else 0} Azure work items")
+        
+        if work_items:
+            # Format items for suggestions
+            items = []
+            for item in work_items:
+                items.append({
+                    'id': str(item.get('id', '')),
+                    'title': item.get('fields', {}).get('System.Title', ''),
+                    'type': item.get('fields', {}).get('System.WorkItemType', 'Work Item'),
+                    'status': item.get('fields', {}).get('System.State', '')
+                })
+            
+            logger.info(f"Fetched {len(items)} Azure work items for suggestions")
+            return jsonify({
+                'success': True,
+                'items': items
+            })
+        else:
+            return jsonify({'success': False, 'error': 'No work items found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Error fetching Azure items: {str(e)}")
+        logger.error(f"Error type: {type(e)}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=5005)
+    app.run(host='0.0.0.0',port=5008)

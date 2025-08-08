@@ -4,12 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <!-- Force refresh v4.0 - Counter In Label Fix -->
     <title>AI-Powered Test Case Automation</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <link rel="shortcut icon" href="/static/assets/images/favicon.png?v={{ timestamp if timestamp else '1' }}">
     <style>
-        /* Replace existing loader styles with new circular loader styles */
+        /* Modern circular loader styles */
         .loader-container {
             display: none;
             position: fixed;
@@ -23,45 +27,22 @@
             align-items: center;
         }
 
-        .percentage-loader {
-            position: relative;
+        .loader {
             width: 120px;
             height: 120px;
+            position: relative;
+            background: white;
+            border-radius: 50%;
         }
 
-        .circular-loader {
+        .loader-spinner {
+            position: absolute;
             width: 100%;
             height: 100%;
-            transform: rotate(-90deg);
-            animation: circleRotate 1.5s linear infinite;
-        }
-
-        .loader-bg,
-        .loader-fg {
-            fill: none;
-            stroke-width: 10;
-            cx: 50;
-            cy: 50;
-            r: 45;
-        }
-
-        .loader-bg {
-            stroke: #ddd;
-        }
-
-        .loader-fg {
-            stroke: #4CAA72;
-            stroke-linecap: round;
-            transform-origin: center;
-            stroke-dasharray: 283;
-            /* Ensure at least a small part of the circle is always visible */
-            stroke-dashoffset: 252; /* Default to showing ~10% of the circle */
-            transition: stroke-dashoffset 0.3s ease;
-        }
-
-        /* Ensure at least part of the circle is visible even at 0% */
-        .loader-fg.visible-progress {
-            stroke-dashoffset: 275; /* Show a small part of the circle even at 0% */
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #4CAA72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
 
         .loader-text {
@@ -70,36 +51,580 @@
             left: 50%;
             transform: translate(-50%, -50%);
             font-size: 24px;
-            color: white;
             font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-            z-index: 20;
+            color: #333;
         }
 
-        .loader {
-            width: 175px;
-            height: 80px;
+        /* Form validation styles - matching the image */
+        .form-validation-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: none;
+            font-weight: 500;
+        }
+
+        .form-validation-error.show {
             display: block;
-            margin: auto;
-            background-image: radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), radial-gradient(circle 50px at 50px 50px, #FFF 100%, transparent 0), radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), linear-gradient(#FFF 50px, transparent 0);
-            background-size: 50px 50px, 100px 76px, 50px 50px, 120px 40px;
-            background-position: 0px 30px, 37px 0px, 122px 30px, 25px 40px;
-            background-repeat: no-repeat;
-            position: relative;
-            box-sizing: border-box;
         }
 
-        /* Keep existing loader animations */
-        .loader::after {
-            content: '';
-            left: 50%;
-            bottom: 0;
-            transform: translate(-50%, 0);
-            position: absolute;
-            border: 15px solid transparent;
-            border-top-color: #4CAA72;
-            box-sizing: border-box;
-            animation: fadePush 1s linear infinite;
+        .form-control.is-invalid {
+            border-color: #dc3545 !important;
+            border-width: 2px !important;
+            box-shadow: none !important;
+        }
+
+        .form-control.is-valid {
+            border-color: #198754 !important;
+            border-width: 2px !important;
+            box-shadow: none !important;
+            background-image: none !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+
+        .form-select.is-invalid {
+            border-color: #dc3545 !important;
+            border-width: 2px !important;
+            box-shadow: none !important;
+        }
+
+        .form-select.is-valid {
+            border-color: #198754 !important;
+            border-width: 2px !important;
+            box-shadow: none !important;
+            background-image: none !important;
+            background-repeat: no-repeat !important;
+            background-position: right calc(0.375em + 0.1875rem) center !important;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+        }
+
+        /* Remove focus effects for invalid fields */
+        .form-control.is-invalid:focus,
+        .form-select.is-invalid:focus {
+            border-color: #dc3545 !important;
+            box-shadow: none !important;
+        }
+
+        /* Remove focus effects for valid fields */
+        .form-control.is-valid:focus,
+        .form-select.is-valid:focus {
+            border-color: #198754 !important;
+            box-shadow: none !important;
+        }
+
+        /* Prevent label color change on input focus - More specific rules */
+        .form-label {
+            color: #212529 !important;
+        }
+
+        /* Override all possible Bootstrap focus states */
+        .form-control:focus ~ .form-label,
+        .form-select:focus ~ .form-label,
+        .form-control:focus + .form-label,
+        .form-select:focus + .form-label,
+        .form-control:focus-within ~ .form-label,
+        .form-select:focus-within ~ .form-label,
+        .form-label:has(+ .form-control:focus),
+        .form-label:has(+ .form-select:focus),
+        .form-label:has(~ .form-control:focus),
+        .form-label:has(~ .form-select:focus) {
+            color: #212529 !important;
+        }
+
+        /* Additional specificity for Bootstrap's focus behavior */
+        .form-floating .form-control:focus ~ .form-label,
+        .form-floating .form-select:focus ~ .form-label,
+        .form-control:focus ~ label,
+        .form-select:focus ~ label {
+            color: #212529 !important;
+        }
+
+        /* Force override for all label states */
+        label,
+        .form-label,
+        .form-label *,
+        .form-label:before,
+        .form-label:after {
+            color: #212529 !important;
+        }
+
+        /* Target specific form structure */
+        .card-body .form-label,
+        .card-body label {
+            color: #212529 !important;
+        }
+
+        /* Comprehensive override for all possible focus states */
+        *:focus ~ label,
+        *:focus ~ .form-label,
+        *:focus + label,
+        *:focus + .form-label,
+        label:has(+ *:focus),
+        .form-label:has(+ *:focus),
+        label:has(~ *:focus),
+        .form-label:has(~ *:focus) {
+            color: #212529 !important;
+        }
+
+        /* Override Bootstrap's form-control focus behavior */
+        .form-control:focus,
+        .form-select:focus,
+        .form-control:focus-visible,
+        .form-select:focus-visible {
+            border-color: #4CAA72 !important;
+            box-shadow: 0 0 0 0.2rem rgba(76, 170, 114, 0.25) !important;
+        }
+
+        /* Remove validation icons from all form controls */
+        .form-control,
+        .form-select,
+        .multi-select-input {
+            background-image: none !important;
+            background-repeat: no-repeat !important;
+        }
+
+        /* Fix hover colors to use green instead of blue */
+        .form-control:hover,
+        .form-select:hover,
+        .multi-select-container:hover {
+            border-color: #4CAA72 !important;
+        }
+
+        /* Remove hover effects when buttons lose focus */
+        .btn:not(:focus):not(:active):hover {
+            /* Normal hover behavior */
+        }
+
+        .btn:focus:not(:active) {
+            /* Remove hover effect when focused but not active */
+            box-shadow: none !important;
+        }
+
+        .btn:active {
+            /* Remove hover effect when clicked */
+            transform: none !important;
+        }
+
+        /* Force remove hover effects when cursor is not on button */
+        .btn:not(:hover):focus {
+            background-color: inherit !important;
+            border-color: inherit !important;
+            box-shadow: none !important;
+        }
+
+        /* Ensure hover only works when cursor is actually on the button */
+        .btn:hover:not(:focus) {
+            /* Normal hover behavior only when not focused */
+        }
+
+        /* Prevent any green color changes */
+        .form-control:focus ~ *,
+        .form-select:focus ~ *,
+        .form-control:focus + *,
+        .form-select:focus + * {
+            color: inherit !important;
+        }
+
+        /* Force all labels to stay dark */
+        .card-body label,
+        .card-body .form-label,
+        .card-body .form-label *,
+        .card-body label * {
+            color: #212529 !important;
+        }
+
+        /* Specific overrides for Item ID and Test Case Types labels */
+        #itemIdField .form-label,
+        #itemIdField label,
+        .form-label:has(+ .multiple-selection-container),
+        .form-label:has(~ .multiple-selection-container),
+        .form-label:has(+ .field),
+        .form-label:has(~ .field) {
+            color: #212529 !important;
+        }
+
+        /* Override for checkbox labels specifically */
+        .form-check-label,
+        .form-check .form-check-label {
+            color: #212529 !important;
+        }
+
+        /* Additional specificity for Item ID and Test Case Types sections */
+        .mb-4 .form-label,
+        .mb-4 label,
+        .form-label:contains("Item ID"),
+        .form-label:contains("Test Case Types") {
+            color: #212529 !important;
+        }
+
+        /* Final override for any remaining focus states */
+        .multiple-selection-input:focus ~ .form-label,
+        .multiple-selection-input:focus + .form-label,
+        .form-check-input:focus ~ .form-check-label,
+        .form-check-input:focus + .form-check-label,
+        .form-check-input:focus ~ label,
+        .form-check-input:focus + label {
+            color: #212529 !important;
+        }
+
+        /* Nuclear option - override all possible label color changes */
+        label,
+        .form-label,
+        .form-check-label,
+        .form-label *,
+        .form-check-label * {
+            color: #212529 !important;
+        }
+
+        /* Specific override for Test Case Types section */
+        .mb-4:has(.form-check) .form-label,
+        .mb-4:has(.form-check) label,
+        .form-label:has(~ .field),
+        .form-label:has(+ .field) {
+            color: #212529 !important;
+        }
+
+        /* Override Bootstrap's checkbox focus behavior */
+        .form-check-input:focus ~ .form-check-label,
+        .form-check-input:focus + .form-check-label,
+        .form-check-input:checked ~ .form-check-label,
+        .form-check-input:checked + .form-check-label,
+        .form-check-input:hover ~ .form-check-label,
+        .form-check-input:hover + .form-check-label {
+            color: #212529 !important;
+        }
+
+        /* Force all text elements to stay dark */
+        .form-label,
+        .form-label span,
+        .form-label i,
+        .form-check-label,
+        .form-check-label span,
+        .form-check-label i {
+            color: #212529 !important;
+        }
+
+        /* Ultimate override for Test Case Types */
+        .mb-4:has(.form-check) .form-label,
+        .mb-4:has(.form-check) .form-label *,
+        .mb-4:has(.form-check) .form-label i,
+        .mb-4:has(.form-check) .form-label span {
+            color: #212529 !important;
+        }
+
+        /* Override any Bootstrap or custom focus states */
+        *:focus ~ .form-label,
+        *:focus + .form-label,
+        *:focus ~ label,
+        *:focus + label,
+        *:hover ~ .form-label,
+        *:hover + .form-label,
+        *:hover ~ label,
+        *:hover + label {
+            color: #212529 !important;
+        }
+
+        /* Normal checkbox styles (default state) */
+        .form-check-input {
+            border-color: #dee2e6 !important;
+            background-color: #fff !important;
+        }
+
+        .form-check-input:checked {
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+        }
+
+        .form-check-input:hover {
+            border-color: #4CAA72 !important;
+        }
+
+        /* Checkbox validation styles - only apply when explicitly set */
+        .form-check-input.is-invalid:not(:checked) {
+            border-color: #dee2e6 !important;
+            background-color: #fff !important;
+        }
+
+        .form-check-input.is-valid:not(:checked) {
+            border-color: #dee2e6 !important;
+            background-color: #fff !important;
+        }
+
+        .form-check-input.is-invalid:checked {
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+        }
+
+        .form-check-input.is-valid:checked {
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+        }
+
+        /* Cursor pointer for clickable elements */
+        .form-check,
+        .form-check-input,
+        .form-check-label {
+            cursor: pointer !important;
+        }
+
+        /* Test Case Types section hover cursor */
+        .mb-4:has(.form-check) .form-label,
+        .mb-4:has(.form-check) .form-label * {
+            cursor: pointer !important;
+        }
+
+        /* Compact Test Case Types section */
+        .mb-4:has(.form-check) {
+            margin-bottom: 1rem !important;
+        }
+
+        .mb-4:has(.form-check) .field {
+            margin-bottom: 0.5rem !important;
+            gap: 0.5rem !important;
+        }
+
+        .mb-4:has(.form-check) .form-check {
+            margin-bottom: 0.25rem !important;
+        }
+
+        /* Compact validation message */
+        .form-validation-error {
+            margin-top: 0.125rem !important;
+            font-size: 0.8rem !important;
+            padding: 0.25rem 0 !important;
+        }
+
+        /* Alert message styling - like the shared image */
+        .general-message:not([style*="display: none"]) {
+            background-color: #f8d7da !important;
+            border: 1px solid #f5c6cb !important;
+            border-radius: 0.375rem !important;
+            padding: 0.75rem 1rem !important;
+            margin-bottom: 1rem !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            color: #721c24 !important;
+            font-size: 0.875rem !important;
+            position: relative !important;
+        }
+
+        /* Hide the general message by default */
+        .general-message {
+            display: none !important;
+        }
+
+        .general-message::before {
+            content: "✕" !important;
+            background-color: #dc3545 !important;
+            color: white !important;
+            border-radius: 50% !important;
+            width: 20px !important;
+            height: 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            flex-shrink: 0 !important;
+        }
+
+        .general-message::after {
+            content: "×" !important;
+            position: absolute !important;
+            right: 0.75rem !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            color: #6c757d !important;
+            font-size: 18px !important;
+            font-weight: bold !important;
+            cursor: pointer !important;
+            background: none !important;
+            border: none !important;
+            padding: 0 !important;
+            width: 20px !important;
+            height: 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+        }
+
+        .general-message::after:hover {
+            color: #495057 !important;
+        }
+
+        /* Reduce spacing in Test Case Types section */
+        .mb-4:has(.form-check) .form-label {
+            margin-bottom: 0.5rem !important;
+        }
+
+        /* Compact Item ID section */
+        #itemIdField {
+            margin-bottom: 1rem !important;
+        }
+
+        #itemIdField .form-label {
+            margin-bottom: 0.5rem !important;
+        }
+
+        .multi-select-container {
+            position: relative;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            height: 38px;
+            min-height: 38px;
+            max-height: 38px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .multi-select-container:hover {
+            border-color: #adb5bd;
+        }
+
+        .multi-select-container:focus-within {
+            border-color: #4CAA72;
+            box-shadow: 0 0 0 0.25rem rgba(76, 170, 114, 0.25);
+        }
+
+        .multi-select-input-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0 0.75rem;
+            height: 38px;
+            min-height: 38px;
+            max-height: 38px;
+            gap: 0.25rem;
+            position: relative;
+        }
+
+        .multi-select-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            min-width: 60px;
+            font-size: 14px;
+            color: #495057;
+            padding: 0.375rem 0;
+            height: 38px;
+            line-height: 1.5;
+            margin: 0;
+            background-image: none !important;
+            background-repeat: no-repeat !important;
+        }
+
+        .multi-select-input::placeholder {
+            color: #6c757d;
+        }
+
+        .multiple-selection-container {
+            min-height: auto !important;
+            max-height: 120px !important;
+        }
+
+        .multiple-selection-input {
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0.375rem 0.75rem !important;
+        }
+
+        /* Ensure all form controls have consistent height */
+        .form-control,
+        .form-select,
+        .multiple-selection-input {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+            padding: 0.375rem 0.75rem !important;
+            line-height: 1.5 !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Override any Bootstrap height variations */
+        .form-control:not(textarea),
+        .form-select {
+            height: 38px !important;
+        }
+
+        /* Ensure consistent height for all input types */
+        input[type="text"],
+        input[type="password"],
+        input[type="email"],
+        input[type="url"],
+        select {
+            height: 38px !important;
+            min-height: 38px !important;
+            max-height: 38px !important;
+        }
+
+        .selected-items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            align-items: center;
+            min-height: auto;
+            max-height: 26px;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .selected-item {
+            margin: 0.125rem !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.875rem !important;
+        }
+
+        /* Item count display styles */
+        .item-count-display {
+            font-weight: 500;
+            padding: 1px 6px;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            font-size: 9px;
+            display: inline-block;
+            color: #6c757d;
+        }
+
+        .item-count-display.text-success {
+            color: #4CAA72;
+            background-color: #e8f5e8;
+            border-color: #d4edda;
+        }
+
+        .item-count-display.text-warning {
+            color: #856404;
+            background-color: #fff8e1;
+            border-color: #ffeaa7;
+        }
+
+        .item-count-display.text-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .item-count-display.text-muted {
+            color: #6c757d;
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+        }
+
+        /* Alert container styles removed - using inline messages instead */
+
+        /* Disabled input fields styling */
+        .form-control:disabled {
+            background-color: #f8f9fa !important;
+            opacity: 0.7 !important;
+            cursor: not-allowed !important;
+            border-color: #e9ecef !important;
         }
 
         .loader::before {
@@ -388,51 +913,318 @@
 
         }
 
-        /* Add a continuously rotating spinner ring */
-        .spinner-ring {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+        /* Clean, professional spinner for buttons */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
             border-radius: 50%;
-            background: conic-gradient(
-                #FF3D00 0deg, 
-                rgba(255, 61, 0, 0.8) 90deg, 
-                rgba(255, 61, 0, 0.6) 180deg,
-                rgba(255, 61, 0, 0.4) 270deg,
-                rgba(255, 61, 0, 0.1) 360deg
-            );
-            animation: spinnerRotate 1.5s linear infinite;
-            z-index: 10;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
         }
 
-        @keyframes spinnerRotate {
+        @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        /* Make the progress circle semi-transparent to see the spinner behind it */
-        .circular-loader {
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg);
+        /* Verification status styles */
+        .verify-status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .verify-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .verify-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+
+
+        /* Improved verify button styles with theme color */
+        .btn-verify {
             position: relative;
-            z-index: 5;
+            min-width: 140px;
+            transition: all 0.3s ease;
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        
+        /* Force override any Bootstrap styles */
+        button.btn-verify,
+        input.btn-verify {
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+
+        .btn-verify:hover {
+            background-color: #3d8a5e !important;
+            border-color: #3d8a5e !important;
+            color: white !important;
+        }
+
+        .btn-verify:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            background-color: #4CAA72 !important;
+            border-color: #4CAA72 !important;
+        }
+
+
+
+        /* Success checkmark animation */
+        .verify-success {
+            animation: checkmark 0.5s ease-in-out;
+        }
+
+        @keyframes checkmark {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* Item ID suggestions styles */
+        .suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 0.375rem 0.375rem;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .multi-select-container .suggestions-container {
+            border-top: 1px solid #ced4da;
+            border-radius: 0 0 0.375rem 0.375rem;
+        }
+
+        .suggestion-header {
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 11px;
+            color: #6c757d;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .current-items {
+            padding: 8px 12px;
+            background-color: #e8f5e8;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .current-items-header {
+            font-size: 11px;
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        /* Multiple Selection Styles */
+        .multiple-selection-container {
+            position: relative;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            min-height: 38px;
+            padding: 0.375rem 0.75rem;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .multiple-selection-container:focus-within {
+            border-color: #4CAA72;
+            box-shadow: 0 0 0 0.2rem rgba(76, 170, 114, 0.25);
+        }
+
+        .selected-items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 2px;
+            min-height: 16px;
+            align-items: center;
+        }
+
+        .selected-item-chip {
+            display: inline-flex;
+            align-items: center;
+            background: #4CAA72;
+            border: none;
+            border-radius: 16px;
+            padding: 4px 8px;
+            font-size: 12px;
+            font-weight: 500;
+            color: white;
+            max-width: 150px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            animation: chipAppear 0.2s ease-out;
+            transition: all 0.15s ease;
+            margin: 0;
+        }
+
+        .selected-item-chip:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes chipAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .selected-item-chip .item-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 3px;
+        }
+
+        .selected-item-chip .remove-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 4px;
+            font-size: 12px;
+            line-height: 1;
+            width: 14px;
+            height: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.15s ease;
+            font-weight: bold;
+        }
+
+        .selected-item-chip .remove-btn:hover {
+            background-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .multiple-selection-input {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            min-height: 20px;
+            flex: 1;
+            background: transparent;
+            font-size: 14px;
+            color: #495057;
+            outline: none !important;
+        }
+
+        .multiple-selection-input:focus {
+            border: none !important;
+            box-shadow: none !important;
+            outline: none !important;
+        }
+
+        .multiple-selection-input::placeholder {
+            color: #adb5bd;
+            font-style: normal;
+        }
+
+        .multiple-selection-container .form-text {
+            margin-top: 2px;
+            margin-bottom: 0;
+            font-size: 10px;
+            text-align: right;
+            color: #6c757d;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.15s ease;
+        }
+
+        .suggestion-item:hover,
+        .suggestion-item.highlighted {
+            background-color: #f8f9fa;
+            border-left: 3px solid #4CAA72;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item .item-id {
+            font-weight: 600;
+            color: #4CAA72;
+            font-size: 13px;
+        }
+
+        .suggestion-item .item-title {
+            color: #495057;
+            font-size: 11px;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+        }
+
+        .suggestion-item .item-type {
+            color: #6c757d;
+            font-size: 10px;
+            margin-top: 1px;
+            font-style: italic;
+        }
+
+        /* Position the item ID field relative for suggestions */
+        #itemIdField {
+            position: relative;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- Replace the existing loader div with this new structure -->
+    <!-- Alert container removed - using inline messages instead -->
+
     <div class="loader-container">
-        <div class="percentage-loader">
-            <svg class="circular-loader circular-animate" viewBox="0 0 100 100">
-                <circle class="loader-bg" cx="50" cy="50" r="45" />
-                <circle class="loader-fg" cx="50" cy="50" r="45" />
-            </svg>
-            <div class="loader-text" id="loader-text">0%</div>
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">0%</div>
         </div>
     </div>
 
@@ -451,9 +1243,12 @@
             </div>
         </div>
 
-
         <div class="card">
             <div class="card-body">
+                <!-- General message area inside white card -->
+                <div id="generalMessage" class="general-message form-validation-error mb-4" style="display: none;">
+                    <span id="generalMessageText"></span>
+                </div>
                 <form id="generatorForm">
                     <div class="row mb-5">
                         <div class=" col-md-6">
@@ -477,59 +1272,89 @@
                                     <i class="bi bi-link"></i>
                                     Jira URL
                                 </label>
-                                <input type="text" class="form-control" name="jiraUrl"
+                                <input type="text" class="form-control" name="jiraUrl" id="jiraUrl"
                                     placeholder="https://your-domain.atlassian.net" required>
+                                <div class="form-validation-error" id="jiraUrl-error">Please enter a valid Jira URL</div>
                             </div>
                             <div class="mb-4 col-md-6">
                                 <label class="form-label">
                                     <i class="bi bi-person"></i>
                                     Jira User
                                 </label>
-                                <input type="text" class="form-control" name="jiraUser" placeholder="email@example.com"
+                                <input type="text" class="form-control" name="jiraUser" id="jiraUser" placeholder="email@example.com"
                                     required>
+                                <div class="form-validation-error" id="jiraUser-error">Please enter a valid email address</div>
                             </div>
 
-                            <div class="col-md-12">
+                            <div class="col-md-6 mb-4">
                                 <label class="form-label">
                                     <i class="bi bi-key"></i>
                                     Jira API Token
                                 </label>
-                                <input type="password" class="form-control" name="jiraToken" required>
-                                <div class="form-text">Generate an API token in your Atlassian account settings</div>
+                                <input type="password" class="form-control" name="jiraToken" id="jiraToken"  placeholder="Generate an API token in your Atlassian account settings" required>
+                                <div class="form-text"></div>
+                                <div class="form-validation-error" id="jiraToken-error">Please enter your Jira API token</div>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <div class="d-flex gap-2" style="margin-top: 32px;">
+                                    <button type="button" class="btn btn-primary" id="verifyJiraBtn" onclick="verifyJiraConnection()" style="border: 2px solid green;">
+                                        <i class="bi bi-check-circle"></i> Verify Connection
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearJiraCredentials()" title="Clear saved credentials" style="border: 1px solid #6c757d; color: #6c757d;">
+                                        <i class="bi bi-trash"></i> Clear
+                                    </button>
+                                </div>
+                                <div id="jiraVerifyStatus" class="mt-2" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
 
                     <div id="azureFields" style="display: none;">
                         <h5 class="mb-4 border-bottom pb-3">Connection Details</h5>
-                        <div class="row ">
-                            <div class="mb-4 col-md-6">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-link"></i>
                                     Azure DevOps URL
                                 </label>
-                                <input type="text" class="form-control" name="azureUrl" required>
+                                <input type="text" class="form-control" name="azureUrl" id="azureUrl" placeholder="https://dev.azure.com/your-organization" required>
+                                <div class="form-validation-error" id="azureUrl-error">Please enter a valid Azure DevOps URL</div>
                             </div>
-                            <div class="mb-4 col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-building"></i>
                                     Azure Organization
                                 </label>
-                                <input type="text" class="form-control" name="azureOrg" required>
+                                <input type="text" class="form-control" name="azureOrg" id="azureOrg" placeholder="your-organization" required>
+                                <div class="form-validation-error" id="azureOrg-error">Please enter your Azure organization</div>
                             </div>
-                            <div class="mb-4 col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-folder"></i>
                                     Azure Project
                                 </label>
-                                <input type="text" class="form-control" name="azureProject" required>
+                                <input type="text" class="form-control" name="azureProject" id="azureProject" placeholder="your-project" required>
+                                <div class="form-validation-error" id="azureProject-error">Please enter your Azure project</div>
                             </div>
-                            <div class="mb-4 col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label class="form-label">
                                     <i class="bi bi-key"></i>
                                     Azure PAT
                                 </label>
-                                <input type="password" class="form-control" name="azurePat" required>
+                                <input type="password" class="form-control" name="azurePat" id="azurePat" placeholder="Generate an PAT token in your Azure account settings" required>
+                                <div class="form-text"></div>
+                                <div class="form-validation-error" id="azurePat-error">Please enter your Azure Personal Access Token</div>
+                            </div>
+                            <div class="col-md-12 mt-3 mb-3">
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-primary" id="verifyAzureBtn" onclick="verifyAzureConnection()" style="border: 2px solid green;">
+                                        <i class="bi bi-check-circle"></i> Verify Connection
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="clearAzureCredentials()" title="Clear saved credentials" style="border: 1px solid #6c757d; color: #6c757d;">
+                                        <i class="bi bi-trash"></i> Clear
+                                    </button>
+                                </div>
+                                <div id="azureVerifyStatus" class="mt-2" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -540,21 +1365,27 @@
                                 <i class="bi bi-image"></i>
                                 Upload Image
                             </label>
-                            <input type="file" class="form-control" name="imageFile" accept="image/*">
+                            <input type="file" class="form-control" name="imageFile" id="imageFile" accept="image/*">
                             <div class="form-text">Upload an image containing the test case requirements</div>
+                            <div class="form-validation-error" id="imageFile-error">Please select an image file</div>
                         </div>
                     </div>
 
                     <div class="mb-4 col-md-12" id="itemIdField">
                         <label class="form-label">
                             <i class="bi bi-card-list"></i>
-                            Item ID(s)
+                            Item ID(s) <span class="text-muted" id="itemCountLabel">(0/5)</span>
                         </label>
-                        <input type="text" class="form-control" name="itemId" id="itemIdInput"
-                            placeholder="Enter single or multiple IDs (e.g., KAN-1,KAN-2)">
-                        <div class="form-text">For multiple items, separate with commas (e.g., KAN-1,KAN-2)</div>
+                        <div class="multi-select-container">
+                            <div class="multi-select-input-wrapper">
+                                <div class="selected-items-container" id="selectedItemsContainer"></div>
+                                <input type="text" class="multi-select-input" id="itemIdInput"
+                                    placeholder="Select Item ID(s)" maxlength="100">
+                            </div>
+                            <div id="itemIdSuggestions" class="suggestions-container" style="display: none;"></div>
+                        </div>
+                        <div class="form-validation-error" id="itemIdInput-error">Please enter at least one Item ID</div>
                     </div>
-
                     <!-- Test Case Types selection -->
                     <!-- <div class="mb-4">
                         <label class="form-label">
@@ -621,11 +1452,16 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="form-validation-error" id="testCaseTypes-error">Please select at least one test case type</div>
                     </div>
                     <div class="d-flex gap-2 pt-4">
                         <button type="button" class="btn btn-primary" id="generateButton" onclick="submitFormManually()"
-                            style="position: relative; z-index: 10;">Generate Tests with AI</button>
-                        <button type="button" class="btn btn-secondary" onclick="clearForm()">Reset Form</button>
+                            style="position: relative; z-index: 10;">
+                            <i class="bi bi-robot"></i> Generate Tests with AI
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                            <i class="bi bi-arrow-clockwise"></i> Reset Form
+                        </button>
                     </div>
                 </form>
             </div>
@@ -640,30 +1476,581 @@
     <!-- Keep existing scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Global variables for suggestions and selected items
+        let jiraItems = [];
+        let azureItems = [];
+        let selectedItems = [];
+        
+        // Function to add item to selected items array and display as chip
+        function addSelectedItem(itemId, itemTitle = null, itemType = null) {
+            if (selectedItems.length >= 5) {
+                showSectionMessage('itemIdField', 'Maximum 5 items allowed', 'warning');
+                return false;
+            }
+            
+            if (selectedItems.some(item => item.id === itemId)) {
+                showSectionMessage('itemIdField', 'Item already selected', 'warning');
+                return false;
+            }
+            
+            selectedItems.push({
+                id: itemId,
+                title: itemTitle || itemId,
+                type: itemType || 'Issue'
+            });
+            displaySelectedItems();
+            updateItemCount();
+            return true;
+        }
+        
+        // Function to remove item from selected items array
+        function removeSelectedItem(itemId) {
+            const index = selectedItems.findIndex(item => item.id === itemId);
+            if (index > -1) {
+                selectedItems.splice(index, 1);
+                displaySelectedItems();
+                updateItemCount();
+            }
+        }
+        
+        // Function to display selected items as chips
+        function displaySelectedItems() {
+            const container = document.getElementById('selectedItemsContainer');
+            container.innerHTML = '';
+            
+            selectedItems.forEach(item => {
+                const chip = document.createElement('div');
+                chip.className = 'selected-item-chip';
+                chip.innerHTML = `
+                    <span class="item-text">${item.id}</span>
+                    <button type="button" class="remove-btn" onclick="removeSelectedItem('${item.id}')" title="Remove ${item.id}">
+                        ×
+                    </button>
+                `;
+                container.appendChild(chip);
+            });
+        }
+        
+        // Function to get selected items as comma-separated string (for backend only)
+        function getSelectedItemsString() {
+            return selectedItems.map(item => item.id).join(',');
+        }
+        
+        // Inline message system
+        function showGeneralMessage(message, type = 'info') {
+            const generalMessage = document.getElementById('generalMessage');
+            const generalMessageText = document.getElementById('generalMessageText');
+            
+            if (generalMessage && generalMessageText) {
+                generalMessageText.textContent = message;
+                generalMessage.className = `general-message form-validation-error`;
+                generalMessage.style.display = 'block';
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    generalMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function showSectionMessage(sectionId, message, type = 'info') {
+            const section = document.getElementById(sectionId);
+            if (section) {
+                // Remove any existing message
+                const existingMessage = section.querySelector('.section-message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+                
+                // Create new message in the same format as validation errors
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `section-message form-validation-error`;
+                messageDiv.textContent = message;
+                
+                // Insert at the end of the section
+                section.appendChild(messageDiv);
+                
+                // Auto-hide after 5 seconds
+                setTimeout(() => {
+                    if (messageDiv.parentNode) {
+                        messageDiv.remove();
+                    }
+                }, 5000);
+            }
+        }
+        
+        // Legacy function for backward compatibility (now shows general message)
+        function showNotification(message, type = 'info') {
+            showGeneralMessage(message, type);
+        }
+
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + '-error');
+            
+            if (field && errorDiv) {
+                field.classList.add('is-invalid');
+                field.classList.remove('is-valid');
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+        }
+
+        function clearFieldError(fieldId) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + '-error');
+            
+            if (field && errorDiv) {
+                field.classList.remove('is-invalid');
+                errorDiv.classList.remove('show');
+            }
+        }
+
+        function validateField(fieldId, validationFn, errorMessage) {
+            const field = document.getElementById(fieldId);
+            if (!field) return true;
+            
+            const isValid = validationFn(field.value);
+            if (isValid) {
+                clearFieldError(fieldId);
+                field.classList.add('is-valid');
+                return true;
+            } else {
+                showFieldError(fieldId, errorMessage);
+                return false;
+            }
+        }
+
+        function clearAllErrors() {
+            const allInputs = document.querySelectorAll('input, select');
+            allInputs.forEach(input => {
+                input.classList.remove('is-invalid', 'is-valid');
+                const errorDiv = document.getElementById(input.id + '-error');
+                if (errorDiv) {
+                    errorDiv.classList.remove('show');
+                }
+            });
+            
+            // Clear checkbox validation
+            const checkboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+            checkboxes.forEach(cb => {
+                cb.classList.remove('is-invalid', 'is-valid');
+            });
+            
+            // Clear test case types error
+            const testCaseError = document.getElementById('testCaseTypes-error');
+            if (testCaseError) {
+                testCaseError.classList.remove('show');
+            }
+            
+            // Reset item count display
+            updateItemCount();
+        }
+
+        function trimAllInputFields() {
+            console.log('Starting to trim all input fields...');
+            
+            // Get all text input fields
+            const textInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="url"]');
+            
+            let trimmedCount = 0;
+            textInputs.forEach(input => {
+                if (input.value) {
+                    const originalValue = input.value;
+                    const trimmedValue = input.value.trim();
+                    
+                    // Only update if there was actually whitespace to trim
+                    if (originalValue !== trimmedValue) {
+                        input.value = trimmedValue;
+                        trimmedCount++;
+                        console.log(`Trimmed field ${input.id || input.name}: "${originalValue}" -> "${trimmedValue}"`);
+                    }
+                }
+            });
+            
+            console.log(`Trimmed ${trimmedCount} fields total`);
+            
+            // Force a small delay to ensure DOM updates are processed
+            return new Promise(resolve => setTimeout(resolve, 10));
+        }
+
         // Global error handler
         window.onerror = function (message, source, lineno, colno, error) {
             console.error('Global error caught:', { message, source, lineno, colno });
-            alert('An error occurred: ' + message);
+            showGeneralMessage('An error occurred: ' + message, 'error');
             return true; // Prevents the default error handling
         };
 
+        // Real-time validation functions
+        function validateEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        function validateUrl(url, type) {
+            if (!url || url.trim() === '') return false;
+            if (type === 'jira') {
+                return url.includes('.atlassian.net');
+            } else if (type === 'azure') {
+                return url.includes('dev.azure.com');
+            }
+            return true;
+        }
+
+        function validateRequired(value) {
+            return value && value.trim() !== '';
+        }
+
+        function validateFile(file) {
+            return file && file.name;
+        }
+
+        function validateItemIds(value) {
+            if (!value || value.trim() === '') {
+                return false;
+            }
+            
+            // Split by comma and count non-empty items
+            const items = value.split(',').map(item => item.trim()).filter(item => item.length > 0);
+            
+            // Check if within limit
+            if (items.length > ITEM_ID_LIMIT) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        function validateTestCaseTypes() {
+            const checkboxes = document.querySelectorAll('input[name="testCaseTypes[]"]:checked');
+            return checkboxes.length > 0;
+        }
+
+        // Item ID limit configuration
+        const ITEM_ID_LIMIT = 5;
+
+        function updateItemCount() {
+            const countLabel = document.getElementById('itemCountLabel');
+            
+            if (!countLabel) return;
+            
+            const count = selectedItems.length;
+            const maxItems = 5;
+            
+            // Update the label with current/max format
+            countLabel.textContent = `(${count}/${maxItems})`;
+            
+            if (count === 0) {
+                countLabel.className = 'text-muted';
+            } else if (count < maxItems) {
+                countLabel.className = 'text-success';
+            } else if (count === maxItems) {
+                countLabel.className = 'text-danger';
+            } else {
+                countLabel.className = 'text-danger';
+            }
+            
+            console.log(`Selected items: ${count}/${maxItems}`);
+        }
+
+        // Add real-time validation listeners
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Add event listeners to remove focus from buttons after click
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('btn')) {
+                    // Remove focus immediately and after a short delay
+                    e.target.blur();
+                    setTimeout(() => {
+                        if (e.target) {
+                            e.target.blur();
+                        }
+                        // Also blur any other focused elements
+                        if (document.activeElement && document.activeElement.classList && document.activeElement.classList.contains('btn')) {
+                            document.activeElement.blur();
+                        }
+                    }, 50);
+                }
+            });
+
+            // Remove focus when mouse leaves button area
+            document.addEventListener('mouseleave', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('btn') && document.activeElement === e.target) {
+                    e.target.blur();
+                }
+            });
+
+            // Add mouseout event to all buttons to remove focus when cursor leaves
+            document.addEventListener('mouseout', function(e) {
+                if (e.target && e.target.classList && e.target.classList.contains('btn')) {
+                    setTimeout(() => {
+                        try {
+                            if (e.target && !e.target.matches(':hover')) {
+                                e.target.blur();
+                            }
+                        } catch (error) {
+                            // Fallback: just blur the target
+                            if (e.target) {
+                                e.target.blur();
+                            }
+                        }
+                    }, 10);
+                }
+            });
+            
+            // Clear any existing chips and force clean state
+            selectedItems = [];
+            displaySelectedItems();
+            updateItemCount();
+            
+            // Initialize multiple selection system
+            let itemIdInput = document.getElementById('itemIdInput');
+            if (itemIdInput) {
+                // Clear any commas from input field
+                if (itemIdInput.value.includes(',')) {
+                    itemIdInput.value = itemIdInput.value.replace(/,/g, '').trim();
+                }
+                
+                // Add input event listener for suggestions
+                itemIdInput.addEventListener('input', function() {
+                    // Remove any commas that might be typed
+                    if (this.value.includes(',')) {
+                        this.value = this.value.replace(/,/g, '').trim();
+                    }
+                    showItemSuggestions(this.value);
+                });
+                
+                // KEYBOARD NAVIGATION v3.0 - Enhanced Event Listener
+                console.log('Adding keyboard navigation to itemIdInput...'); // Debug log
+                itemIdInput.addEventListener('keydown', function(e) {
+                    console.log('🔥 KEYBOARD EVENT:', e.key); // Enhanced debug log
+                    
+                    // Check if suggestions are visible
+                    const suggestionsContainer = document.getElementById('itemIdSuggestions');
+                    const isVisible = suggestionsContainer && suggestionsContainer.style.display !== 'none';
+                    console.log('🔥 Suggestions visible:', isVisible);
+                    
+                    if (!isVisible) {
+                        console.log('🔥 No suggestions visible, ignoring keyboard nav');
+                        return;
+                    }
+                    
+                    const suggestions = document.querySelectorAll('.suggestion-item');
+                    console.log('🔥 Found suggestions:', suggestions.length);
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🔥 ARROW DOWN - Navigating down');
+                        navigateSuggestions('down');
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🔥 ARROW UP - Navigating up');
+                        navigateSuggestions('up');
+                    } else if (e.key === 'Enter') {
+                        if (suggestions.length > 0) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            console.log('🔥 ENTER - Selecting item');
+                            // Select the highlighted suggestion or the first one
+                            const highlighted = document.querySelector('.suggestion-item.highlighted');
+                            if (highlighted) {
+                                const itemId = highlighted.querySelector('.item-id').textContent;
+                                console.log('🔥 Selecting highlighted item:', itemId);
+                                selectSuggestion(itemId);
+                            } else if (suggestions.length > 0) {
+                                const itemId = suggestions[0].querySelector('.item-id').textContent;
+                                console.log('🔥 Selecting first item:', itemId);
+                                selectSuggestion(itemId);
+                            }
+                        }
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🔥 ESCAPE - Hiding suggestions');
+                        suggestionsContainer.style.display = 'none';
+                    }
+                }, true); // Use capture phase
+                
+                // Add blur event listener to hide suggestions
+                itemIdInput.addEventListener('blur', function() {
+                    // Delay hiding suggestions to allow for clicks
+                    setTimeout(() => {
+                        const suggestionsContainer = document.getElementById('itemIdSuggestions');
+                        if (suggestionsContainer) {
+                            suggestionsContainer.style.display = 'none';
+                        }
+                    }, 200);
+                });
+            }
+            
+            // Initialize item count display
+            updateItemCount();
+            
+            // Restore saved credentials and verification status FIRST
+            restoreSavedCredentials();
+            
+            // Then force button colors on page load (but only for non-verified buttons)
+            setTimeout(() => {
+                const verifyButtons = document.querySelectorAll('#verifyJiraBtn, #verifyAzureBtn');
+                verifyButtons.forEach(button => {
+                    // Only style buttons that don't say "Verified"
+                    if (!button.innerHTML.includes('Verified')) {
+                        button.className = 'btn btn-primary';
+                        console.log('Applied primary styling to button:', button.id);
+                    } else {
+                        console.log('Skipping styling for verified button:', button.id);
+                    }
+                });
+            }, 100);
+            // Jira URL validation
+            const jiraUrl = document.getElementById('jiraUrl');
+            if (jiraUrl) {
+                jiraUrl.addEventListener('blur', function() {
+                    if (this.value.trim() !== '') {
+                        validateField('jiraUrl', (value) => validateUrl(value, 'jira'), 'Please enter a valid Jira URL');
+                    }
+                });
+            }
+
+            // Jira User validation
+            const jiraUser = document.getElementById('jiraUser');
+            if (jiraUser) {
+                jiraUser.addEventListener('blur', function() {
+                    if (this.value.trim() !== '') {
+                        validateField('jiraUser', validateEmail, 'Please enter a valid email address');
+                    }
+                });
+            }
+
+            // Jira Token validation
+            const jiraToken = document.getElementById('jiraToken');
+            if (jiraToken) {
+                jiraToken.addEventListener('blur', function() {
+                    validateField('jiraToken', validateRequired, 'Please enter your Jira API token');
+                });
+            }
+
+            // Azure URL validation
+            const azureUrl = document.getElementById('azureUrl');
+            if (azureUrl) {
+                azureUrl.addEventListener('blur', function() {
+                    if (this.value.trim() !== '') {
+                        validateField('azureUrl', (value) => validateUrl(value, 'azure'), 'Please enter a valid Azure DevOps URL');
+                    }
+                });
+            }
+
+            // Azure fields validation
+            const azureFields = ['azureOrg', 'azureProject', 'azurePat'];
+            azureFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('blur', function() {
+                        validateField(fieldId, validateRequired, `Please enter your Azure ${fieldId.replace('azure', '')}`);
+                    });
+                }
+            });
+
+            // Image file validation
+            const imageFile = document.getElementById('imageFile');
+            if (imageFile) {
+                imageFile.addEventListener('change', function() {
+                    validateField('imageFile', validateFile, 'Please select an image file');
+                });
+            }
+
+            // Item ID validation and count tracking (handled in multiple selection system above)
+
+            // Test case types validation
+            const testCaseCheckboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+            testCaseCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const isValid = validateTestCaseTypes();
+                    const errorDiv = document.getElementById('testCaseTypes-error');
+                    const checkboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+                    
+                    if (isValid) {
+                        // Clear error
+                        if (errorDiv) {
+                            errorDiv.classList.remove('show');
+                        }
+                        // Remove invalid styling from all checkboxes
+                        checkboxes.forEach(cb => {
+                            cb.classList.remove('is-invalid');
+                            cb.classList.remove('is-valid');
+                        });
+                    } else {
+                        // Show error
+                        if (errorDiv) {
+                            errorDiv.classList.add('show');
+                        }
+                        // Add invalid styling to all checkboxes
+                        checkboxes.forEach(cb => {
+                            cb.classList.remove('is-valid');
+                            cb.classList.add('is-invalid');
+                        });
+                    }
+                });
+            });
+
+            // Clear validation on input
+            const allInputs = document.querySelectorAll('input, select');
+            allInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    if (this.classList.contains('is-invalid')) {
+                        this.classList.remove('is-invalid');
+                        const errorDiv = document.getElementById(this.id + '-error');
+                        if (errorDiv) {
+                            errorDiv.classList.remove('show');
+                        }
+                    }
+                });
+            });
+
+            // Add real-time trimming on blur for text inputs
+            const textInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="url"]');
+            textInputs.forEach(input => {
+                input.addEventListener('blur', function() {
+                    if (this.value) {
+                        const originalValue = this.value;
+                        const trimmedValue = this.value.trim();
+                        
+                        if (originalValue !== trimmedValue) {
+                            this.value = trimmedValue;
+                            console.log(`Auto-trimmed field ${this.id || this.name}: "${originalValue}" -> "${trimmedValue}"`);
+                        }
+                    }
+                });
+            });
+        });
+
         // Simple test function to verify click events are working
         function testButtonClick() {
-            alert('Test button clicked successfully!');
+            showNotification('Test button clicked successfully!', 'success');
             console.log('Test button clicked');
             document.body.style.backgroundColor = '#ffeeee'; // Visual feedback
         }
 
         // Direct manual form submission
-        function submitFormManually() {
+        async function submitFormManually() {
             console.log('Manual form submission triggered');
             document.body.style.backgroundColor = '#eeffee'; // Visual feedback
 
+            // Clear all previous errors first
+            clearAllErrors();
+
+            // Trim all input fields BEFORE collecting data
+            await trimAllInputFields();
+
             try {
-                // Get form data directly
+                // Get form data directly AFTER trimming
                 const form = document.getElementById('generatorForm');
                 const sourceType = document.getElementById('sourceType').value;
                 console.log('Source type:', sourceType);
+
+                let hasErrors = false;
 
                 // Get test case types
                 const selectedCheckboxes = document.querySelectorAll('input[name="testCaseTypes[]"]:checked');
@@ -671,17 +2058,27 @@
                 console.log('Selected test types:', selectedTypes);
 
                 if (selectedTypes.length === 0) {
-                    alert('Please select at least one test case type');
-                    return;
+                    const errorDiv = document.getElementById('testCaseTypes-error');
+                    const checkboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+                    
+                    if (errorDiv) {
+                        errorDiv.classList.add('show');
+                    }
+                    checkboxes.forEach(cb => {
+                        cb.classList.remove('is-valid');
+                        cb.classList.add('is-invalid');
+                    });
+                    hasErrors = true;
                 }
 
-                // Get item ID if needed
-                let itemId = '';
+                // Get item IDs from selected items array
                 if (sourceType !== 'image') {
-                    itemId = document.querySelector('input[name="itemId"]').value;
-                    if (!itemId || itemId.trim() === '') {
-                        alert('Please enter at least one Item ID');
-                        return;
+                    if (selectedItems.length === 0) {
+                        showFieldError('itemIdInput', 'Please enter at least one Item ID');
+                        hasErrors = true;
+                    } else if (selectedItems.length > 5) {
+                        showFieldError('itemIdInput', `Maximum 5 Item IDs allowed. You selected ${selectedItems.length}.`);
+                        hasErrors = true;
                     }
                 }
 
@@ -692,34 +2089,33 @@
                 };
 
                 if (sourceType !== 'image') {
-                    data.itemId = itemId.split(',').map(id => id.trim());
+                    data.itemId = selectedItems.map(item => item.id);
                 }
 
                 // Add debugging for item IDs
                 if (sourceType !== 'image') {
-                    console.log('Original itemId input:', itemId);
-                    console.log('Processed itemId array:', data.itemId);
-                    console.log('Number of item IDs:', data.itemId.length);
+                    console.log('Selected items array:', selectedItems);
+                    console.log('Number of item IDs:', selectedItems.length);
                 }
 
                 // Add source-specific config
                 if (sourceType === 'jira') {
-                    let jiraUrl = document.querySelector('input[name="jiraUrl"]').value;
-                    const jiraUser = document.querySelector('input[name="jiraUser"]').value;
-                    const jiraToken = document.querySelector('input[name="jiraToken"]').value;
+                    let jiraUrl = document.querySelector('input[name="jiraUrl"]').value.trim();
+                    const jiraUser = document.querySelector('input[name="jiraUser"]').value.trim();
+                    const jiraToken = document.querySelector('input[name="jiraToken"]').value.trim();
 
                     // Validate Jira fields
                     if (!jiraUrl || jiraUrl.trim() === '') {
-                        alert('Please enter a Jira URL');
-                        return;
+                        showFieldError('jiraUrl', 'Please enter a Jira URL');
+                        hasErrors = true;
                     }
                     if (!jiraUser || jiraUser.trim() === '') {
-                        alert('Please enter a Jira user email');
-                        return;
+                        showFieldError('jiraUser', 'Please enter a Jira user email');
+                        hasErrors = true;
                     }
                     if (!jiraToken || jiraToken.trim() === '') {
-                        alert('Please enter a Jira API token');
-                        return;
+                        showFieldError('jiraToken', 'Please enter a Jira API token');
+                        hasErrors = true;
                     }
 
                     // Add https:// if missing
@@ -732,8 +2128,8 @@
 
                     // Validate Jira URL format
                     if (!jiraUrl.includes('.atlassian.net')) {
-                        alert('Please enter a valid Jira URL (e.g., https://your-domain.atlassian.net)');
-                        return;
+                        showFieldError('jiraUrl', 'Please enter a valid Jira URL (e.g., https://your-domain.atlassian.net)');
+                        hasErrors = true;
                     }
 
                     data.jira_config = {
@@ -743,27 +2139,52 @@
                     };
 
                 } else if (sourceType === 'azure') {
-                    let azureUrl = document.querySelector('input[name="azureUrl"]').value;
-                    const azureOrg = document.querySelector('input[name="azureOrg"]').value;
-                    const azureProject = document.querySelector('input[name="azureProject"]').value;
-                    const azurePat = document.querySelector('input[name="azurePat"]').value;
+                    const azureUrlElement = document.querySelector('input[name="azureUrl"]');
+                    const azureOrgElement = document.querySelector('input[name="azureOrg"]');
+                    const azureProjectElement = document.querySelector('input[name="azureProject"]');
+                    const azurePatElement = document.querySelector('input[name="azurePat"]');
+                    
+                    console.log('🔍 Azure form elements found:', {
+                        urlElement: !!azureUrlElement,
+                        orgElement: !!azureOrgElement,
+                        projectElement: !!azureProjectElement,
+                        patElement: !!azurePatElement
+                    });
+                    
+                    if (!azureUrlElement || !azureOrgElement || !azureProjectElement || !azurePatElement) {
+                        console.error('❌ Some Azure form elements not found!');
+                        showGeneralMessage('Azure form fields not found. Please refresh the page.', 'error');
+                        return;
+                    }
+                    
+                    let azureUrl = azureUrlElement.value.trim();
+                    const azureOrg = azureOrgElement.value.trim();
+                    const azureProject = azureProjectElement.value.trim();
+                    const azurePat = azurePatElement.value.trim();
+                    
+                    console.log('🔍 Azure form field values:', {
+                        url: azureUrl,
+                        org: azureOrg,
+                        project: azureProject,
+                        pat: azurePat ? '***' : 'empty'
+                    });
 
                     // Validate Azure fields
                     if (!azureUrl || azureUrl.trim() === '') {
-                        alert('Please enter an Azure DevOps URL');
-                        return;
+                        showFieldError('azureUrl', 'Please enter an Azure DevOps URL');
+                        hasErrors = true;
                     }
                     if (!azureOrg || azureOrg.trim() === '') {
-                        alert('Please enter an Azure DevOps organization');
-                        return;
+                        showFieldError('azureOrg', 'Please enter an Azure DevOps organization');
+                        hasErrors = true;
                     }
                     if (!azureProject || azureProject.trim() === '') {
-                        alert('Please enter an Azure DevOps project');
-                        return;
+                        showFieldError('azureProject', 'Please enter an Azure DevOps project');
+                        hasErrors = true;
                     }
                     if (!azurePat || azurePat.trim() === '') {
-                        alert('Please enter an Azure DevOps Personal Access Token');
-                        return;
+                        showFieldError('azurePat', 'Please enter an Azure DevOps Personal Access Token');
+                        hasErrors = true;
                     }
 
                     // Add https:// if missing
@@ -776,8 +2197,8 @@
 
                     // Validate Azure URL format
                     if (!azureUrl.includes('dev.azure.com')) {
-                        alert('Please enter a valid Azure DevOps URL (e.g., https://dev.azure.com)');
-                        return;
+                        showFieldError('azureUrl', 'Please enter a valid Azure DevOps URL (e.g., https://dev.azure.com)');
+                        hasErrors = true;
                     }
 
                     data.azure_config = {
@@ -786,6 +2207,19 @@
                         project: azureProject,
                         pat: azurePat
                     };
+                    
+                    console.log('🔧 Azure config being sent:', {
+                        url: azureUrl,
+                        org: azureOrg,
+                        project: azureProject,
+                        pat: azurePat ? '***' : 'empty'
+                    });
+                }
+
+                // Check if there are any validation errors
+                if (hasErrors) {
+                    showGeneralMessage('Please fix the validation errors before submitting', 'error');
+                    return;
                 }
 
                 // Show loader
@@ -802,14 +2236,17 @@
                     // Check if image is selected
                     const imageFile = formData.get('imageFile');
                     if (!imageFile || !imageFile.name) {
-                        alert('Please select an image file');
-                        loader.style.display = 'none';
-                        return;
+                        showFieldError('imageFile', 'Please select an image file');
+                        hasErrors = true;
                     }
 
                     // Clear existing test case types and add selected ones
                     formData.delete('testCaseTypes[]');
                     selectedTypes.forEach(type => formData.append('testCaseTypes[]', type));
+                    
+                    // Add selected items for image uploads
+                    formData.delete('itemId');
+                    selectedItems.forEach(item => formData.append('itemId', item.id));
 
                     fetch('/api/generate', {
                         method: 'POST',
@@ -818,7 +2255,7 @@
                         .then(response => response.json())
                         .then(result => {
                             if (result.error) {
-                                alert('Error: ' + result.error);
+                                showNotification('Error: ' + result.error, 'error');
                                 loader.style.display = 'none';
                                 return;
                             }
@@ -831,7 +2268,7 @@
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('Error: ' + error.message);
+                            showNotification('Error: ' + error.message, 'error');
                             loader.style.display = 'none';
                         });
 
@@ -848,7 +2285,7 @@
                         .then(response => response.json())
                         .then(result => {
                             if (result.error) {
-                                alert('Error: ' + result.error);
+                                showNotification('Error: ' + result.error, 'error');
                                 loader.style.display = 'none';
                                 return;
                             }
@@ -861,15 +2298,636 @@
                         })
                         .catch(error => {
                             console.error('Error:', error);
-                            alert('Error: ' + error.message);
+                            showNotification('Error: ' + error.message, 'error');
                             loader.style.display = 'none';
                         });
                 }
 
             } catch (error) {
                 console.error('Error in manual form submission:', error);
-                alert('Error: ' + error.message);
+                showNotification('Error: ' + error.message, 'error');
             }
+        }
+
+        // Verification and suggestion functions
+        async function verifyJiraConnection() {
+            const jiraUrl = document.getElementById('jiraUrl').value.trim();
+            const jiraUser = document.getElementById('jiraUser').value.trim();
+            const jiraToken = document.getElementById('jiraToken').value.trim();
+            const verifyBtn = document.getElementById('verifyJiraBtn');
+            const statusDiv = document.getElementById('jiraVerifyStatus');
+
+            // Validate inputs
+            if (!jiraUrl || !jiraUser || !jiraToken) {
+                showSectionMessage('jiraFields', 'Please fill in all Jira fields before verifying', 'error');
+                return;
+            }
+
+            // Show loading state
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+            verifyBtn.style.backgroundColor = '#4CAA72';
+            verifyBtn.style.border = '2px solid green';
+            verifyBtn.style.color = 'white';
+            statusDiv.style.display = 'none';
+            statusDiv.innerHTML = '';
+
+            let verificationSuccessful = false;
+
+            try {
+                const response = await fetch('/api/verify-jira', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jiraUrl: jiraUrl,
+                        jiraUser: jiraUser,
+                        jiraToken: jiraToken
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    verificationSuccessful = true;
+                    
+                    // Hide the status message
+                    statusDiv.style.display = 'none';
+                    
+                    // IMMEDIATELY change button text to "Verified" and disable it
+                    console.log('🔥 CHANGING BUTTON TO VERIFIED STATE');
+                    verifyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+                    verifyBtn.disabled = true;
+                    verifyBtn.className = 'btn btn-success';
+                    
+                    // Force immediate visual update - already handled by className above
+                    
+                    console.log('🔥 Button text changed to:', verifyBtn.innerHTML);
+                    console.log('🔥 Button disabled:', verifyBtn.disabled);
+                    
+                    // Store credentials locally
+                    const credentialsToSave = {
+                        url: jiraUrl,
+                        user: jiraUser,
+                        token: jiraToken
+                    };
+                    localStorage.setItem('jiraCredentials', JSON.stringify(credentialsToSave));
+                    console.log('Saved Jira credentials to localStorage:', credentialsToSave);
+                    
+                    // Disable input fields after successful verification
+                    disableJiraFields();
+                    
+                    // Fetch and store recent items for suggestions
+                    await fetchJiraItems(jiraUrl, jiraUser, jiraToken);
+                } else {
+                    statusDiv.innerHTML = '<div class="verify-status error"><i class="bi bi-x-circle-fill"></i> Connection failed: ' + (result.error || 'Unknown error') + '</div>';
+                    statusDiv.style.display = 'block';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="verify-status error">❌ Connection failed: ' + error.message + '</div>';
+                statusDiv.style.display = 'block';
+            } finally {
+                // Only reset button state if verification failed
+                if (!verificationSuccessful) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerHTML = '<i class="bi bi-check-circle"></i> Verify Connection';
+                    verifyBtn.style.backgroundColor = '#4CAA72';
+                    verifyBtn.style.border = '2px solid green';
+                    verifyBtn.style.color = 'white';
+                }
+            }
+        }
+
+        async function verifyAzureConnection() {
+            const azureUrl = document.getElementById('azureUrl').value.trim();
+            const azureOrg = document.getElementById('azureOrg').value.trim();
+            const azureProject = document.getElementById('azureProject').value.trim();
+            const azurePat = document.getElementById('azurePat').value.trim();
+            const verifyBtn = document.getElementById('verifyAzureBtn');
+            const statusDiv = document.getElementById('azureVerifyStatus');
+
+            // Validate inputs
+            if (!azureUrl || !azureOrg || !azureProject || !azurePat) {
+                showSectionMessage('azureFields', 'Please fill in all Azure fields before verifying', 'error');
+                return;
+            }
+
+            // Show loading state
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner"></span> Verifying...';
+            verifyBtn.style.backgroundColor = '#4CAA72';
+            verifyBtn.style.border = '2px solid green';
+            verifyBtn.style.color = 'white';
+            statusDiv.style.display = 'none';
+            statusDiv.innerHTML = '';
+
+            let verificationSuccessful = false;
+
+            try {
+                const response = await fetch('/api/verify-azure', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        azureUrl: azureUrl,
+                        azureOrg: azureOrg,
+                        azureProject: azureProject,
+                        azurePat: azurePat
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    verificationSuccessful = true;
+                    
+                    // Hide the status message
+                    statusDiv.style.display = 'none';
+                    
+                    // IMMEDIATELY change button text to "Verified" and disable it
+                    console.log('🔥 CHANGING AZURE BUTTON TO VERIFIED STATE');
+                    verifyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+                    verifyBtn.disabled = true;
+                    verifyBtn.className = 'btn btn-success';
+                    
+                    // Force immediate visual update - already handled by className above
+                    
+                    console.log('🔥 Azure Button text changed to:', verifyBtn.innerHTML);
+                    console.log('🔥 Azure Button disabled:', verifyBtn.disabled);
+                    
+                    // Store credentials locally
+                    localStorage.setItem('azureCredentials', JSON.stringify({
+                        url: azureUrl,
+                        org: azureOrg,
+                        project: azureProject,
+                        pat: azurePat
+                    }));
+                    
+                    // Disable input fields after successful verification
+                    disableAzureFields();
+                    
+                    // Fetch and store recent items for suggestions
+                    await fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                } else {
+                    statusDiv.innerHTML = '<div class="verify-status error"><i class="bi bi-x-circle-fill"></i> Connection failed: ' + (result.error || 'Unknown error') + '</div>';
+                    statusDiv.style.display = 'block';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="verify-status error"><i class="bi bi-x-circle-fill"></i> Connection failed: ' + error.message + '</div>';
+                statusDiv.style.display = 'block';
+            } finally {
+                // Only reset button state if verification failed
+                if (!verificationSuccessful) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.innerHTML = '<i class="bi bi-check-circle"></i> Verify Connection';
+                    verifyBtn.style.backgroundColor = '#4CAA72';
+                    verifyBtn.style.border = '2px solid green';
+                    verifyBtn.style.color = 'white';
+                }
+            }
+        }
+
+        async function fetchJiraItems(jiraUrl, jiraUser, jiraToken) {
+            try {
+                const response = await fetch('/api/fetch-jira-items', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        jiraUrl: jiraUrl,
+                        jiraUser: jiraUser,
+                        jiraToken: jiraToken
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    localStorage.setItem('jiraItems', JSON.stringify(result.items));
+                }
+            } catch (error) {
+                console.error('Error fetching Jira items:', error);
+            }
+        }
+
+        async function fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat) {
+            try {
+                console.log('Fetching Azure items with:', { azureUrl, azureOrg, azureProject });
+                const response = await fetch('/api/fetch-azure-items', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        azureUrl: azureUrl,
+                        azureOrg: azureOrg,
+                        azureProject: azureProject,
+                        azurePat: azurePat
+                    })
+                });
+
+                console.log('Azure items fetch response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Azure items fetch failed:', response.status, errorText);
+                    return;
+                }
+
+                const result = await response.json();
+                console.log('Azure items fetch result:', result);
+                
+                if (result.success) {
+                    localStorage.setItem('azureItems', JSON.stringify(result.items));
+                    console.log('Stored Azure items:', result.items.length);
+                } else {
+                    console.error('Failed to fetch Azure items:', result.error);
+                }
+            } catch (error) {
+                console.error('Error fetching Azure items:', error);
+                if (response) {
+                    console.error('Response status:', response.status);
+                    try {
+                        const errorText = await response.text();
+                        console.error('Response text:', errorText);
+                    } catch (textError) {
+                        console.error('Could not read response text:', textError);
+                    }
+                }
+            }
+        }
+
+        function navigateSuggestions(direction) {
+            console.log('🔥 navigateSuggestions called with direction:', direction);
+            const suggestions = document.querySelectorAll('.suggestion-item');
+            console.log('🔥 navigateSuggestions found suggestions:', suggestions.length);
+            
+            if (suggestions.length === 0) {
+                console.log('🔥 No suggestions to navigate');
+                return;
+            }
+
+            let currentIndex = -1;
+            
+            // Find currently highlighted item
+            suggestions.forEach((item, index) => {
+                if (item.classList.contains('highlighted')) {
+                    currentIndex = index;
+                }
+            });
+            console.log('🔥 Current highlighted index:', currentIndex);
+
+            // Remove current highlight
+            if (currentIndex >= 0) {
+                suggestions[currentIndex].classList.remove('highlighted');
+                console.log('🔥 Removed highlight from index:', currentIndex);
+            }
+
+            // Calculate new index
+            if (direction === 'down') {
+                currentIndex = currentIndex < suggestions.length - 1 ? currentIndex + 1 : 0;
+            } else if (direction === 'up') {
+                currentIndex = currentIndex > 0 ? currentIndex - 1 : suggestions.length - 1;
+            }
+            console.log('🔥 New highlighted index:', currentIndex);
+
+            // Add highlight to new item
+            if (currentIndex >= 0 && currentIndex < suggestions.length) {
+                suggestions[currentIndex].classList.add('highlighted');
+                console.log('🔥 Added highlight to index:', currentIndex);
+                
+                // Scroll into view if needed
+                const container = document.getElementById('itemIdSuggestions');
+                const item = suggestions[currentIndex];
+                const containerRect = container.getBoundingClientRect();
+                const itemRect = item.getBoundingClientRect();
+                
+                if (itemRect.bottom > containerRect.bottom) {
+                    container.scrollTop += itemRect.bottom - containerRect.bottom + 5;
+                } else if (itemRect.top < containerRect.top) {
+                    container.scrollTop += itemRect.top - containerRect.top - 5;
+                }
+            }
+        }
+
+        function showItemSuggestions(input) {
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            const sourceType = document.getElementById('sourceType').value;
+            
+            if (input.length < 1) {
+                suggestionsContainer.style.display = 'none';
+                return;
+            }
+            
+            console.log('Will show suggestions for:', input);
+
+            let items = [];
+            if (sourceType === 'jira') {
+                const storedItems = localStorage.getItem('jiraItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            } else if (sourceType === 'azure') {
+                const storedItems = localStorage.getItem('azureItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            }
+            
+            console.log('Source type:', sourceType, 'Available items:', items.length);
+            if (sourceType === 'azure') {
+                console.log('Azure items details:', items);
+            }
+            console.log('Sample items:', items.slice(0, 3));
+
+            // Filter items based on input and exclude already selected items
+            const filteredItems = items.filter(item => 
+                (item.id.toLowerCase().includes(input.toLowerCase()) ||
+                item.title.toLowerCase().includes(input.toLowerCase())) &&
+                !selectedItems.some(selected => selected.id === item.id)
+            ).slice(0, 5); // Limit to 5 suggestions
+            
+            console.log('Filtered items for "' + input + '":', filteredItems.length);
+
+            if (filteredItems.length > 0) {
+                const selectedCount = selectedItems.length;
+                const maxItems = 5;
+                const remainingCount = maxItems - selectedCount;
+                const tipText = selectedCount > 0 ? ` (${selectedCount}/${maxItems} selected)` : ' - Click to select';
+                
+                suggestionsContainer.innerHTML = `
+                    <div class="suggestion-header">Suggestions${tipText}</div>
+                    ${filteredItems.map(item => `
+                        <div class="suggestion-item" onclick="selectSuggestion('${item.id}')">
+                            <div class="item-id">${item.id}</div>
+                            <div class="item-title">${item.title}</div>
+                            <div class="item-type">${item.type || 'Issue'}</div>
+                        </div>
+                    `).join('')}
+                `;
+                suggestionsContainer.style.display = 'block';
+                
+                // Clear any existing highlights when new suggestions are shown
+                const suggestions = suggestionsContainer.querySelectorAll('.suggestion-item');
+                suggestions.forEach(item => item.classList.remove('highlighted'));
+            } else {
+                suggestionsContainer.style.display = 'none';
+            }
+        }
+
+        function selectSuggestion(itemId) {
+            // Find the item details from the suggestions
+            const sourceType = document.getElementById('sourceType').value;
+            let items = [];
+            if (sourceType === 'jira') {
+                const storedItems = localStorage.getItem('jiraItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            } else if (sourceType === 'azure') {
+                const storedItems = localStorage.getItem('azureItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            }
+            
+            const item = items.find(item => item.id === itemId);
+            
+            // Add the selected item to the array and display as chip
+            if (addSelectedItem(itemId, item?.title, item?.type)) {
+                // Clear the input field after successful selection
+                const itemIdInput = document.getElementById('itemIdInput');
+                itemIdInput.value = '';
+                
+                // Hide suggestions
+                const suggestionsContainer = document.getElementById('itemIdSuggestions');
+                suggestionsContainer.style.display = 'none';
+                
+                // Focus back on input for next selection
+                itemIdInput.focus();
+            }
+        }
+
+        // Functions to disable/enable connection fields
+        function disableJiraFields() {
+            console.log('Disabling Jira fields...');
+            const jiraUrl = document.getElementById('jiraUrl');
+            const jiraUser = document.getElementById('jiraUser');
+            const jiraToken = document.getElementById('jiraToken');
+            
+            if (jiraUrl) {
+                jiraUrl.disabled = true;
+                console.log('Disabled Jira URL field');
+            }
+            if (jiraUser) {
+                jiraUser.disabled = true;
+                console.log('Disabled Jira User field');
+            }
+            if (jiraToken) {
+                jiraToken.disabled = true;
+                console.log('Disabled Jira Token field');
+            }
+        }
+        
+        function enableJiraFields() {
+            console.log('Enabling Jira fields...');
+            const jiraUrl = document.getElementById('jiraUrl');
+            const jiraUser = document.getElementById('jiraUser');
+            const jiraToken = document.getElementById('jiraToken');
+            
+            if (jiraUrl) {
+                jiraUrl.disabled = false;
+                console.log('Enabled Jira URL field');
+            }
+            if (jiraUser) {
+                jiraUser.disabled = false;
+                console.log('Enabled Jira User field');
+            }
+            if (jiraToken) {
+                jiraToken.disabled = false;
+                console.log('Enabled Jira Token field');
+            }
+        }
+        
+        function disableAzureFields() {
+            const azureUrl = document.getElementById('azureUrl');
+            const azureOrg = document.getElementById('azureOrg');
+            const azureProject = document.getElementById('azureProject');
+            const azurePat = document.getElementById('azurePat');
+            
+            if (azureUrl) azureUrl.disabled = true;
+            if (azureOrg) azureOrg.disabled = true;
+            if (azureProject) azureProject.disabled = true;
+            if (azurePat) azurePat.disabled = true;
+        }
+        
+        function enableAzureFields() {
+            const azureUrl = document.getElementById('azureUrl');
+            const azureOrg = document.getElementById('azureOrg');
+            const azureProject = document.getElementById('azureProject');
+            const azurePat = document.getElementById('azurePat');
+            
+            if (azureUrl) azureUrl.disabled = false;
+            if (azureOrg) azureOrg.disabled = false;
+            if (azureProject) azureProject.disabled = false;
+            if (azurePat) azurePat.disabled = false;
+        }
+
+        function restoreSavedCredentials() {
+            console.log('Restoring saved credentials... [NEW VERSION]');
+            
+            // Restore Jira credentials
+            const jiraCredentials = localStorage.getItem('jiraCredentials');
+            console.log('Jira credentials from localStorage:', jiraCredentials);
+            
+            if (jiraCredentials) {
+                try {
+                    const credentials = JSON.parse(jiraCredentials);
+                    console.log('Parsed Jira credentials:', credentials);
+                    
+                    const jiraUrl = document.getElementById('jiraUrl');
+                    const jiraUser = document.getElementById('jiraUser');
+                    const jiraToken = document.getElementById('jiraToken');
+                    
+                    if (jiraUrl && jiraUser && jiraToken) {
+                        jiraUrl.value = credentials.url || '';
+                        jiraUser.value = credentials.user || '';
+                        jiraToken.value = credentials.token || '';
+                        
+                        console.log('Restored Jira credentials to form fields');
+                        
+                        // Set verify button to "Verified" state
+                        const verifyBtn = document.getElementById('verifyJiraBtn');
+                        if (verifyBtn) {
+                            verifyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+                            verifyBtn.disabled = true;
+                            verifyBtn.className = 'btn btn-success';
+                        }
+                        
+                        // Hide status message
+                        const statusDiv = document.getElementById('jiraVerifyStatus');
+                        if (statusDiv) {
+                            statusDiv.style.display = 'none';
+                        }
+                        
+                        // Disable fields since credentials are already verified
+                        console.log('About to disable Jira fields on page load...');
+                        disableJiraFields();
+                    }
+                } catch (error) {
+                    console.error('Error restoring Jira credentials:', error);
+                }
+            }
+
+            // Restore Azure credentials
+            const azureCredentials = localStorage.getItem('azureCredentials');
+            if (azureCredentials) {
+                try {
+                    const credentials = JSON.parse(azureCredentials);
+                    const azureUrl = document.getElementById('azureUrl');
+                    const azureOrg = document.getElementById('azureOrg');
+                    const azureProject = document.getElementById('azureProject');
+                    const azurePat = document.getElementById('azurePat');
+                    
+                    if (azureUrl && azureOrg && azureProject && azurePat) {
+                        azureUrl.value = credentials.url || '';
+                        azureOrg.value = credentials.org || '';
+                        azureProject.value = credentials.project || '';
+                        azurePat.value = credentials.pat || '';
+                        
+                        // Set verify button to "Verified" state
+                        const verifyBtn = document.getElementById('verifyAzureBtn');
+                        if (verifyBtn) {
+                            verifyBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Verified';
+                            verifyBtn.disabled = true;
+                            verifyBtn.className = 'btn btn-success';
+                        }
+                        
+                        // Hide status message
+                        const statusDiv = document.getElementById('azureVerifyStatus');
+                        if (statusDiv) {
+                            statusDiv.style.display = 'none';
+                        }
+                        
+                        // Disable fields since credentials are already verified
+                        disableAzureFields();
+                    }
+                } catch (error) {
+                    console.error('Error restoring Azure credentials:', error);
+                }
+            }
+        }
+
+        function clearJiraCredentials() {
+            localStorage.removeItem('jiraCredentials');
+            localStorage.removeItem('jiraItems');
+            
+            // Clear form fields
+            const jiraUrl = document.getElementById('jiraUrl');
+            const jiraUser = document.getElementById('jiraUser');
+            const jiraToken = document.getElementById('jiraToken');
+            
+            if (jiraUrl) jiraUrl.value = '';
+            if (jiraUser) jiraUser.value = '';
+            if (jiraToken) jiraToken.value = '';
+            
+            // Enable input fields
+            enableJiraFields();
+            
+            // Reset verify button to original state
+            const verifyBtn = document.getElementById('verifyJiraBtn');
+            if (verifyBtn) {
+                verifyBtn.innerHTML = '<i class="bi bi-check-circle"></i> Verify Connection';
+                verifyBtn.disabled = false;
+                verifyBtn.className = 'btn btn-primary';
+            }
+            
+            // Hide verification status
+            const statusDiv = document.getElementById('jiraVerifyStatus');
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Remove focus from the button to clear hover effect
+            document.activeElement.blur();
+            
+            showSectionMessage('jiraFields', 'Jira credentials cleared', 'success');
+        }
+
+        function clearAzureCredentials() {
+            localStorage.removeItem('azureCredentials');
+            localStorage.removeItem('azureItems');
+            
+            // Clear form fields
+            const azureUrl = document.getElementById('azureUrl');
+            const azureOrg = document.getElementById('azureOrg');
+            const azureProject = document.getElementById('azureProject');
+            const azurePat = document.getElementById('azurePat');
+            
+            if (azureUrl) azureUrl.value = '';
+            if (azureOrg) azureOrg.value = '';
+            if (azureProject) azureProject.value = '';
+            if (azurePat) azurePat.value = '';
+            
+            // Enable input fields
+            enableAzureFields();
+            
+            // Reset verify button to original state
+            const verifyBtn = document.getElementById('verifyAzureBtn');
+            if (verifyBtn) {
+                verifyBtn.innerHTML = '<i class="bi bi-check-circle"></i> Verify Connection';
+                verifyBtn.disabled = false;
+                verifyBtn.className = 'btn btn-primary';
+            }
+            
+            // Hide verification status
+            const statusDiv = document.getElementById('azureVerifyStatus');
+            if (statusDiv) statusDiv.style.display = 'none';
+            
+            // Remove focus from the button to clear hover effect
+            document.activeElement.blur();
+            
+            showSectionMessage('azureFields', 'Azure credentials cleared', 'success');
         }
 
         // Keep existing JavaScript code unchanged
@@ -902,44 +2960,186 @@
                 itemIdField.style.display = 'block';
                 itemIdInput.setAttribute('required', '');
             }
+
+            // Clear form data when switching between Jira and Azure
+            clearFormDataOnSwitch(this.value);
         });
 
+        function clearFormDataOnSwitch(newSourceType) {
+            // Only clear data when switching between Jira and Azure (not when switching to image)
+            if (newSourceType === 'jira' || newSourceType === 'azure') {
+                console.log('Clearing form data for switch to:', newSourceType);
+                
+                // Clear Item ID(s) section
+                selectedItems = [];
+                displaySelectedItems();
+                updateItemCount();
+                
+                // Clear Item ID input field
+                const itemIdInput = document.getElementById('itemIdInput');
+                if (itemIdInput) {
+                    itemIdInput.value = '';
+                }
+                
+                // Hide Item ID suggestions
+                const suggestionsContainer = document.getElementById('itemIdSuggestions');
+                if (suggestionsContainer) {
+                    suggestionsContainer.style.display = 'none';
+                }
+                
+                // Clear Test Case Types checkboxes
+                const testCaseCheckboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+                testCaseCheckboxes.forEach(checkbox => {
+                    checkbox.checked = false;
+                    checkbox.classList.remove('is-invalid', 'is-valid');
+                });
+                
+                // Clear Test Case Types error message
+                const testCaseError = document.getElementById('testCaseTypes-error');
+                if (testCaseError) {
+                    testCaseError.classList.remove('show');
+                }
+                
+                // Clear Item ID error message
+                const itemIdError = document.getElementById('itemIdInput-error');
+                if (itemIdError) {
+                    itemIdError.classList.remove('show');
+                }
+                
+                // Clear any section messages
+                const sectionMessages = document.querySelectorAll('.section-message');
+                sectionMessages.forEach(msg => msg.remove());
+                
+                // Clear localStorage for the previous source type
+                const currentSourceType = document.getElementById('sourceType').value;
+                if (currentSourceType === 'jira') {
+                    localStorage.removeItem('jiraItems');
+                } else if (currentSourceType === 'azure') {
+                    localStorage.removeItem('azureItems');
+                }
+                
+                console.log('Form data cleared for switch to:', newSourceType);
+                
+                // Re-fetch items for the new source type if connection is verified
+                setTimeout(() => {
+                    reFetchItemsForSourceType(newSourceType);
+                }, 100);
+            }
+        }
+
+        function reFetchItemsForSourceType(sourceType) {
+            if (sourceType === 'jira') {
+                // Check if Jira is verified and re-fetch items
+                const verifyBtn = document.getElementById('verifyJiraBtn');
+                if (verifyBtn && verifyBtn.innerHTML.includes('Verified')) {
+                    console.log('Re-fetching Jira items after switch');
+                    const jiraUrl = document.getElementById('jiraUrl').value.trim();
+                    const jiraUser = document.getElementById('jiraUser').value.trim();
+                    const jiraToken = document.getElementById('jiraToken').value.trim();
+                    if (jiraUrl && jiraUser && jiraToken) {
+                        fetchJiraItems(jiraUrl, jiraUser, jiraToken);
+                    }
+                }
+            } else if (sourceType === 'azure') {
+                // Check if Azure is verified and re-fetch items
+                const verifyBtn = document.getElementById('verifyAzureBtn');
+                if (verifyBtn && verifyBtn.innerHTML.includes('Verified')) {
+                    console.log('Re-fetching Azure items after switch');
+                    const azureUrl = document.getElementById('azureUrl').value.trim();
+                    const azureOrg = document.getElementById('azureOrg').value.trim();
+                    const azureProject = document.getElementById('azureProject').value.trim();
+                    const azurePat = document.getElementById('azurePat').value.trim();
+                    
+                    console.log('Azure credentials from form:', {
+                        url: azureUrl,
+                        org: azureOrg,
+                        project: azureProject,
+                        pat: azurePat ? '***' : 'empty'
+                    });
+                    
+                    if (azureUrl && azureOrg && azureProject && azurePat) {
+                        fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                    } else {
+                        console.log('Missing Azure credentials, trying to get from localStorage');
+                        // Try to get credentials from localStorage
+                        const storedCredentials = localStorage.getItem('azureCredentials');
+                        if (storedCredentials) {
+                            const credentials = JSON.parse(storedCredentials);
+                            console.log('Azure credentials from localStorage:', credentials);
+                            if (credentials.url && credentials.org && credentials.project && credentials.pat) {
+                                fetchAzureItems(credentials.url, credentials.org, credentials.project, credentials.pat);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         function clearForm() {
-            document.getElementById('generatorForm').reset();
-            document.getElementById('sourceType').dispatchEvent(new Event('change'));
+            // Only reset Item ID(s) and Test Case Types sections
+            // Keep connection details intact
+            
+            // Clear Item ID(s) section
+            selectedItems = [];
+            displaySelectedItems();
+            updateItemCount();
+            
+            // Clear Item ID input field
+            const itemIdInput = document.getElementById('itemIdInput');
+            if (itemIdInput) {
+                itemIdInput.value = '';
+            }
+            
+            // Hide Item ID suggestions
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none';
+            }
+            
+            // Clear Test Case Types checkboxes
+            const testCaseCheckboxes = document.querySelectorAll('input[name="testCaseTypes[]"]');
+            testCaseCheckboxes.forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.classList.remove('is-invalid', 'is-valid');
+            });
+            
+            // Clear Test Case Types error message
+            const testCaseError = document.getElementById('testCaseTypes-error');
+            if (testCaseError) {
+                testCaseError.classList.remove('show');
+            }
+            
+            // Clear Item ID error message
+            const itemIdError = document.getElementById('itemIdInput-error');
+            if (itemIdError) {
+                itemIdError.classList.remove('show');
+            }
+            
+            // Clear any section messages
+            const sectionMessages = document.querySelectorAll('.section-message');
+            sectionMessages.forEach(msg => msg.remove());
+            
+            // Show success message
+            showGeneralMessage('Item IDs and Test Case Types have been reset', 'success');
         }
 
         // Function to check test case generation status
         function updateLoader(percentage) {
-            const circle = document.querySelector('.loader-fg');
-            const text = document.getElementById('loader-text');
-            const radius = 45;
-            const circumference = 2 * Math.PI * radius;
-
-            // Ensure percentage is between 0 and 100
-            percentage = Math.min(100, Math.max(0, percentage));
-
-            // For 100%, make sure offset is exactly 0
-            let offset;
-            if (percentage === 100) {
-                offset = 0;
-            } else if (percentage === 0) {
-                // For 0%, show at least a small portion of the circle (~10%)
-                offset = circumference * 0.9;
+            const loader = document.querySelector('.loader-container');
+            if (percentage > 0) {
+                loader.style.display = 'flex';
+                loader.style.opacity = percentage / 100;
+                updateLoaderPercentage(percentage);
             } else {
-                offset = circumference - (percentage / 100) * circumference;
+                loader.style.display = 'none';
+                loader.style.opacity = 0;
+                updateLoaderPercentage(0);
             }
+        }
 
-            // Set both strokeDasharray and strokeDashoffset
-            circle.style.strokeDasharray = `${circumference}`;
-            circle.style.strokeDashoffset = offset;
-            
-            // Update the text - If NaN display "Processing..." instead of percentage
-            if (isNaN(percentage) || percentage < 0) {
-                text.textContent = "Processing...";
-            } else {
-                text.textContent = `${Math.round(percentage)}%`;
-            }
+        function updateLoaderPercentage(percentage) {
+            const loaderText = document.querySelector('.loader-text');
+            loaderText.textContent = percentage + '%';
         }
 
         async function checkGenerationStatus(loader, result, itemIds) {
@@ -1019,6 +3219,17 @@
         // Add window load event to ensure everything is ready
         window.onload = function () {
             console.log('Window loaded completely');
+
+            // Force refresh if old styling is detected
+            const chips = document.querySelectorAll('.selected-item-chip');
+            if (chips.length > 0) {
+                const firstChip = chips[0];
+                const computedStyle = window.getComputedStyle(firstChip);
+                if (computedStyle.backgroundColor === 'rgb(227, 242, 253)' || computedStyle.backgroundColor === '#e3f2fd') {
+                    console.log('Detected old blue chip styling, forcing refresh...');
+                    window.location.reload(true);
+                }
+            }
 
             // Check if buttons are clickable
             const testBtn = document.querySelector('.btn-warning');

@@ -5,7 +5,7 @@ from utils.sentry_config import init_sentry, capture_exception, capture_message,
 init_sentry("ai-test-case-generator-jira")
 
 import requests
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from config.settings import JIRA_URL, JIRA_USER, JIRA_API_TOKEN
 
 def fetch_issue(issue_key: str, jira_config: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
@@ -57,3 +57,55 @@ def fetch_issue(issue_key: str, jira_config: Optional[Dict[str, str]] = None) ->
     except requests.exceptions.JSONDecodeError as e:
         print(f"❌ Error decoding JSON: {e}")
         return None
+
+class JiraClient:
+    """Jira API client for connection testing and item fetching"""
+    
+    def __init__(self, jira_url: str, jira_user: str, jira_token: str):
+        self.jira_url = jira_url.rstrip('/')
+        self.jira_user = jira_user
+        self.jira_token = jira_token
+        self.headers = {"Accept": "application/json"}
+    
+    def get_current_user(self) -> Optional[Dict[str, Any]]:
+        """Get current user information"""
+        try:
+            url = f"{self.jira_url}/rest/api/3/myself"
+            response = requests.get(
+                url,
+                auth=(self.jira_user, self.jira_token),
+                headers=self.headers,
+                timeout=30
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"❌ Failed to get current user: {e}")
+            return None
+    
+    def get_recent_issues(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Get recent issues for suggestions"""
+        try:
+            url = f"{self.jira_url}/rest/api/3/search"
+            jql = "ORDER BY updated DESC"
+            
+            payload = {
+                "jql": jql,
+                "maxResults": limit,
+                "fields": ["summary", "issuetype", "status"]
+            }
+            
+            response = requests.post(
+                url,
+                auth=(self.jira_user, self.jira_token),
+                headers=self.headers,
+                json=payload,
+                timeout=30
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            return result.get('issues', [])
+        except Exception as e:
+            print(f"❌ Failed to get recent issues: {e}")
+            return []
