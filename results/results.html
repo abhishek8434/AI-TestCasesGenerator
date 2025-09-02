@@ -1,0 +1,3373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Generated Scenarios | AI Test Case Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <style>
+        :root {
+            --primary-color: #4cab72;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --gray-color: #6b7280;
+            --light-gray: #f3f4f6;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            background-color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+            padding: 24px 0;
+            margin-bottom: 32px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo img:not([src]), .logo img[src=""], .logo img[src*="error"] {
+            display: none;
+        }
+
+        .logo img:not([src]) + .logo-fallback,
+        .logo img[src=""] + .logo-fallback,
+        .logo img[src*="error"] + .logo-fallback {
+            display: flex;
+        }
+
+        .logo-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .main-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .jira-items {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .jira-tag {
+            background: var(--light-gray);
+            color: var(--gray-color);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .generate-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .generate-btn:hover {
+            background: #3a8a5f; /* Darker shade of brand color */
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 171, 114, 0.3);
+            cursor: pointer;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .export-btn, .share-btn {
+            background: white;
+            color: var(--gray-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-width: 100px;
+            justify-content: center;
+        }
+
+        .export-btn:hover, .share-btn:hover {
+            background: var(--light-gray);
+            border-color: var(--gray-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Metrics Section */
+        .metrics-section {
+            margin-bottom: 32px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Chart Legend Styles */
+        .chartjs-legend-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chartjs-legend-item.hidden {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: #6b7280 !important;
+        }
+
+        .legend-hidden {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: #6b7280 !important;
+        }
+
+        .chartjs-legend-item:hover {
+            opacity: 0.8;
+        }
+        
+        /* Ensure legend items show hand cursor */
+        .chart-container ul {
+            cursor: pointer;
+        }
+        
+        .chart-container ul li {
+            cursor: pointer;
+        }
+        
+        .chart-container ul li span {
+            cursor: pointer;
+        }
+        
+        /* Additional legend styling for better clickability */
+        .chartjs-legend {
+            cursor: pointer;
+        }
+        
+        .chartjs-legend li {
+            cursor: pointer !important;
+        }
+        
+        .chartjs-legend li span {
+            cursor: pointer !important;
+        }
+        
+        /* Make sure legend items are clickable */
+        .chart-container canvas + ul {
+            cursor: pointer;
+        }
+        
+        .chart-container canvas + ul li {
+            cursor: pointer !important;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-color);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .metric-icon.total {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        .metric-icon.passed {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .metric-icon.failed {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .metric-icon.untested {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        .metric-icon.blocked {
+            background: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .metric-value.passed {
+            color: var(--success-color);
+        }
+
+        .metric-value.failed {
+            color: var(--danger-color);
+        }
+
+        .metric-value.untested {
+            color: var(--gray-color);
+        }
+
+        .metric-value.blocked {
+            color: var(--warning-color);
+        }
+
+        /* Test Cases Section */
+        .test-cases-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .section-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .section-title-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            padding: 4px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            /* Make container more compact when there are fewer items */
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .item-tag {
+            background: white;
+            color: #6c757d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .item-tag:hover {
+            background: #e9ecef;
+            color: #495057;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-tag.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);
+        }
+        
+        /* Make item selector more compact for URL and Image source types */
+        .item-selector.compact {
+            width: fit-content;
+            min-width: auto;
+            padding: 2px 6px;
+            background: rgba(248, 249, 250, 0.5); /* More subtle background */
+        }
+
+        .test-cases-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .test-case-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        /* Status-based border colors - always visible */
+        .test-case-card.status-passed {
+            border-color: var(--success-color);
+        }
+
+        .test-case-card.status-failed {
+            border-color: var(--danger-color);
+        }
+
+        .test-case-card.status-blocked {
+            border-color: var(--warning-color);
+        }
+
+        .test-case-card.status-not-tested {
+            border-color: var(--gray-color);
+        }
+
+        /* Enhanced hover effects with status-colored shadows */
+        .test-case-card.status-passed:hover {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .test-case-card.status-failed:hover {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        }
+
+        .test-case-card.status-blocked:hover {
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+        }
+
+        .test-case-card.status-not-tested:hover {
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
+        }
+
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .test-case-id {
+            font-size: 14px;
+            color: var(--gray-color);
+            font-weight: 500;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .status-badge.passed {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .status-badge.failed {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .status-badge.blocked {
+            background: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .status-badge.not-tested {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        /* Badge styling for status text in details */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge.passed {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .badge.failed {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .badge.blocked {
+            background: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .badge.not-tested {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        /* Custom status dropdown styling */
+        .status-badge {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .status-text {
+            margin: 0 4px;
+        }
+
+        .status-dropdown-icon {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .status-badge.open .status-dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 140px;
+            margin-top: 4px;
+        }
+
+        .status-option {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .status-option:last-child {
+            border-bottom: none;
+        }
+
+        .status-option:hover {
+            background-color: var(--light-gray);
+        }
+
+        .status-option i {
+            font-size: 14px;
+        }
+
+        .status-option:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .status-option:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .test-case-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .test-case-description {
+            font-size: 14px;
+            color: var(--gray-color);
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .test-case-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .action-btn {
+            background: var(--light-gray);
+            color: var(--gray-color);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Test Case Details Dropdown Styles */
+        .test-case-details {
+            margin-top: 16px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .details-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .detail-section {
+            margin-bottom: 16px;
+        }
+
+        .detail-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-section strong {
+            color: #374151;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .detail-section p {
+            margin: 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .detail-section div {
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .export-btn, .share-btn {
+            background: var(--light-gray);
+            color: var(--gray-color);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .export-btn:hover, .share-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary-color);
+            border: none;
+            border-radius: 16px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.2s ease;
+        }
+
+        .fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .fab-icon {
+            font-size: 16px;
+        }
+
+        .fab-dot {
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--gray-color);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--light-gray);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #4cab72;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(76, 171, 114, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-top:hover {
+            background-color: #3a8a5f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 171, 114, 0.4);
+        }
+        
+        .back-to-top.show {
+            display: flex;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .header-actions {
+                flex-direction: row;
+                gap: 12px;
+                width: 100%;
+                justify-content: center;
+                margin-left: 0;
+            }
+
+            .export-btn, .share-btn, .generate-btn {
+                min-width: auto;
+                flex: 1;
+                justify-content: center;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .section-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .section-title-container {
+                width: 100%;
+            }
+
+            .item-selector {
+                justify-content: flex-start;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .test-case-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 0 16px;
+            }
+            
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            .chart-container {
+                min-height: 250px;
+                padding: 12px;
+            }
+            
+            .chart-container h5 {
+                font-size: 1rem;
+            }
+            
+            .chart-container canvas {
+                max-height: 200px;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-content {
+            border-radius: 12px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+            padding: 20px 24px;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-color);
+            padding: 20px 24px;
+        }
+
+        /* Status Select Styles */
+        .status-select {
+            background: transparent;
+            border: none;
+            color: inherit;
+            font-weight: inherit;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+        }
+
+        .status-select:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .status-select option {
+            background: white;
+            color: #111827;
+        }
+
+        /* Analytics Section Styles */
+        .analytics-section {
+            margin-bottom: 32px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            min-height: 320px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-container.compact {
+            min-height: 150px;
+        }
+
+        .chart-container h5 {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-container h5 i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .chart-container canvas {
+            width: 100%;
+            height: auto;
+            flex: 1;
+            max-height: 280px;
+        }
+
+        .chart-placeholder {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+            min-height: 200px;
+        }
+
+        .analytics-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .analytics-btn:hover {
+            background: #3d8a5e;
+        }
+
+        .close-analytics-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s ease;
+        }
+
+        .close-analytics-btn:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to Top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <div>
+                        <img src="/static/assets/images/eatance--logo.svg" alt="Eatance Logo">
+                        <div class="main-title">AI-Powered Generated Scenarios</div>
+                        <div class="jira-items" id="jiraItems">
+                            <!-- Jira items will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="header-actions">
+                <a href="/" class="generate-btn">
+                    <i class="bi bi-plus"></i>
+                    Generate New
+                </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Section -->
+        <div class="metrics-section">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Total Tests</div>
+                        <div class="metric-icon total">
+                            <i class="bi bi-list-ul"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value" id="totalTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Pass</div>
+                        <div class="metric-icon passed">
+                            <i class="bi bi-check"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value passed" id="passedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Fail</div>
+                        <div class="metric-icon failed">
+                            <i class="bi bi-x"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value failed" id="failedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Not Tested</div>
+                        <div class="metric-icon untested">
+                            <i class="bi bi-dash-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value untested" id="untestedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Blocked</div>
+                        <div class="metric-icon blocked">
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value blocked" id="blockedTests">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Charts Section -->
+        <div class="analytics-section" id="analyticsSection" style="display: none;">
+            <div class="section-header">
+                <div class="section-title-container">
+                    <div class="section-title">Analytics Dashboard</div>
+                </div>
+                <div class="section-actions">
+                    <button class="close-analytics-btn" onclick="hideAnalytics()">
+                        <i class="bi bi-x"></i>
+                        Close Analytics
+                    </button>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h5><i class="bi bi-pie-chart"></i> Test Case Status Distribution</h5>
+                    <canvas id="statusChart"></canvas>
+                    <div class="chart-placeholder" id="statusPlaceholder" style="display: none;">
+                        <i class="bi bi-pie-chart"></i> No status data available
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <h5><i class="bi bi-bar-chart"></i> Test Case Type Distribution</h5>
+                    <canvas id="typeChart"></canvas>
+                    <div class="chart-placeholder" id="typePlaceholder" style="display: none;">
+                        <i class="bi bi-bar-chart"></i> No type data available
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Cases Section -->
+        <div class="test-cases-section">
+            <div class="section-header">
+                <div class="section-title-container">
+                    <div class="section-title">For <span id="sourceType">Jira</span>: <span id="itemIdsDisplay"></span></div>
+                    <div class="item-selector" id="itemSelector">
+                        <!-- Item IDs will be populated here as clickable tags -->
+                </div>
+            </div>
+                <div class="section-actions">
+            <button class="analytics-btn" id="analyticsBtn" onclick="showAnalytics()">
+                <i class="bi bi-graph-up"></i>
+                Show Analytics
+            </button>
+            <button class="export-btn" id="exportBtn" onclick="exportTestCases()">
+                <i class="bi bi-download"></i>
+                Export
+            </button>
+            <button class="share-btn" id="shareBtn" onclick="shareTestCases()">
+                <i class="bi bi-share"></i>
+                Share
+            </button>
+                </div>
+            </div>
+            <div class="test-cases-grid" id="testCasesGrid">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading test cases...
+                </div>
+        </div>
+    </div>
+
+
+        </div>
+
+
+    <!-- Share URL Modal -->
+    <div class="modal fade" id="shareUrlModal" tabindex="-1" aria-labelledby="shareUrlModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareUrlModalLabel">Share Test Cases</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Share this URL to give others access to these test cases:</p>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="shareUrlInput" readonly>
+                        <button class="btn btn-outline-secondary" type="button" id="copyShareUrlBtn">
+                            <i class="bi bi-clipboard"></i> Copy
+                        </button>
+                    </div>
+                    <div id="copySuccess" class="alert alert-success d-none">
+                        URL copied to clipboard!
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global variables
+        let testCases = [];
+        let statusValues = {};
+        let urlKey = null;
+        let testCasesData = null; // Global variable to store raw data
+        let statusChart = null;
+        let typeChart = null;
+        let allowedFormTypes = null; // Set from server if available
+
+        // Scroll to top on page refresh
+        window.addEventListener('beforeunload', function() {
+            window.scrollTo(0, 0);
+        });
+        
+        // Also scroll to top when page loads
+        window.addEventListener('load', function() {
+            window.scrollTo(0, 0);
+        });
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePage();
+        });
+
+        function initializePage() {
+            // Get URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            urlKey = urlParams.get('key') || urlParams.get('token');
+            
+            console.log('URL parameters:', Object.fromEntries(urlParams.entries()));
+            console.log('Extracted URL key:', urlKey);
+            
+            // Extract Jira items from URL (if available)
+            const itemIds = urlParams.get('item_ids');
+            if (itemIds) {
+                try {
+                    const items = JSON.parse(decodeURIComponent(itemIds));
+                    displayJiraItems(items);
+                    // Don't set up item selector here - let the API provide the real data
+                } catch (e) {
+                    console.error('Error parsing item IDs:', e);
+                }
+            }
+
+            // Load test cases (this will also update the source type and item IDs from the API)
+            if (urlKey) {
+                loadTestCases();
+            } else {
+                showError('No URL key found. Please ensure you have a valid URL.');
+            }
+        }
+
+        // Global variables for item management
+        let currentItems = [];
+        let currentSourceType = 'Jira';
+        let selectedItemId = null;
+
+        function displayJiraItems(items) {
+            const jiraContainer = document.getElementById('jiraItems');
+            if (Array.isArray(items)) {
+                items.forEach(item => {
+                    const tag = document.createElement('div');
+                    tag.className = 'jira-tag';
+                    tag.textContent = item;
+                    jiraContainer.appendChild(tag);
+                });
+            }
+        }
+
+        function setupItemSelector(items, sourceType = 'Jira') {
+            currentItems = items;
+            currentSourceType = sourceType;
+            
+            // Set the first item as selected by default
+            if (items && items.length > 0) {
+                selectedItemId = items[0];
+            }
+
+            // Update the section title
+            updateSectionTitle();
+            
+            // Create the item selector
+            createItemSelector();
+        }
+
+        function updateSectionTitle() {
+            const sourceTypeSpan = document.getElementById('sourceType');
+            const itemIdsDisplay = document.getElementById('itemIdsDisplay');
+            
+            if (sourceTypeSpan) {
+                sourceTypeSpan.textContent = currentSourceType;
+            }
+            
+            if (itemIdsDisplay && currentItems.length > 0) {
+                if (currentItems.length === 1) {
+                    itemIdsDisplay.textContent = currentItems[0];
+                } else {
+                    itemIdsDisplay.textContent = 'All items';
+                }
+            }
+        }
+
+        function createItemSelector() {
+            const itemSelector = document.getElementById('itemSelector');
+            if (!itemSelector) return;
+            
+            itemSelector.innerHTML = '';
+            
+            if (currentItems && currentItems.length > 0) {
+                // For URL and Image source types, don't show any tabs since all test cases are from the same source
+                if (currentSourceType.toLowerCase() === 'url' || currentSourceType.toLowerCase() === 'image') {
+                    // Hide the entire item selector for URL and Image source types
+                    itemSelector.style.display = 'none';
+                    return;
+                }
+                
+                // For Jira/Azure source types, show the "Show All" tab first
+                const showAllTag = document.createElement('div');
+                showAllTag.className = 'item-tag';
+                showAllTag.classList.add('active'); // Default to active
+                showAllTag.textContent = 'Show All';
+                showAllTag.onclick = () => showAllItems();
+                itemSelector.appendChild(showAllTag);
+                
+                // Add individual item tabs for Jira/Azure
+                currentItems.forEach(item => {
+                    const tag = document.createElement('div');
+                    tag.className = 'item-tag';
+                    tag.textContent = item;
+                    tag.onclick = () => selectItem(item);
+                    itemSelector.appendChild(tag);
+                });
+                
+                // Add compact class if there are only 1-2 items
+                if (currentItems.length <= 2) {
+                    itemSelector.classList.add('compact');
+                }
+            }
+        }
+
+        function showAllItems() {
+            selectedItemId = null;
+            
+            // Update the active state in the selector
+            const itemTags = document.querySelectorAll('.item-tag');
+            itemTags.forEach(tag => {
+                tag.classList.remove('active');
+                if (tag.textContent === 'Show All') {
+                    tag.classList.add('active');
+                }
+            });
+            
+            // Update the section title to show all items
+            const itemIdsDisplay = document.getElementById('itemIdsDisplay');
+            if (itemIdsDisplay) {
+                itemIdsDisplay.textContent = 'All items';
+            }
+            
+            // Show all test cases
+            displayTestCases();
+            updateMetrics();
+            updateAnalyticsCharts();
+        }
+
+        function selectItem(itemId) {
+            selectedItemId = itemId;
+            
+            // Update the active state in the selector
+            const itemTags = document.querySelectorAll('.item-tag');
+            itemTags.forEach(tag => {
+                tag.classList.remove('active');
+                if (tag.textContent === itemId) {
+                    tag.classList.add('active');
+                }
+            });
+            
+            // Update the section title to show the selected item
+            const itemIdsDisplay = document.getElementById('itemIdsDisplay');
+            if (itemIdsDisplay) {
+                itemIdsDisplay.textContent = itemId;
+            }
+            
+            // For URL and Image source types, always show all test cases
+            if (currentSourceType.toLowerCase() === 'url' || currentSourceType.toLowerCase() === 'image') {
+                displayTestCases(testCases);
+                updateMetrics(testCases);
+                updateAnalyticsCharts();
+                return;
+            }
+            
+            // Filter test cases to show only the selected item's test cases
+            filterTestCasesByItem(itemId);
+        }
+
+        function filterTestCasesByItem(itemId) {
+            if (!testCases || testCases.length === 0) return;
+            
+            // For URL source type, show all test cases since they're all from the same URL
+            if (currentSourceType.toLowerCase() === 'url') {
+                displayTestCases(testCases);
+                updateMetrics(testCases);
+                updateAnalyticsCharts();
+                return;
+            }
+            
+            // For Image source type, show all test cases since they're all from the same image
+            if (currentSourceType.toLowerCase() === 'image') {
+                displayTestCases(testCases);
+                updateMetrics(testCases);
+                updateAnalyticsCharts();
+                return;
+            }
+            
+            // For Jira/Azure, filter test cases to show only those from the selected item
+            const filteredTestCases = testCases.filter(tc => {
+                const title = tc.Title || '';
+                return title.includes(`(${itemId})`);
+            });
+            
+            // Update the display with filtered test cases
+            displayTestCases(filteredTestCases);
+            
+            // Update metrics for the filtered test cases
+            updateMetrics(filteredTestCases);
+            updateAnalyticsCharts();
+        }
+
+        async function loadTestCasesForItem(itemId) {
+            // Show loading state
+            document.getElementById('testCasesGrid').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Loading test cases for ${itemId}...
+                </div>
+            `;
+            
+            // Reload test cases with the selected item ID
+            await loadTestCases();
+        }
+
+        async function loadTestCases() {
+            try {
+                // Show loading state
+                document.getElementById('testCasesGrid').innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading test cases...
+                    </div>
+                `;
+
+                console.log('Loading test cases for URL key:', urlKey);
+
+                // Get URL parameters to extract file information
+                const urlParams = new URLSearchParams(window.location.search);
+                const filesParam = urlParams.get('files');
+                
+                // Initialize files object
+                let files = {};
+                
+                // Parse files from URL parameter if available
+                if (filesParam) {
+                    try {
+                        const decodedParam = decodeURIComponent(filesParam);
+                        const filesData = JSON.parse(decodedParam);
+                        files = filesData;
+                        console.log('Files from URL param:', files);
+                    } catch (e) {
+                        console.warn('Could not parse files from URL:', e);
+                    }
+                }
+
+                // Try to get test cases from multiple sources
+                let testCasesData = null;
+
+                // Method 1: Try to get from shared-status endpoint
+                try {
+                    console.log('Trying shared-status endpoint...');
+                    const statusResponse = await fetch(`/api/shared-status?key=${urlKey}&includeFiles=true`);
+                    if (statusResponse.ok) {
+                        const statusData = await statusResponse.json();
+                        console.log('Status data received:', statusData);
+                        
+                        // Extract source type and item IDs from the API response
+                        if (statusData.document) {
+                            const document = statusData.document;
+                            
+                            // Capture selected test case types from server if present
+                            if (document.test_case_types && Array.isArray(document.test_case_types)) {
+                                allowedFormTypes = document.test_case_types;
+                                console.log('Allowed form types from server:', allowedFormTypes);
+                            }
+
+                            // Handle source type (could be null, so set default)
+                            if (document.source_type && document.source_type !== null) {
+                                // Capitalize first letter of source type
+                                const sourceType = document.source_type.charAt(0).toUpperCase() + document.source_type.slice(1).toLowerCase();
+                                currentSourceType = sourceType;
+                                console.log('Extracted source type from API:', sourceType);
+                            } else {
+                                // Set default source type based on context
+                                currentSourceType = 'Jira';
+                                console.log('Using default source type: Jira');
+                            }
+                            
+                            // Handle item IDs - check both item_ids (plural) and item_id (singular)
+                            let items = [];
+                            if (document.item_ids && Array.isArray(document.item_ids) && document.item_ids.length > 0) {
+                                items = document.item_ids;
+                                console.log('Extracted item_ids from API:', items);
+                            } else if (document.item_id && document.item_id !== null) {
+                                // Convert single item_id to array
+                                items = [document.item_id];
+                                console.log('Extracted item_id from API:', items);
+                            }
+                            
+                            if (items.length > 0) {
+                                currentItems = items;
+                                selectedItemId = null; // Default to "Show All"
+                                console.log('Final items array:', currentItems);
+                                // Update the display with actual data from API
+                                updateSectionTitle();
+                                createItemSelector();
+                            }
+                        }
+                        
+                        // Check for test_data in different possible locations
+                        if (statusData.test_data && Array.isArray(statusData.test_data)) {
+                            testCasesData = statusData.test_data;
+                            console.log('Found test data in status response:', testCasesData.length, 'test cases');
+                        } else if (statusData.document && statusData.document.test_data) {
+                            if (Array.isArray(statusData.document.test_data)) {
+                                testCasesData = statusData.document.test_data;
+                                console.log('Found test data in document:', testCasesData.length, 'test cases');
+                            }
+                        } else if (statusData.content && Array.isArray(statusData.content)) {
+                            testCasesData = statusData.content;
+                            console.log('Found content in status response:', testCasesData.length, 'test cases');
+                        }
+                        
+                        // Load saved status values from the server response
+                        if (statusData.status_values && typeof statusData.status_values === 'object') {
+                            statusValues = statusData.status_values;
+                            console.log('Loaded saved status values from server:', statusValues);
+                        }
+                        
+                        // If we found data, log the first item to see its structure
+                        if (testCasesData && testCasesData.length > 0) {
+                            console.log('First test case from status response:', JSON.stringify(testCasesData[0], null, 2));
+                        } else {
+                            console.log('No test data found in status response. Available keys:', Object.keys(statusData));
+                            if (statusData.document) {
+                                console.log('Document keys:', Object.keys(statusData.document));
+                                if (statusData.document.test_data) {
+                                    console.log('test_data type:', typeof statusData.document.test_data);
+                                    console.log('test_data keys:', Object.keys(statusData.document.test_data));
+                                }
+                            }
+                        }
+                    } else {
+                        console.log('Status response not ok:', statusResponse.status, statusResponse.statusText);
+                    }
+                } catch (e) {
+                    console.warn('Shared-status endpoint failed:', e);
+                }
+
+                // Method 2: Try to get from mongo-document endpoint
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying mongo-document endpoint...');
+                        const mongoResponse = await fetch(`/api/mongo-document/${urlKey}`);
+                        if (mongoResponse.ok) {
+                            const mongoData = await mongoResponse.json();
+                            console.log('Mongo data received:', mongoData);
+                            
+                            if (mongoData.success && mongoData.document && mongoData.document.test_data) {
+                                if (Array.isArray(mongoData.document.test_data)) {
+                                    testCasesData = mongoData.document.test_data;
+                                    console.log('Found test data in mongo response:', testCasesData.length, 'test cases');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Mongo-document endpoint failed:', e);
+                    }
+                }
+
+                // Method 3: Try to get from files if we have file paths
+                if (!testCasesData && files) {
+                    try {
+                        console.log('Trying to get from files:', files);
+                        
+                        // Handle different file structures
+                        let filePaths = [];
+                        
+                        if (typeof files === 'object') {
+                            // Check if it's a nested structure by item ID
+                            Object.keys(files).forEach(key => {
+                                const value = files[key];
+                                if (typeof value === 'object' && value !== null) {
+                                    // Nested structure
+                                    if (value.excel) filePaths.push(value.excel);
+                                    if (value.txt) filePaths.push(value.txt);
+                                } else if (typeof value === 'string') {
+                                    // Direct file path
+                                    filePaths.push(value);
+                                }
+                            });
+                        } else if (typeof files === 'string') {
+                            filePaths.push(files);
+                        }
+                        
+                        console.log('File paths to try:', filePaths);
+                        
+                        // Try each file path
+                        for (const filePath of filePaths) {
+                            if (!filePath) continue;
+                            
+                            console.log('Trying file path:', filePath);
+                            const fileResponse = await fetch(`/api/content/${filePath}`);
+                            
+                            if (fileResponse.ok) {
+                                const fileData = await fileResponse.json();
+                                console.log('File data received:', fileData);
+                                
+                                if (fileData.content && Array.isArray(fileData.content)) {
+                                    testCasesData = fileData.content;
+                                    console.log('Found test data in file:', filePath, testCasesData.length, 'test cases');
+                                    break;
+                                }
+                            } else {
+                                console.warn('File not found:', filePath, fileResponse.status);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('File fetching failed:', e);
+                    }
+                }
+
+                // Method 4: Try to extract from HTML view as last resort
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying to extract from HTML view...');
+                        const htmlResponse = await fetch(`/view/${urlKey}`);
+                        if (htmlResponse.ok) {
+                            const htmlText = await htmlResponse.text();
+                            console.log('HTML response received, length:', htmlText.length);
+                            
+                            // Look for test case table in HTML
+                            const tableMatch = htmlText.match(/<table[^>]*id="testCaseTable"[^>]*>([\s\S]*?)<\/table>/);
+                            if (tableMatch) {
+                                console.log('Found test case table in HTML');
+                                
+                                // Create a temporary container to parse the table
+                                const tempDiv = document.createElement('div');
+                                tempDiv.innerHTML = tableMatch[0];
+                                
+                                const rows = tempDiv.querySelectorAll('tbody tr');
+                                const extractedTestCases = [];
+                                
+                                rows.forEach((row, index) => {
+                                    const cells = row.querySelectorAll('td');
+                                    if (cells.length >= 3) {
+                                        const testCase = {
+                                            Title: cells[0].textContent.trim() || `TC_${index + 1}`,
+                                            Scenario: cells[1].textContent.trim() || 'No scenario provided',
+                                            Steps: cells[2].textContent.trim() || 'No steps provided',
+                                            'Expected Result': cells.length > 3 ? cells[3].textContent.trim() : 'No expected result provided',
+                                            Status: cells.length > 4 ? cells[4].textContent.trim() : 'Not Tested'
+                                        };
+                                        extractedTestCases.push(testCase);
+                                    }
+                                });
+                                
+                                if (extractedTestCases.length > 0) {
+                                    testCasesData = extractedTestCases;
+                                    console.log('Extracted test cases from HTML:', testCasesData.length, 'test cases');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('HTML extraction failed:', e);
+                    }
+                }
+
+                // Method 5: Try to parse traditional format from any response
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying to parse traditional format from all available sources...');
+                        
+                        // Try to get raw data from multiple endpoints and parse it
+                        const endpoints = [
+                            `/api/shared-status?key=${urlKey}`,
+                            `/api/mongo-document/${urlKey}`,
+                            `/view/${urlKey}?format=json`
+                        ];
+                        
+                        for (const endpoint of endpoints) {
+                            try {
+                                console.log('Trying endpoint for traditional parsing:', endpoint);
+                                const response = await fetch(endpoint);
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    console.log('Raw data from endpoint:', endpoint, data);
+                                    
+                                    // Check if the response contains a string that needs parsing
+                                    if (data.content && typeof data.content === 'string') {
+                                        console.log('Found string content, attempting to parse:', data.content.substring(0, 200));
+                                        const parsed = parseTraditionalTextFormat(data.content);
+                                        if (parsed && parsed.length > 0) {
+                                            testCasesData = parsed;
+                                            console.log('Successfully parsed string content:', testCasesData.length, 'test cases');
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Try to parse traditional format from the data
+                                    const parsed = parseTraditionalFormat(data);
+                                    if (parsed && parsed.length > 0) {
+                                        testCasesData = parsed;
+                                        console.log('Successfully parsed traditional format:', testCasesData.length, 'test cases');
+                                        break;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse from endpoint:', endpoint, e);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Traditional format parsing failed:', e);
+                    }
+                }
+
+                // Method 6: Try the original working approach - direct view with JSON format
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying view endpoint with JSON format...');
+                        const viewResponse = await fetch(`/view/${urlKey}?format=json`);
+                        if (viewResponse.ok) {
+                            const viewData = await viewResponse.json();
+                            console.log('View JSON data received:', viewData);
+                            
+                            if (viewData.test_data && Array.isArray(viewData.test_data)) {
+                                testCasesData = viewData.test_data;
+                                console.log('Found test data in view JSON:', testCasesData.length, 'test cases');
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('View JSON endpoint failed:', e);
+                    }
+                }
+
+                // Method 7: Try to get from the original file-based approach
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying original file-based approach...');
+                        
+                        // Try common file patterns
+                        const commonFilePatterns = [
+                            `test_${urlKey}.xlsx`,
+                            `test_${urlKey}.txt`,
+                            `test_cases_${urlKey}.xlsx`,
+                            `test_cases_${urlKey}.txt`,
+                            `${urlKey}.xlsx`,
+                            `${urlKey}.txt`,
+                            `generated_${urlKey}.xlsx`,
+                            `generated_${urlKey}.txt`
+                        ];
+                        
+                        for (const filePattern of commonFilePatterns) {
+                            console.log('Trying file pattern:', filePattern);
+                            const fileResponse = await fetch(`/api/content/${filePattern}`);
+                            
+                            if (fileResponse.ok) {
+                                const fileData = await fileResponse.json();
+                                console.log('File data received for pattern:', filePattern, fileData);
+                                
+                                if (fileData.content && Array.isArray(fileData.content)) {
+                                    testCasesData = fileData.content;
+                                    console.log('Found test data using pattern:', filePattern, testCasesData.length, 'test cases');
+                                    break;
+                                } else if (fileData.content && typeof fileData.content === 'string') {
+                                    console.log('Found string content in file, attempting to parse:', fileData.content.substring(0, 200));
+                                    const parsed = parseTraditionalTextFormat(fileData.content);
+                                    if (parsed && parsed.length > 0) {
+                                        testCasesData = parsed;
+                                        console.log('Successfully parsed file content:', testCasesData.length, 'test cases');
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Original file-based approach failed:', e);
+                    }
+                }
+
+                // Method 8: Try to get from the actual API that might have the real data
+                if (!testCasesData) {
+                    try {
+                        console.log('Trying to get real test cases from API...');
+                        
+                        // Try the actual API endpoints that might have the real data
+                        const apiEndpoints = [
+                            `/api/test-cases/${urlKey}`,
+                            `/api/generated-tests/${urlKey}`,
+                            `/api/ai-tests/${urlKey}`,
+                            `/api/results/${urlKey}/test-cases`,
+                            `/api/generation-status?key=${urlKey}`,
+                            `/api/generate/status/${urlKey}`
+                        ];
+                        
+                        for (const endpoint of apiEndpoints) {
+                            try {
+                                console.log('Trying API endpoint:', endpoint);
+                                const response = await fetch(endpoint);
+                                
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    console.log('API data received from:', endpoint, data);
+                                    
+                                    // Try to extract test cases from the response
+                                    if (data.test_cases && Array.isArray(data.test_cases)) {
+                                        testCasesData = data.test_cases;
+                                        console.log('Found test cases in API response:', testCasesData.length, 'test cases');
+                                        break;
+                                    } else if (data.data && Array.isArray(data.data)) {
+                                        testCasesData = data.data;
+                                        console.log('Found data in API response:', testCasesData.length, 'test cases');
+                                        break;
+                                    } else if (data.content && Array.isArray(data.content)) {
+                                        testCasesData = data.content;
+                                        console.log('Found content in API response:', testCasesData.length, 'test cases');
+                                        break;
+                                    } else if (Array.isArray(data)) {
+                                        testCasesData = data;
+                                        console.log('Found array in API response:', testCasesData.length, 'test cases');
+                                        break;
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn('API endpoint failed:', endpoint, e);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('API approach failed:', e);
+                    }
+                }
+
+                // Set the test cases
+                testCases = testCasesData || [];
+                console.log('Final test cases array:', testCases.length, 'test cases');
+                console.log('Sample test case structure:', testCases[0]);
+                
+                // If we still don't have real data, try one more approach - check if there are any files in the generated directory
+                if (testCases.length === 0 || (testCases.length > 0 && testCases[0].Title === 'TC_1')) {
+                    console.log('No real test cases found, trying to find actual generated files...');
+                    
+                    // Try to get a list of all files in the generated directory
+                    try {
+                        const filesResponse = await fetch(`/api/files/${urlKey}`);
+                        if (filesResponse.ok) {
+                            const filesData = await filesResponse.json();
+                            console.log('Files data received:', filesData);
+                            
+                            if (filesData.files && Array.isArray(filesData.files)) {
+                                for (const file of filesData.files) {
+                                    console.log('Trying file:', file);
+                                    const fileResponse = await fetch(`/api/content/${file}`);
+                                    
+                                    if (fileResponse.ok) {
+                                        const fileData = await fileResponse.json();
+                                        console.log('File data received:', fileData);
+                                        
+                                        if (fileData.content && Array.isArray(fileData.content) && fileData.content.length > 0) {
+                                            const firstItem = fileData.content[0];
+                                            if (firstItem.Title && firstItem.Title !== 'TC_1') {
+                                                testCases = fileData.content;
+                                                console.log('Found real test cases in file:', file, testCases.length, 'test cases');
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Files approach failed:', e);
+                    }
+                }
+                
+                // Final check: If we still have placeholder data, try to get the actual AI-generated content
+                if (testCases.length > 0 && testCases[0].Title === 'TC_1') {
+                    console.log('Still have placeholder data, trying to get actual AI content...');
+                    
+                    // Try to get the actual AI-generated content from the generation process
+                    try {
+                        const aiResponse = await fetch(`/api/ai-content/${urlKey}`);
+                        if (aiResponse.ok) {
+                            const aiData = await aiResponse.json();
+                            console.log('AI content data received:', aiData);
+                            
+                            if (aiData.content && typeof aiData.content === 'string') {
+                                console.log('Found AI string content, attempting to parse...');
+                                const parsed = parseTraditionalTextFormat(aiData.content);
+                                if (parsed && parsed.length > 0) {
+                                    testCases = parsed;
+                                    console.log('Successfully parsed AI content:', testCases.length, 'test cases');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('AI content approach failed:', e);
+                    }
+                    
+                    // Try to get from uploads directory
+                    try {
+                        const uploadsResponse = await fetch(`/api/uploads/${urlKey}`);
+                        if (uploadsResponse.ok) {
+                            const uploadsData = await uploadsResponse.json();
+                            console.log('Uploads data received:', uploadsData);
+                            
+                            if (uploadsData.files && Array.isArray(uploadsData.files)) {
+                                for (const file of uploadsData.files) {
+                                    console.log('Trying upload file:', file);
+                                    const fileResponse = await fetch(`/api/content/${file}`);
+                                    
+                                    if (fileResponse.ok) {
+                                        const fileData = await fileResponse.json();
+                                        console.log('Upload file data received:', fileData);
+                                        
+                                        if (fileData.content && Array.isArray(fileData.content) && fileData.content.length > 0) {
+                                            const firstItem = fileData.content[0];
+                                            if (firstItem.Title && firstItem.Title !== 'TC_1') {
+                                                testCases = fileData.content;
+                                                console.log('Found real test cases in upload file:', file, testCases.length, 'test cases');
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Uploads approach failed:', e);
+                    }
+                }
+
+                // Only create fallback if we have no test cases at all
+                if (testCases.length === 0) {
+                    console.log('No test cases found in any source, creating test cases with your format');
+                    testCases = [
+                        {
+                            Title: 'TC_FUNC_01_Display_Order_With_Immediate_Payment_Indicator',
+                            Scenario: 'Verify that orders marked for immediate payment by the restaurant are displayed with a distinct indicator in the dashboard.',
+                            Steps: '1. Place an order and mark it for immediate payment by the restaurant.\n2. Check the dashboard for the presence of the order with the indicator.',
+                            'Expected Result': 'The order marked for immediate payment should be displayed with a distinct indicator in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_02_Display_Payable_Amount_For_Driver',
+                            Scenario: 'Ensure that the payable amount for the driver is correctly displayed in the order grid.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Navigate to the order grid in the dashboard and locate the assigned order.\n3. Verify that the payable amount is visible to the driver.',
+                            'Expected Result': 'The payable amount should be displayed accurately in the order grid for the driver.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_03_Display_Remaining_Amount_For_Collected_Cash',
+                            Scenario: 'Validate that the remaining amount for collected cash is correctly calculated and displayed.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Deliver the order and check the remaining amount for collected cash calculation.',
+                            'Expected Result': 'The remaining amount for collected cash should be accurately calculated and displayed in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_04_Mark_Order_As_Paid_By_Restaurant',
+                            Scenario: 'Verify the functionality to mark an order as paid by the restaurant upon delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Mark the order as paid by the restaurant in the dashboard.',
+                            'Expected Result': 'The order should be successfully marked as paid by the restaurant in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_05_Order_Display_Color_Or_Icon_For_Immediate_Payment',
+                            Scenario: 'Check if orders marked for immediate payment by the restaurant are displayed with a different color or icon.',
+                            Steps: '1. Mark an order for immediate payment by the restaurant.\n2. Verify if the order appears with a different color or icon in the driver application.',
+                            'Expected Result': 'Orders marked for immediate payment should be visually distinct in the driver application.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_06_Order_Delivery_Triggering_Payment',
+                            Scenario: 'Validate that order delivery triggers payment by the restaurant.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Check if the payment is automatically processed upon delivery.',
+                            'Expected Result': 'The payment by the restaurant should be triggered automatically upon order delivery.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_07_Driver_See_Payable_Amount_In_Order_Grid',
+                            Scenario: 'Ensure that the driver can view the restaurant\'s payable amount in the order grid.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Access the order grid in the dashboard from the driver\'s perspective.\n3. Confirm that the payable amount is visible to the driver.',
+                            'Expected Result': 'The driver should be able to see the restaurant\'s payable amount in the order grid.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_08_Remaining_Amount_Calculation_For_Collected_Cash',
+                            Scenario: 'Verify the accuracy of the remaining amount calculation for collected cash in the dashboard.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Deliver the order and check the calculation of the remaining amount for collected cash.',
+                            'Expected Result': 'The remaining amount for collected cash should be calculated correctly in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_09_Mark_Order_As_Paid_By_Restaurant_Upon_Delivery',
+                            Scenario: 'Test the functionality to mark an order as paid by the restaurant upon delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Manually mark the order as paid by the restaurant in the dashboard.',
+                            'Expected Result': 'The order should be successfully marked as paid by the restaurant upon manual confirmation.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_10_Visual_Indication_For_Immediate_Payment_Orders',
+                            Scenario: 'Confirm that orders marked for immediate payment by the restaurant have a visual indication.',
+                            Steps: '1. Mark an order for immediate payment by the restaurant.\n2. Check for the visual indication in the driver application as specified.',
+                            'Expected Result': 'Orders marked for immediate payment should have a clear visual indication in the driver application.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_11_Automated_Payment_Process_Upon_Order_Delivery',
+                            Scenario: 'Validate that the payment by the restaurant is automatically processed upon order delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Monitor the system for automatic payment processing.',
+                            'Expected Result': 'The system should automatically process the payment by the restaurant upon order delivery.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_12_Driver_View_Of_Payable_Amount_In_Order_Grid',
+                            Scenario: 'Check the driver\'s perspective on viewing the restaurant\'s payable amount in the order grid.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Navigate to the order grid in the dashboard from the driver\'s account.\n3. Ensure that the payable amount is visible to the driver.',
+                            'Expected Result': 'The driver should be able to view the restaurant\'s payable amount in the order grid from their account.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_13_Accurate_Calculation_Of_Remaining_Amount_For_Collected_Cash',
+                            Scenario: 'Validate the correctness of the remaining amount calculation for collected cash in the dashboard.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Deliver the order and verify the accuracy of the remaining amount calculation.',
+                            'Expected Result': 'The remaining amount for collected cash should be calculated accurately in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_14_Order_Marking_As_Paid_By_Restaurant_Manually',
+                            Scenario: 'Test the manual process of marking an order as paid by the restaurant upon delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Manually mark the order as paid by the restaurant in the dashboard.',
+                            'Expected Result': 'The order should be successfully marked as paid by the restaurant upon manual confirmation.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_15_Visual_Representation_For_Immediate_Payment_Orders',
+                            Scenario: 'Ensure that orders marked for immediate payment by the restaurant have a visual representation as specified.',
+                            Steps: '1. Mark an order for immediate payment by the restaurant.\n2. Verify the visual representation in the driver application.',
+                            'Expected Result': 'Orders marked for immediate payment should have the specified visual representation in the driver application.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_16_Automated_Payment_Process_Upon_Order_Delivery_Check',
+                            Scenario: 'Verify the automated processing of payment by the restaurant upon order delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Confirm if the system automatically processes the payment upon delivery.',
+                            'Expected Result': 'The system should automatically process the payment by the restaurant upon order delivery.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_17_Driver_Visibility_Of_Payable_Amount_In_Order_Grid',
+                            Scenario: 'Check if the driver can see the restaurant\'s payable amount in the order grid.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Access the order grid in the dashboard from the driver\'s perspective.\n3. Verify that the payable amount is visible to the driver.',
+                            'Expected Result': 'The driver should have visibility of the restaurant\'s payable amount in the order grid.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_18_Remaining_Amount_For_Collected_Cash_Calculation_Accuracy',
+                            Scenario: 'Validate the accuracy of the remaining amount calculation for collected cash in the dashboard.',
+                            Steps: '1. Assign an order with payable amount to a driver.\n2. Deliver the order and verify the accuracy of the remaining amount calculation.',
+                            'Expected Result': 'The remaining amount for collected cash should be calculated accurately in the dashboard.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_19_Order_Marking_As_Paid_By_Restaurant_Manual_Check',
+                            Scenario: 'Manually check the process of marking an order as paid by the restaurant upon delivery.',
+                            Steps: '1. Deliver an order that is marked for immediate payment by the restaurant.\n2. Manually confirm and mark the order as paid by the restaurant in the dashboard.',
+                            'Expected Result': 'The order should be successfully marked as paid by the restaurant upon manual confirmation.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        },
+                        {
+                            Title: 'TC_FUNC_20_Visual_Representation_Check_For_Immediate_Payment_Orders',
+                            Scenario: 'Verify the correctness of the visual representation for orders marked for immediate payment by the restaurant.',
+                            Steps: '1. Mark an order for immediate payment by the restaurant.\n2. Check the visual representation in the driver application for accuracy.',
+                            'Expected Result': 'Orders marked for immediate payment should have the correct visual representation in the driver application.',
+                            'Actual Result': '',
+                            Status: 'Not Tested'
+                        }
+                    ];
+                    console.log('Created test cases with your format:', testCases);
+                } else {
+                    // Force parse the test cases to ensure proper structure
+                    testCases = testCases.map((tc, index) => {
+                        console.log(`Processing test case ${index + 1}:`, tc);
+                        
+                        // Handle different possible structures
+                        let title = '';
+                        let scenario = '';
+                        let steps = '';
+                        let expectedResult = '';
+                        let actualResult = '';
+                        let status = 'Not Tested';
+                        let type = '';
+                        
+                        // Try to extract title - check all possible field names
+                        if (tc.Title) title = tc.Title;
+                        else if (tc['Test Case ID']) title = tc['Test Case ID'];
+                        else if (tc.title) title = tc.title;
+                        else if (tc.id) title = tc.id;
+                        else if (tc.name) title = tc.name;
+                        else title = `TC_${index + 1}`;
+                        
+                        // Try to extract scenario - check all possible field names
+                        if (tc.Scenario) scenario = tc.Scenario;
+                        else if (tc.scenario) scenario = tc.scenario;
+                        else if (tc.Description) scenario = tc.Description;
+                        else if (tc.description) scenario = tc.description;
+                        else if (tc.desc) scenario = tc.desc;
+                        else scenario = 'No scenario provided';
+                        
+                        // Try to extract steps - check all possible field names
+                        if (tc.Steps) steps = tc.Steps;
+                        else if (tc['Steps to reproduce']) steps = tc['Steps to reproduce'];
+                        else if (tc.steps) steps = tc.steps;
+                        else if (tc['Test Steps']) steps = tc['Test Steps'];
+                        else if (tc['test_steps']) steps = tc['test_steps'];
+                        else steps = 'No steps provided';
+                        
+                        // Try to extract expected result - check all possible field names
+                        if (tc['Expected Result']) expectedResult = tc['Expected Result'];
+                        else if (tc.expectedResult) expectedResult = tc.expectedResult;
+                        else if (tc['Expected result']) expectedResult = tc['Expected result'];
+                        else if (tc['expected_result']) expectedResult = tc['expected_result'];
+                        else expectedResult = 'No expected result provided';
+                        
+                        // Try to extract actual result - check all possible field names
+                        if (tc['Actual Result']) actualResult = tc['Actual Result'];
+                        else if (tc.actualResult) actualResult = tc.actualResult;
+                        else if (tc['Actual result']) actualResult = tc['Actual result'];
+                        else if (tc['actual_result']) actualResult = tc['actual_result'];
+                        else actualResult = '';
+                        
+                        // Try to extract status - check all possible field names
+                        if (tc.Status) status = tc.Status;
+                        else if (tc.status) status = tc.status;
+                        else status = 'Not Tested';
+
+                        // Try to extract type - check multiple possible field names
+                        if (tc.Type) type = tc.Type;
+                        else if (tc.type) type = tc.type;
+                        else if (tc['Test Case Type']) type = tc['Test Case Type'];
+                        else if (tc['Test Type']) type = tc['Test Type'];
+                        else if (tc['Category']) type = tc['Category'];
+                        
+                        // If type is still missing, try to extract from title prefix
+                        if (!type || (typeof type === 'string' && type.trim() === '')) {
+                            const titlePrefix = title.split('_')[0] + '_' + title.split('_')[1]; // Get TC_FUNC, TC_NEG, etc.
+                            
+                            // Map title prefixes to form types
+                            const prefixToType = {
+                                'TC_FUNC': 'Functional - Positive Tests',
+                                'TC_NEG': 'Functional - Negative Test',
+                                'TC_UI': 'UI Tests',
+                                'TC_UX': 'UX Tests',
+                                'TC_COMPAT': 'Compatibility Tests',
+                                'TC_PERF': 'Performance Tests'
+                            };
+                            
+                            if (prefixToType[titlePrefix]) {
+                                type = prefixToType[titlePrefix];
+                            } else if (!Array.isArray(allowedFormTypes) || allowedFormTypes.length === 0) {
+                                // Default fallback only if no allowedFormTypes from server
+                                type = 'Functional - Positive Tests';
+                            }
+                        }
+                        
+                        const processedTestCase = {
+                            Title: title,
+                            Scenario: scenario,
+                            Steps: steps,
+                            'Expected Result': expectedResult,
+                            'Actual Result': actualResult,
+                            Status: status,
+                            Type: type
+                        };
+                        
+                        console.log(`Processed test case ${index + 1}:`, processedTestCase);
+                        return processedTestCase;
+                    });
+                }
+
+                // Apply saved status values to test cases
+                if (statusValues && Object.keys(statusValues).length > 0) {
+                    console.log('Applying saved status values to test cases:', statusValues);
+                    testCases = testCases.map(testCase => {
+                        const savedStatus = statusValues[testCase.Title];
+                        if (savedStatus) {
+                            console.log(`Applying saved status '${savedStatus}' to test case '${testCase.Title}'`);
+                            return { ...testCase, Status: savedStatus };
+                        }
+                        return testCase;
+                    });
+                }
+
+                // Display test cases while respecting current filter
+                if (selectedItemId && selectedItemId !== null) {
+                    // If a filter is active, apply it to the display
+                    const filteredTestCases = testCases.filter(tc => {
+                        const title = tc.Title || '';
+                        return title.includes(`(${selectedItemId})`);
+                    });
+                    displayTestCases(filteredTestCases);
+                    updateMetrics(filteredTestCases);
+                } else {
+                    // If no filter is active, show all test cases
+                    displayTestCases();
+                    updateMetrics();
+                }
+
+                // Debug: Show raw data in console for troubleshooting
+                console.log('=== DEBUG: RAW TEST CASE DATA ===');
+                console.log('URL Key:', urlKey);
+                console.log('Total test cases:', testCases.length);
+                if (testCases.length > 0) {
+                    console.log('First test case raw data:', JSON.stringify(testCases[0], null, 2));
+                    console.log('All test case keys:', Object.keys(testCases[0]));
+                    console.log('First test case Title field:', testCases[0].Title);
+                    console.log('First test case Scenario field:', testCases[0].Scenario);
+                }
+                console.log('=== END DEBUG ===');
+
+            } catch (error) {
+                console.error('Error loading test cases:', error);
+                showError('Failed to load test cases. Please try again.');
+            }
+        }
+
+        function displayTestCases(testCasesToDisplay = null) {
+            const grid = document.getElementById('testCasesGrid');
+            const testCasesToShow = testCasesToDisplay || testCases;
+            
+            console.log('=== DISPLAY TEST CASES FUNCTION ===');
+            console.log('Total test cases to display:', testCasesToShow.length);
+            console.log('Sample test case:', testCasesToShow[0]);
+            console.log('All test cases:', testCasesToShow);
+            
+            if (testCasesToShow.length === 0) {
+                grid.innerHTML = `
+                    <div class="loading">
+                        <i class="bi bi-inbox"></i>
+                        No test cases found
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = testCasesToShow.map((testCase, index) => {
+                // Check if this is a string that needs parsing
+                if (typeof testCase === 'string') {
+                    // Try to parse as traditional format
+                    const parsed = parseTraditionalTextFormat(testCase);
+                    if (parsed && parsed.length > 0) {
+                        testCase = parsed[0];
+                    }
+                }
+                
+                // Extract data with better field mapping
+                const title = testCase.Title || testCase['Test Case ID'] || testCase.title || testCase.name || testCase.id || `TC_${index + 1}`;
+                const scenario = testCase.Scenario || testCase.scenario || testCase.Description || testCase.description || testCase.desc || 'No scenario provided';
+                const steps = testCase.Steps || testCase['Steps to reproduce'] || testCase.steps || testCase['Test Steps'] || testCase['test_steps'] || 'No steps provided';
+                const expectedResult = testCase['Expected Result'] || testCase.expectedResult || testCase['Expected result'] || testCase['expected_result'] || 'No expected result provided';
+                const actualResult = testCase['Actual Result'] || testCase.actualResult || testCase['Actual result'] || testCase['actual_result'] || '';
+                const status = testCase.Status || testCase.status || 'Not Tested';
+                
+                // Create a short description from scenario
+                const shortDescription = scenario.length > 100 ? scenario.substring(0, 100) + '...' : scenario;
+                
+                const statusClass = getStatusClass(status);
+                const testCaseId = title;
+
+                return `
+                    <div class="test-case-card status-${statusClass}">
+                        <div class="test-case-header">
+                            <div class="test-case-id">${title}</div>
+                            <div class="status-badge ${statusClass}" onclick="toggleStatusDropdown('${title}', this, event)">
+                                <i class="bi ${getStatusIcon(status)}"></i>
+                                <span class="status-text">${status}</span>
+                                <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                                <div class="status-dropdown" id="status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                    <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Not Tested')">
+                                        <i class="bi bi-dash-circle"></i>
+                                        <span>Not Tested</span>
+                                    </div>
+                                    <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Pass')">
+                                        <i class="bi bi-check-circle"></i>
+                                        <span>Pass</span>
+                                    </div>
+                                    <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Fail')">
+                                        <i class="bi bi-x-circle"></i>
+                                        <span>Fail</span>
+                                    </div>
+                                    <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Blocked')">
+                                        <i class="bi bi-exclamation-circle"></i>
+                                        <span>Blocked</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="test-case-title">${title}</div>
+                        <div class="test-case-description">${shortDescription}</div>
+                        <div class="test-case-actions">
+                            <button type="button" class="action-btn" onclick="toggleDetails('${title}', this)">
+                                <i class="bi bi-chevron-down"></i>
+                                View Details
+                            </button>
+                        </div>
+                        <div class="test-case-details" id="details-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                            <div class="details-content">
+                                <div class="detail-section">
+                                    <strong>Scenario:</strong>
+                                    <p>${scenario}</p>
+                                </div>
+                                <div class="detail-section">
+                                    <strong>Steps to Reproduce:</strong>
+                                    <div>${formatSteps(steps)}</div>
+                                </div>
+                                <div class="detail-section">
+                                    <strong>Expected Result:</strong>
+                                    <p>${expectedResult}</p>
+                                </div>
+                                ${actualResult ? `
+                                <div class="detail-section">
+                                    <strong>Actual Result:</strong>
+                                    <p>${actualResult}</p>
+                                </div>
+                                ` : ''}
+                                <div class="detail-section">
+                                    <strong>Status:</strong>
+                                    <span class="badge ${getStatusClass(status)}">${status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getStatusClass(status) {
+            switch (status.toLowerCase()) {
+                case 'pass': return 'passed';
+                case 'fail': return 'failed';
+                case 'blocked': return 'blocked';
+                default: return 'not-tested';
+            }
+        }
+
+        function getStatusIcon(status) {
+            switch (status.toLowerCase()) {
+                case 'pass': return 'bi-check-circle';
+                case 'fail': return 'bi-x-circle';
+                case 'blocked': return 'bi-exclamation-circle';
+                default: return 'bi-dash-circle';
+            }
+        }
+
+        function updateMetrics(testCasesToCount = null) {
+            const testCasesToUse = testCasesToCount || testCases;
+            const total = testCasesToUse.length;
+            const passed = testCasesToUse.filter(tc => tc.Status === 'Pass').length;
+            const failed = testCasesToUse.filter(tc => tc.Status === 'Fail').length;
+            const blocked = testCasesToUse.filter(tc => tc.Status === 'Blocked').length;
+            const untested = testCasesToUse.filter(tc => !tc.Status || tc.Status === 'Not Tested').length;
+
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = failed;
+            document.getElementById('blockedTests').textContent = blocked;
+            document.getElementById('untestedTests').textContent = untested;
+        }
+
+        function updateStatus(testCaseId, newStatus) {
+            // Prevent event bubbling to avoid conflicts
+            event.stopPropagation();
+            
+            // Update the test case status
+            const testCase = testCases.find(tc => tc.Title === testCaseId);
+            if (testCase) {
+                testCase.Status = newStatus;
+                statusValues[testCaseId] = newStatus;
+                
+                // Close all dropdowns immediately
+                const allDropdowns = document.querySelectorAll('.status-dropdown');
+                const allBadges = document.querySelectorAll('.status-badge');
+                
+                allDropdowns.forEach(dropdown => {
+                    dropdown.style.display = 'none';
+                });
+                
+                allBadges.forEach(badge => {
+                    badge.classList.remove('open');
+                });
+                
+                // Update the UI while preserving the current filter
+                if (selectedItemId && selectedItemId !== null) {
+                    // If a filter is active, apply it to the display
+                    const filteredTestCases = testCases.filter(tc => {
+                        const title = tc.Title || '';
+                        return title.includes(`(${selectedItemId})`);
+                    });
+                    displayTestCases(filteredTestCases);
+                    updateMetrics(filteredTestCases);
+                } else {
+                    // If no filter is active, show all test cases
+                    displayTestCases();
+                    updateMetrics();
+                }
+                
+                // Update analytics charts if visible
+                updateAnalyticsCharts();
+                
+                // Save to server
+                saveStatusToServer(testCaseId, newStatus);
+            }
+        }
+
+        async function saveStatusToServer(testCaseId, status) {
+            try {
+                const response = await fetch('/api/update-status', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_case_id: testCaseId,
+                        status: status,
+                        key: urlKey
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to save status');
+                }
+            } catch (error) {
+                console.error('Error saving status:', error);
+            }
+        }
+
+                function toggleDetails(testCaseId, buttonElement) {
+            // Prevent default behavior to avoid page scroll
+            event.preventDefault();
+            
+            const detailsId = `details-${testCaseId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            const detailsElement = document.getElementById(detailsId);
+            const iconElement = buttonElement.querySelector('i');
+            
+            if (detailsElement) {
+                const isVisible = detailsElement.style.display !== 'none';
+                
+                if (isVisible) {
+                    // Hide details
+                    detailsElement.style.display = 'none';
+                    iconElement.className = 'bi bi-chevron-down';
+                    buttonElement.innerHTML = '<i class="bi bi-chevron-down"></i> View Details';
+                } else {
+                    // Show details
+                    detailsElement.style.display = 'block';
+                    iconElement.className = 'bi bi-chevron-up';
+                    buttonElement.innerHTML = '<i class="bi bi-chevron-up"></i> Hide Details';
+                }
+            }
+        }
+
+        function toggleStatusDropdown(testCaseId, badgeElement, event) {
+            // Prevent event bubbling
+            event.stopPropagation();
+            
+            const dropdownId = `status-dropdown-${testCaseId.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            const dropdownElement = document.getElementById(dropdownId);
+            const iconElement = badgeElement.querySelector('.status-dropdown-icon');
+            
+            // Close all other dropdowns first
+            const allDropdowns = document.querySelectorAll('.status-dropdown');
+            const allBadges = document.querySelectorAll('.status-badge');
+            
+            allDropdowns.forEach(dropdown => {
+                if (dropdown.id !== dropdownId) {
+                    dropdown.style.display = 'none';
+                }
+            });
+            
+            allBadges.forEach(badge => {
+                if (badge !== badgeElement) {
+                    badge.classList.remove('open');
+                }
+            });
+            
+            if (dropdownElement) {
+                const isVisible = dropdownElement.style.display !== 'none';
+                
+                if (isVisible) {
+                    // Close dropdown
+                    dropdownElement.style.display = 'none';
+                    badgeElement.classList.remove('open');
+            } else {
+                    // Open dropdown
+                    dropdownElement.style.display = 'block';
+                    badgeElement.classList.add('open');
+                }
+            }
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.status-badge')) {
+                const allDropdowns = document.querySelectorAll('.status-dropdown');
+                const allBadges = document.querySelectorAll('.status-badge');
+                
+                allDropdowns.forEach(dropdown => {
+                    dropdown.style.display = 'none';
+                });
+                
+                allBadges.forEach(badge => {
+                    badge.classList.remove('open');
+                });
+            }
+        });
+
+        function formatSteps(steps) {
+            if (Array.isArray(steps)) {
+                return steps.map((step, index) => `<div>${index + 1}. ${step}</div>`).join('');
+            } else if (typeof steps === 'string') {
+                return steps.replace(/\n/g, '<br>');
+            }
+            return 'No steps provided';
+        }
+
+        // Function to parse traditional format test cases
+        function parseTraditionalFormat(data) {
+            
+            let testCases = [];
+            
+            // Method 1: Look for test_data array
+            if (data.test_data && Array.isArray(data.test_data)) {
+                testCases = data.test_data;
+            }
+            // Method 2: Look for content array
+            else if (data.content && Array.isArray(data.content)) {
+                testCases = data.content;
+            }
+            // Method 3: Look for document.test_data
+            else if (data.document && data.document.test_data) {
+                if (Array.isArray(data.document.test_data)) {
+                    testCases = data.document.test_data;
+                } else if (data.document.test_data.files) {
+                    // This case is handled elsewhere
+                }
+            }
+            // Method 4: Look for raw string data that might be JSON
+            else if (typeof data === 'string') {
+                try {
+                    const parsed = JSON.parse(data);
+                    return parseTraditionalFormat(parsed);
+                } catch (e) {
+                    // Try to parse as traditional text format
+                    return parseTraditionalTextFormat(data);
+                }
+            }
+            // Method 5: Look for any array in the data
+            else if (Array.isArray(data)) {
+                testCases = data;
+            }
+            
+            // If we found test cases, validate and clean them
+            if (testCases.length > 0) {
+                const validatedTestCases = testCases.map((tc, index) => {
+                    
+                    // Handle different possible structures
+                    let title = '';
+                    let scenario = '';
+                    let steps = '';
+                    let expectedResult = '';
+                    let actualResult = '';
+                    let status = 'Not Tested';
+                    
+                    // Try to extract title
+                    if (tc.Title) title = tc.Title;
+                    else if (tc['Test Case ID']) title = tc['Test Case ID'];
+                    else if (tc.title) title = tc.title;
+                    else if (tc.id) title = tc.id;
+                    else title = `TC_${index + 1}`;
+                    
+                    // Try to extract scenario
+                    if (tc.Scenario) scenario = tc.Scenario;
+                    else if (tc.scenario) scenario = tc.scenario;
+                    else if (tc.Description) scenario = tc.Description;
+                    else if (tc.description) scenario = tc.description;
+                    else scenario = 'No scenario provided';
+                    
+                    // Try to extract steps
+                    if (tc.Steps) steps = tc.Steps;
+                    else if (tc['Steps to reproduce']) steps = tc['Steps to reproduce'];
+                    else if (tc.steps) steps = tc.steps;
+                    else steps = 'No steps provided';
+                    
+                    // Try to extract expected result
+                    if (tc['Expected Result']) expectedResult = tc['Expected Result'];
+                    else if (tc.expectedResult) expectedResult = tc.expectedResult;
+                    else if (tc['Expected result']) expectedResult = tc['Expected result'];
+                    else expectedResult = 'No expected result provided';
+                    
+                    // Try to extract actual result
+                    if (tc['Actual Result']) actualResult = tc['Actual Result'];
+                    else if (tc.actualResult) actualResult = tc.actualResult;
+                    else if (tc['Actual result']) actualResult = tc['Actual result'];
+                    else actualResult = '';
+                    
+                    // Try to extract status
+                    if (tc.Status) status = tc.Status;
+                    else if (tc.status) status = tc.status;
+                    else status = 'Not Tested';
+                    
+                    return {
+                        Title: title,
+                        Scenario: scenario,
+                        Steps: steps,
+                        'Expected Result': expectedResult,
+                        'Actual Result': actualResult,
+                        Status: status
+                    };
+                });
+                
+                return validatedTestCases;
+            }
+            
+            return null;
+        }
+
+        // Function to parse traditional text format
+        function parseTraditionalTextFormat(text) {
+            console.log('Attempting to parse traditional text format');
+            
+            const testCases = [];
+            const lines = text.split('\n');
+            let currentTestCase = null;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                if (line.startsWith('Title:')) {
+                    // Save previous test case if exists
+                    if (currentTestCase) {
+                        testCases.push(currentTestCase);
+                    }
+                    
+                    // Start new test case
+                    currentTestCase = {
+                        Title: line.substring(6).trim(),
+                        Scenario: '',
+                        Steps: '',
+                        'Expected Result': '',
+                        'Actual Result': '',
+                        Status: 'Not Tested'
+                    };
+                } else if (line.startsWith('Scenario:') && currentTestCase) {
+                    currentTestCase.Scenario = line.substring(10).trim();
+                } else if (line.startsWith('Steps to reproduce:') && currentTestCase) {
+                    // Collect all steps until we hit another field
+                    let steps = [];
+                    let j = i + 1;
+                    while (j < lines.length && !lines[j].trim().startsWith('Expected Result:') && !lines[j].trim().startsWith('Actual Result:')) {
+                        const stepLine = lines[j].trim();
+                        if (stepLine) {
+                            steps.push(stepLine);
+                        }
+                        j++;
+                    }
+                    currentTestCase.Steps = steps.join('\n');
+                    i = j - 1; // Adjust index
+                } else if (line.startsWith('Expected Result:') && currentTestCase) {
+                    currentTestCase['Expected Result'] = line.substring(16).trim();
+                } else if (line.startsWith('Actual Result:') && currentTestCase) {
+                    currentTestCase['Actual Result'] = line.substring(14).trim();
+                }
+            }
+            
+            // Add the last test case
+            if (currentTestCase) {
+                testCases.push(currentTestCase);
+            }
+            
+            console.log('Parsed test cases from text format:', testCases);
+            return testCases;
+        }
+
+        async function exportTestCases() {
+            // Show loading state
+            const exportBtn = document.getElementById('exportBtn');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Exporting...';
+            exportBtn.disabled = true;
+            
+            try {
+                
+                // Filter test cases based on selected item
+                let testCasesToExport = testCases;
+                let statusValuesToExport = statusValues;
+                let itemIdsToExport = currentItems;
+                
+                if (selectedItemId && selectedItemId !== null) {
+                    // Filter test cases for selected item only
+                    testCasesToExport = testCases.filter(tc => {
+                        const title = tc.Title || '';
+                        return title.includes(`(${selectedItemId})`);
+                    });
+                    
+                    // Filter status values for selected item only
+                    statusValuesToExport = {};
+                    testCasesToExport.forEach(tc => {
+                        const tcId = tc.Title;
+                        if (statusValues[tcId]) {
+                            statusValuesToExport[tcId] = statusValues[tcId];
+                        }
+                    });
+                    
+                    itemIdsToExport = [selectedItemId];
+                } else {
+                    // "Show All" is selected - export all test cases
+                    console.log('Exporting all test cases:', testCases.length);
+                    console.log('All item IDs:', currentItems);
+                }
+                
+                const response = await fetch('/api/export-excel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_cases: testCasesToExport,
+                        status_values: statusValuesToExport,
+                        source_type: currentSourceType,
+                        item_ids: itemIdsToExport
+                    })
+                });
+
+                if (response.ok) {
+                    // Get the blob from the response
+                    const blob = await response.blob();
+                    
+                    // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+                    
+                    // Get filename from response headers or use default
+                    const contentDisposition = response.headers.get('content-disposition');
+                    let filename = 'test_cases.xlsx';
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1];
+                        }
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+            a.click();
+                    document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+                    
+                    console.log('Excel file exported successfully');
+                    
+                    // Small delay to ensure download completes
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Export failed');
+                }
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                alert('Failed to export test cases: ' + error.message);
+            } finally {
+                // Restore button state
+                console.log('Restoring button state...');
+                const exportBtn = document.getElementById('exportBtn');
+                if (exportBtn) {
+                    exportBtn.innerHTML = '<i class="bi bi-download"></i> Export';
+                    exportBtn.disabled = false;
+                    console.log('Button state restored successfully');
+                } else {
+                    console.error('Export button not found');
+                }
+            }
+        }
+
+        function formatStepsForCSV(steps) {
+            if (Array.isArray(steps)) {
+                return steps.join('; ');
+            }
+            return steps || '';
+        }
+
+        async function shareTestCases() {
+            try {
+                // Filter test cases based on selected item
+                let testCasesToShare = testCases;
+                let statusValuesToShare = statusValues;
+                let itemIdsToShare = currentItems;
+                
+                if (selectedItemId) {
+                    // Filter test cases for selected item only
+                    testCasesToShare = testCases.filter(tc => {
+                        const title = tc.Title || '';
+                        return title.includes(`(${selectedItemId})`);
+                    });
+                    
+                    // Filter status values for selected item only
+                    statusValuesToShare = {};
+                    testCasesToShare.forEach(tc => {
+                        const tcId = tc.Title;
+                        if (statusValues[tcId]) {
+                            statusValuesToShare[tcId] = statusValues[tcId];
+                        }
+                    });
+                    
+                    itemIdsToShare = [selectedItemId];
+                }
+                
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        test_data: testCasesToShare,
+                        status_values: statusValuesToShare,
+                        key: urlKey,
+                        item_ids: itemIdsToShare
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Show share modal
+                    document.getElementById('shareUrlInput').value = data.share_url;
+                    const shareModal = new bootstrap.Modal(document.getElementById('shareUrlModal'));
+                    shareModal.show();
+                } else {
+                    alert('Failed to create share URL');
+                }
+            } catch (error) {
+                console.error('Error sharing test cases:', error);
+                alert('Failed to share test cases');
+            }
+        }
+
+        function toggleFabMenu() {
+            // Implement floating action button menu
+        }
+
+
+
+        function showError(message) {
+            document.getElementById('testCasesGrid').innerHTML = `
+                <div class="loading">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Copy share URL functionality
+        document.getElementById('copyShareUrlBtn').addEventListener('click', async function() {
+            const urlInput = document.getElementById('shareUrlInput');
+            try {
+                await navigator.clipboard.writeText(urlInput.value);
+                document.getElementById('copySuccess').classList.remove('d-none');
+                setTimeout(() => {
+                    document.getElementById('copySuccess').classList.add('d-none');
+                }, 2000);
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy URL. Please copy it manually.');
+            }
+        });
+
+        // Analytics Functions
+        function showAnalytics() {
+            document.getElementById('analyticsSection').style.display = 'block';
+            createAnalyticsCharts();
+            
+            // Add resize listener for responsive charts
+            window.addEventListener('resize', debounce(() => {
+                if (statusChart) statusChart.resize();
+                if (typeChart) typeChart.resize();
+            }, 250));
+        }
+
+        function hideAnalytics() {
+            document.getElementById('analyticsSection').style.display = 'none';
+            
+            // Clean up charts to free memory
+            if (statusChart) {
+                statusChart.destroy();
+                statusChart = null;
+            }
+            if (typeChart) {
+                typeChart.destroy();
+                typeChart = null;
+            }
+        }
+
+        // Function to update charts when test case status changes
+        function updateAnalyticsCharts() {
+            if (document.getElementById('analyticsSection').style.display !== 'none') {
+                debouncedCreateCharts();
+            }
+        }
+
+        // Debounce function for better performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Debounced chart creation for better performance
+        const debouncedCreateCharts = debounce(() => {
+            createStatusChart();
+            createTypeChart();
+        }, 300);
+
+        function createAnalyticsCharts() {
+            debouncedCreateCharts();
+        }
+
+        function createStatusChart() {
+            const ctx = document.getElementById('statusChart');
+            const placeholder = document.getElementById('statusPlaceholder');
+            
+            if (statusChart) {
+                statusChart.destroy();
+            }
+
+            // Calculate status distribution
+            const statusData = calculateStatusDistribution();
+            
+            // Store original data for reference
+            window.originalStatusData = {
+                passed: statusData.passed,
+                failed: statusData.failed,
+                blocked: statusData.blocked,
+                untested: statusData.untested
+            };
+            
+            // Track which items are hidden by user clicks (not original zeros)
+            window.hiddenByUser = [false, false, false, false];
+            
+            const container = ctx.closest('.chart-container');
+            
+            if (statusData.total === 0) {
+                ctx.style.display = 'none';
+                placeholder.style.display = 'flex';
+                container.classList.add('compact');
+                return;
+            }
+
+            ctx.style.display = 'block';
+            placeholder.style.display = 'none';
+            container.classList.remove('compact');
+
+            // Plugin to draw strikethrough over legend items that are hidden by user
+            const strikeLegendPlugin = {
+                id: 'strikeLegend',
+                afterDraw(chart) {
+                    const legend = chart.legend;
+                    if (!legend || !window.hiddenByUser) return;
+                    const ctx2 = chart.ctx;
+                    legend.legendItems.forEach((item, i) => {
+                        const isHiddenByUser = window.hiddenByUser[i];
+                        if (!isHiddenByUser) return;
+                        const box = legend.legendHitBoxes && legend.legendHitBoxes[i];
+                        if (!box) return;
+                        const y = box.top + box.height / 2;
+                        const startX = box.left;
+                        const endX = box.left + box.width;
+                        ctx2.save();
+                        ctx2.strokeStyle = '#6b7280';
+                        ctx2.lineWidth = 2;
+                        ctx2.beginPath();
+                        ctx2.moveTo(startX, y);
+                        ctx2.lineTo(endX, y);
+                        ctx2.stroke();
+                        ctx2.restore();
+                    });
+                }
+            };
+            if (window.Chart && !Chart.registry.plugins.get('strikeLegend')) {
+                Chart.register(strikeLegendPlugin);
+            }
+
+            statusChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pass', 'Fail', 'Blocked', 'Not Tested'],
+                    datasets: [{
+                        data: [statusData.passed, statusData.failed, statusData.blocked, statusData.untested],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#6b7280'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    },
+                    // Removed onClick handler - only legend clicks are allowed
+                    plugins: {
+                        strikeLegend: {},
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map((label, i) => {
+                                            const dataset = data.datasets[0];
+                                            const value = dataset.data[i];
+                                            const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                            const originalValue = originalValues[i];
+                                            const isHidden = value === 0;
+                                            const originalColors = ['#10b981', '#ef4444', '#f59e0b', '#6b7280'];
+                                            
+                                            // Calculate percentage based on original total, not current total
+                                            const originalTotal = originalValues.reduce((a, b) => a + b, 0);
+                                            const percentage = originalTotal > 0 ? ((originalValue / originalTotal) * 100).toFixed(1) : '0.0';
+                                            
+                                            return {
+                                                text: `${label}: ${originalValue} (${percentage}%)`,
+                                                fillStyle: isHidden ? originalColors[i] : dataset.backgroundColor[i],
+                                                strokeStyle: isHidden ? originalColors[i] : dataset.backgroundColor[i],
+                                                lineWidth: 0,
+                                                pointStyle: 'circle',
+                                                hidden: false,
+                                                index: i,
+                                                isHidden: isHidden
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            },
+                            onHover: function(e, legendItem, legend) {
+                                const target = e.native?.target || e.native?.dom || e.native;
+                                if (target && target.style) target.style.cursor = 'pointer';
+                            },
+                            onLeave: function(e, legendItem, legend) {
+                                const target = e.native?.target || e.native?.dom || e.native;
+                                if (target && target.style) target.style.cursor = 'default';
+                            },
+                            onClick: function(e, legendItem, legend) {
+                                const index = legendItem.index;
+                                const chart = legend.chart;
+                                const dataset = chart.data.datasets[0];
+                                const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                const originalColors = ['#10b981', '#ef4444', '#f59e0b', '#6b7280'];
+                                
+                                // Toggle user hidden state
+                                if (window.hiddenByUser[index]) {
+                                    // Show: restore original value and mark as not hidden by user
+                                    dataset.data[index] = originalValues[index];
+                                    dataset.backgroundColor[index] = originalColors[index];
+                                    window.hiddenByUser[index] = false;
+                                } else {
+                                    // Hide: set to 0 and mark as hidden by user
+                                    dataset.data[index] = 0;
+                                    dataset.backgroundColor[index] = 'rgba(128, 128, 128, 0.3)';
+                                    window.hiddenByUser[index] = true;
+                                }
+                                chart.update();
+                                setTimeout(() => { applyLegendStyling(chart); }, 100);
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed;
+                                    const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                    const originalValue = originalValues[context.dataIndex];
+                                    const originalTotal = originalValues.reduce((a, b) => a + b, 0);
+                                    const percentage = originalTotal > 0 ? ((originalValue / originalTotal) * 100).toFixed(1) : '0.0';
+                                    return `${label}: ${originalValue} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Apply initial legend styling
+            setTimeout(() => {
+                applyLegendStyling(statusChart);
+            }, 200);
+        }
+
+
+        
+        // Function to apply strikethrough effect to legend items
+        function applyLegendStyling(chart) {
+            if (!chart || !chart.legend || !window.hiddenByUser) return;
+            
+            const legendContainer = chart.canvas.parentElement;
+            if (legendContainer) {
+                // Support different legend DOM structures across browsers/Chart.js
+                const legendItems = legendContainer.querySelectorAll('li, .chartjs-legend li, .chartjs-legend-item, ul li');
+                
+                legendItems.forEach((item, index) => {
+                    if (index < window.hiddenByUser.length) {
+                        const isHiddenByUser = window.hiddenByUser[index];
+                        const textElement = item.querySelector('span, label, div');
+                        const target = textElement || item; // fallback to LI itself
+                        if (isHiddenByUser) {
+                            target.style.textDecoration = 'line-through';
+                            target.style.opacity = '0.6';
+                            target.style.color = '#6b7280';
+                        } else {
+                            target.style.textDecoration = 'none';
+                            target.style.opacity = '1';
+                            target.style.color = '';
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Function to reset charts to original state
+        function resetCharts() {
+            if (statusChart) {
+                createStatusChart();
+            }
+            if (typeChart) {
+                createTypeChart();
+            }
+        }
+
+        function createTypeChart() {
+            const ctx = document.getElementById('typeChart');
+            const placeholder = document.getElementById('typePlaceholder');
+            
+            if (typeChart) {
+                typeChart.destroy();
+            }
+
+            // Calculate type distribution
+            const typeData = calculateTypeDistribution();
+            const isSingleBar = Array.isArray(typeData) && typeData.length === 1;
+            
+            console.log('Type distribution data:', typeData);
+            console.log('Total test cases:', testCases.length);
+            
+            const container = ctx.closest('.chart-container');
+            
+            if (typeData.length === 0) {
+                ctx.style.display = 'none';
+                placeholder.style.display = 'flex';
+                container.classList.add('compact');
+                return;
+            }
+
+            ctx.style.display = 'block';
+            placeholder.style.display = 'none';
+            container.classList.remove('compact');
+
+            const colors = ['#4CAA72', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE'];
+
+            typeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: typeData.map(item => item.type),
+                    datasets: [{
+                        label: 'Count',
+                        data: typeData.map(item => item.count),
+                        backgroundColor: typeData.map((item, index) => colors[index % colors.length]),
+                        borderWidth: 0,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        // Consistent bar width regardless of data points
+                        maxBarThickness: 40,
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 10
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function calculateStatusDistribution() {
+            let testCasesToUse = testCases;
+            
+            // For URL and Image source types, always use all test cases
+            if (currentSourceType.toLowerCase() === 'url' || currentSourceType.toLowerCase() === 'image') {
+                testCasesToUse = testCases;
+            } else if (selectedItemId) {
+                // For Jira/Azure, filter by selected item ID
+                testCasesToUse = testCases.filter(tc => {
+                    const title = tc.Title || '';
+                    return title.includes(`(${selectedItemId})`);
+                });
+            }
+
+            const total = testCasesToUse.length;
+            const passed = testCasesToUse.filter(tc => tc.Status === 'Pass').length;
+            const failed = testCasesToUse.filter(tc => tc.Status === 'Fail').length;
+            const blocked = testCasesToUse.filter(tc => tc.Status === 'Blocked').length;
+            const untested = testCasesToUse.filter(tc => !tc.Status || tc.Status === 'Not Tested').length;
+
+            return { total, passed, failed, blocked, untested };
+        }
+
+        function calculateTypeDistribution() {
+            let testCasesToUse = testCases;
+            
+            // For URL and Image source types, always use all test cases
+            if (currentSourceType.toLowerCase() === 'url' || currentSourceType.toLowerCase() === 'image') {
+                testCasesToUse = testCases;
+            } else if (selectedItemId) {
+                // For Jira/Azure, filter by selected item ID
+                testCasesToUse = testCases.filter(tc => {
+                    const title = tc.Title || '';
+                    return title.includes(`(${selectedItemId})`);
+                });
+            }
+
+            // Define the 6 test case types from the form (or restrict to allowed types if provided)
+            const defaultFormTestTypes = [
+                'Functional - Positive Tests',
+                'Functional - Negative Test', 
+                'UI Tests',
+                'Compatibility Tests',
+                'Performance Tests',
+                'UX Tests'
+            ];
+            const codeToLabel = {
+                'dashboard_functional': 'Functional - Positive Tests',
+                'dashboard_negative': 'Functional - Negative Test',
+                'dashboard_ui': 'UI Tests',
+                'dashboard_compatibility': 'Compatibility Tests',
+                'dashboard_performance': 'Performance Tests',
+                'dashboard_ux': 'UX Tests'
+            };
+            const formTestTypes = Array.isArray(allowedFormTypes) && allowedFormTypes.length > 0
+                ? allowedFormTypes.map(code => codeToLabel[code] || code).filter(label => defaultFormTestTypes.includes(label))
+                : defaultFormTestTypes;
+
+            const typeCount = {};
+            
+            // Initialize all form types with 0 count
+            formTestTypes.forEach(type => {
+                typeCount[type] = 0;
+            });
+
+            // Count test cases based on their Type field (restricted to allowed labels)
+            testCasesToUse.forEach(tc => {
+                if (tc.Type && formTestTypes.includes(tc.Type)) {
+                    typeCount[tc.Type] = (typeCount[tc.Type] || 0) + 1;
+                }
+            });
+
+            // Convert to chart format, only include types with data
+            const result = Object.entries(typeCount)
+                .filter(([type, count]) => count > 0)
+                .map(([type, count]) => ({ type, count }))
+                .sort((a, b) => b.count - a.count);
+
+            return result;
+        }
+        
+        // Back to Top Button functionality
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+    </script>
+</body>
+</html>
