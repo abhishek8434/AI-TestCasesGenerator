@@ -150,6 +150,8 @@ def generate():
             generation_status['current_test_type'] = ''
             generation_status['log'] = []
             generation_status['progress_percentage'] = 0
+            # Critical: clear any stale final_url_key from previous runs
+            generation_status['final_url_key'] = ''
             # For multiple item IDs, track combinations of item_id and test_type
             if source_type == 'image':
                 generation_status['total_types'] = set(f"image_{test_type}" for test_type in selected_types)
@@ -330,7 +332,7 @@ def generate():
                                 'url': target_url,
                                 'test_case_types': types,
                                 'test_data': structured_test_data  # Use structured data for frontend display
-                            }, result_key)
+                            }, result_key, 'url')
                             logger.info(f"[URL ASYNC] Saved test case with URL key: {url_key_final}")
                         except Exception as me:
                             logger.error(f"[URL ASYNC] Failed to save test case: {me}")
@@ -563,7 +565,7 @@ def generate():
                         'source_type': 'image',
                         'image_id': unique_id,
                         'test_data': structured_test_data  # Add structured data for frontend display
-                    }, unique_id)
+                    }, unique_id, 'image')
                     
                     # Track successful image test case generation with timing
                     generation_end_time = datetime.utcnow()
@@ -845,7 +847,10 @@ def generate():
                         'test_cases': formatted_test_cases,
                         'source_type': source_type,
                         'item_ids': item_ids
-                    }, item_ids[0] if item_ids else None)
+                    }, item_ids[0] if item_ids else None, source_type)
+                    # Expose the url_key for redirect logic
+                    with generation_status['lock']:
+                        generation_status['final_url_key'] = url_key
                     
                     # Track successful test case generation with timing
                     generation_end_time = datetime.utcnow()
@@ -1328,6 +1333,7 @@ def share_test_case():
         item_id = data.get('item_id')
         item_ids = data.get('item_ids', [])
         status_values = data.get('status_values', {})
+        source_type = data.get('source_type')  # Extract source type for proper identification
         
         if not test_data:
             return jsonify({'error': 'No test data provided'}), 400
@@ -1340,9 +1346,9 @@ def share_test_case():
         # Save the test case with status values
         # Use item_ids if provided, otherwise fall back to item_id
         if item_ids and len(item_ids) > 0:
-            url_key = mongo_handler.save_test_case(test_data, item_ids[0] if len(item_ids) == 1 else item_ids)
+            url_key = mongo_handler.save_test_case(test_data, item_ids[0] if len(item_ids) == 1 else item_ids, source_type)
         else:
-            url_key = mongo_handler.save_test_case(test_data, item_id)
+            url_key = mongo_handler.save_test_case(test_data, item_id, source_type)
         
         # If status values were provided, save them too
         if status_values:
@@ -1806,8 +1812,12 @@ def get_shared_status():
                         
                         nested_test_data = doc['test_data']
                         
-                        # Check if this is URL data with nested structure
-                        if 'source_type' in nested_test_data and nested_test_data['source_type'] == 'url':
+                        # Check if this is URL data with nested structure (only when the document itself is URL type)
+                        if (
+                            (doc.get('source_type') in (None, '', 'url')) 
+                            and 'source_type' in nested_test_data 
+                            and nested_test_data['source_type'] == 'url'
+                        ):
                             logger.info(f"Found URL data with nested structure")
                             
                             # Extract the actual test cases from the nested structure
@@ -1823,8 +1833,12 @@ def get_shared_status():
                                 logger.info(f"Successfully loaded {len(nested_test_data['test_data'])} URL test cases from nested structure")
                                 return jsonify(response_data)
                         
-                        # Check if this is Image data with nested structure
-                        elif 'source_type' in nested_test_data and nested_test_data['source_type'] == 'image':
+                        # Check if this is Image data with nested structure (only when the document itself is Image type)
+                        elif (
+                            (doc.get('source_type') in (None, '', 'image'))
+                            and 'source_type' in nested_test_data 
+                            and nested_test_data['source_type'] == 'image'
+                        ):
                             logger.info(f"Found Image data with nested structure")
                             
                             # Extract the actual test cases from the nested structure
@@ -2727,6 +2741,20 @@ def bad_request_error(error):
     """Handle 400 Bad Request errors"""
     logger.warning(f"400 error: {request.url}")
     return render_template('error.html', error_message="The request was invalid. Please check your input and try again."), 400
+
+@app.after_request
+def add_global_no_cache_headers(response):
+    try:
+        if 'Cache-Control' not in response.headers:
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+        if 'Pragma' not in response.headers:
+            response.headers["Pragma"] = "no-cache"
+        if 'Expires' not in response.headers:
+            response.headers["Expires"] = "0"
+    except Exception:
+        # Fail-safe: never break the response pipeline due to header issues
+        pass
+    return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5008)
