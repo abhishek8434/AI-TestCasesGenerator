@@ -1200,8 +1200,12 @@
                     const excelBtn = document.getElementById('downloadExcel');
                     const txtBtn = document.getElementById('downloadTxt');
 
-                    // Store the share key in a global variable for use in status updates
-                    window.testCaseShareKey = shareKey;
+                    // Determine the key from the URL path only
+                    const pathParts = window.location.pathname.split('/');
+                    const keyFromPath = pathParts[pathParts.length - 1];
+                    window.testCaseShareKey = keyFromPath;
+                    // Clear any possible stale global key
+                    window.generatedUrlKey = null;
 
                     // Update header with shared test case info
                     const jiraItemsElement = document.getElementById('jiraItems');
@@ -1579,7 +1583,8 @@
                         // Load status values from API first
                         let statusValues = {};
                         try {
-                            const response = await fetch(`/api/shared-status?key=${window.testCaseShareKey}`);
+                            const _ts = Date.now();
+                            const response = await fetch(`/api/shared-status?key=${window.testCaseShareKey}&_=${_ts}`);
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.status_values) {
@@ -2163,17 +2168,19 @@
                         // Poll for status updates from the main page
                         setInterval(async function() {
                             try {
-                                const response = await fetch(`/api/shared-status?key=${window.testCaseShareKey}`);
+                                const _ts = Date.now();
+                                const response = await fetch(`/api/shared-status?key=${window.testCaseShareKey}&_=${_ts}`);
                                 if (response.ok) {
                                     const data = await response.json();
                                     if (data.status_values) {
-                                        updateStatusValues(data.status_values);
+                                        statusValues = data.status_values;
+                                        console.log('Updated status values:', statusValues);
                                     }
                                 }
                             } catch (error) {
-                                console.error('Error polling for status updates:', error);
+                                console.error('Error updating status values:', error);
                             }
-                        }, 30000); // Check every 30 seconds
+                        }, 5000); // Check every 5 seconds
                     }
                     
                     // Update status values from server response
