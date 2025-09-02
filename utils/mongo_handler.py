@@ -30,7 +30,7 @@ class MongoHandler:
             logger.error(f"Failed to connect to MongoDB: {str(e)}")
             raise Exception("Could not connect to MongoDB. Please check your connection settings.")
 
-    def save_test_case(self, test_data, item_id=None):
+    def save_test_case(self, test_data, item_id=None, source_type=None):
         """Save test case data and generate unique URL"""
         try:
             unique_id = str(uuid.uuid4())
@@ -40,14 +40,32 @@ class MongoHandler:
                 "created_at": datetime.utcnow(),
                 "url_key": unique_id,
                 "item_id": item_id,
+                "source_type": source_type,  # Preserve source type for proper identification
                 "status": {}  # Initialize empty status dictionary for test cases
             }
             self.collection.insert_one(document)
-            logger.info(f"Successfully saved test case with ID: {unique_id}")
+            logger.info(f"Successfully saved test case with ID: {unique_id}, source_type: {source_type}")
             return unique_id
         except Exception as e:
             logger.error(f"Error saving test case: {str(e)}")
             raise Exception("Failed to save test case to database")
+
+    def update_status_dict(self, url_key, status_values):
+        """Update the status dictionary for a test case document"""
+        try:
+            result = self.collection.update_one(
+                {"url_key": url_key},
+                {"$set": {"status": status_values}}
+            )
+            if result.modified_count > 0:
+                logger.info(f"Successfully updated status dict for {url_key}")
+                return True
+            else:
+                logger.warning(f"No document found to update status for {url_key}")
+                return False
+        except Exception as e:
+            logger.error(f"Error updating status dict: {str(e)}")
+            return False
 
     def track_user_session(self, session_data):
         """Track user session and page visits"""
@@ -594,6 +612,21 @@ class MongoHandler:
                         status = tc.get('Status', tc.get('status', ''))
                         if title:
                             logger.info(f"MAIN VIEW TC[{i}]: Title='{title}', Status='{status}'")
+                    elif isinstance(tc, str):
+                        # Attempt to parse string-formatted test case(s)
+                        try:
+                            from utils.file_handler import parse_traditional_format
+                            parsed = parse_traditional_format(tc)
+                            if parsed:
+                                for pidx, ptc in enumerate(parsed):
+                                    ptitle = ptc.get('Title', ptc.get('title', ''))
+                                    pstatus = ptc.get('Status', ptc.get('status', ''))
+                                    if ptitle:
+                                        logger.info(f"MAIN VIEW TC[{i}] parsed[{pidx}]: Title='{ptitle}', Status='{pstatus}'")
+                            else:
+                                logger.warning(f"MAIN VIEW TC[{i}] is a string but could not be parsed")
+                        except Exception as e:
+                            logger.error(f"Error parsing MAIN VIEW TC[{i}] string entry: {e}")
                     else:
                         logger.warning(f"MAIN VIEW TC[{i}] is not a dict: {type(tc)}")
             
@@ -633,6 +666,20 @@ class MongoHandler:
                         if title:
                             status_values[title] = status
                             # logger.debug(f"Found status '{status}' for '{title}' in main view")
+                    elif isinstance(tc, str):
+                        # Parse string entries into structured test cases and capture their statuses
+                        from utils.file_handler import parse_traditional_format
+                        try:
+                            parsed_test_cases = parse_traditional_format(tc)
+                            if parsed_test_cases:
+                                for ptc in parsed_test_cases:
+                                    if isinstance(ptc, dict):
+                                        ptitle = ptc.get('Title', ptc.get('title', ''))
+                                        pstatus = ptc.get('Status', ptc.get('status', ''))
+                                        if ptitle:
+                                            status_values[ptitle] = pstatus
+                        except Exception as e:
+                            logger.error(f"Error parsing string test case entry in main view: {e}")
                             
             # Check if test_data has test_data array (nested structure)
             elif 'test_data' in result and isinstance(result['test_data'], dict) and 'test_data' in result['test_data']:
