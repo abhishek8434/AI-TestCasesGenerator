@@ -1,8 +1,5 @@
-# Initialize Sentry for Azure integration
-from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
-
-# Initialize Sentry for the Azure integration
-init_sentry("ai-test-case-generator-azure")
+# Import error logging utilities for error tracking
+from utils.error_logger import capture_exception, capture_message, set_tag, set_context
 
 import os
 import requests
@@ -111,7 +108,7 @@ class AzureClient:
                 error_msg = f"Error processing work item {work_item_id}: {str(e)}"
                 self.last_error = error_msg
                 print(f"❌ {error_msg}")
-                # Capture error in Sentry
+                # Capture error in MongoDB
                 capture_exception(e, {
                     "work_item_id": work_item_id,
                     "azure_url": self.azure_url,
@@ -138,8 +135,12 @@ class AzureClient:
             print(f"❌ Failed to get project {project_name}: {e}")
             return None
 
-    def get_recent_work_items(self, project_name: str, limit: int = 50):
-        """Get recent work items for suggestions"""
+    def get_recent_work_items(self, project_name: str, limit: int = None, states=None):
+        """Get recent work items for suggestions
+        :param project_name: Azure DevOps project name
+        :param limit: Max number of items to return (None for all, details fetch still respects this cap)
+        :param states: Optional list of state names to filter by (e.g., ['Ready for QA', 'Re-open'])
+        """
         try:
             print(f"🔍 Fetching work items for project: {project_name}")
             url = f"{self.azure_url}/{self.azure_org}/{project_name}/_apis/wit/wiql?api-version=6.0"
@@ -149,10 +150,23 @@ class AzureClient:
                 "Authorization": f"Basic {base64.b64encode(f':{self.azure_pat}'.encode()).decode()}"
             }
             
-            # WIQL query to get recent work items
-            payload = {
-                "query": f"SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State] FROM WorkItems WHERE [System.TeamProject] = '{project_name}' ORDER BY [System.ChangedDate] DESC"
-            }
+            # WIQL query to get recent work items (optionally filtered by state)
+            where_clauses = [f"[System.TeamProject] = '{project_name}'"]
+            if states and isinstance(states, (list, tuple)) and len(states) > 0:
+                # Build an IN clause for the provided states
+                # Quote each state value safely
+                quoted_states = ", ".join([f"'{s}'" for s in states])
+                where_clauses.append(f"[System.State] IN ({quoted_states})")
+
+            where_sql = " AND ".join(where_clauses)
+            wiql_query = (
+                "SELECT [System.Id], [System.Title], [System.WorkItemType], [System.State] "
+                "FROM WorkItems "
+                f"WHERE {where_sql} "
+                "ORDER BY [System.ChangedDate] DESC"
+            )
+
+            payload = {"query": wiql_query}
             
             print(f"🔍 Making WIQL request to: {url}")
             response = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -169,7 +183,9 @@ class AzureClient:
             
             # Get details for each work item
             detailed_items = []
-            for item in work_items[:limit]:
+            # Use all items if limit is None, otherwise use the limit
+            items_to_process = work_items if limit is None else work_items[:limit]
+            for item in items_to_process:
                 item_id = item['id']
                 item_url = f"{self.azure_url}/{self.azure_org}/{project_name}/_apis/wit/workitems/{item_id}?api-version=6.0"
                 
