@@ -181,7 +181,7 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             if test_cases:
                 logger.info(f"Generated {test_type} test cases successfully")
                 # Add a section header for each test type to help with parsing
-                test_cases_with_header = f"TEST TYPE: {test_type}" + "\n\n" + f"{test_cases}"
+                test_cases_with_header = f"TEST TYPE: {test_type}\n\n{test_cases}"
                 all_test_cases.append(test_cases_with_header)
             else:
                 logger.warning(f"Received empty response for {test_type} test cases")

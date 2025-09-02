@@ -223,7 +223,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                     if test_cases:
                         logger.info(f"Successfully generated {test_type} test cases using model {model}")
                         # Add a section header for each test type to help with parsing
-                        test_cases_with_header = f"TEST TYPE: {test_type}" + "\n\n" + f"{test_cases}"
+                        test_cases_with_header = f"TEST TYPE: {test_type}\n\n{test_cases}"
                         all_test_cases.append(test_cases_with_header)
                         break
                     else:

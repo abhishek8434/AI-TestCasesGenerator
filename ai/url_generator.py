@@ -356,7 +356,7 @@ def generate_url_test_cases(url: str, selected_types: List[str]) -> Optional[str
                 if test_cases:
                     logger.info(f"Generated {test_type} test cases successfully")
                     # Add a section header for each test type to help with parsing
-                    test_cases_with_header = f"TEST TYPE: {test_type}" + "\n\n" + f"{test_cases}"
+                    test_cases_with_header = f"TEST TYPE: {test_type}{chr(10)}{chr(10)}{test_cases}"
                     all_test_cases.append(test_cases_with_header)
                 else:
                     logger.warning(f"Received empty response for {test_type} test cases")
@@ -379,8 +379,8 @@ def generate_url_test_cases(url: str, selected_types: List[str]) -> Optional[str
             return None
             
         logger.info(f"Successfully generated test cases for {len(all_test_cases)} test types")
-        logger.info(f"Total test cases length: {len('\n\n'.join(all_test_cases))}")
-        return "\n\n" + "\n\n".join(all_test_cases)
+        logger.info(f"Total test cases length: {len(chr(10) + chr(10).join(all_test_cases))}")
+        return chr(10) + chr(10) + (chr(10) + chr(10)).join(all_test_cases)
         
     except Exception as e:
         logger.error(f"Error in URL test case generation: {str(e)}")
@@ -388,8 +388,7 @@ def generate_url_test_cases(url: str, selected_types: List[str]) -> Optional[str
         
         # For debugging, return a simple test case if there's an error
         logger.info("Returning debug test case due to error")
-        return f"""
-TEST TYPE: dashboard_functional
+        return f"""TEST TYPE: dashboard_functional
 
 Title: TC_FUNC_001_Debug_Test
 Scenario: Debug test case for URL generation
@@ -399,5 +398,4 @@ Steps to reproduce:
 3. Check basic functionality
 Expected Result: Page should load successfully
 Actual Result: To be filled during execution
-Priority: Medium
-"""
+Priority: Medium"""
