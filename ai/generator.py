@@ -1,8 +1,5 @@
-# Initialize Sentry for AI module
-from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
-
-# Initialize Sentry for the AI generator
-init_sentry("ai-test-case-generator-ai")
+# Import error logging utilities for error tracking
+from utils.error_logger import capture_exception, capture_message, set_tag, set_context
 
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.tracers.langchain import LangChainTracer
@@ -32,37 +29,37 @@ def get_test_type_config(test_type: str) -> dict:
         "dashboard_functional": {
             "prefix": "TC_FUNC",
             "description": "functional test cases focusing on valid inputs and expected behaviors",
-            "count": 20
+            "max_count": 20
         },
         "dashboard_negative": {
             "prefix": "TC_NEG",
             "description": "negative test cases focusing on invalid inputs, error handling, and edge cases",
-            "count": 20
+            "max_count": 20
         },
         "dashboard_ui": {
             "prefix": "TC_UI",
             "description": "UI test cases focusing on visual elements and layout",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_ux": {
             "prefix": "TC_UX",
             "description": "user experience test cases focusing on user interaction and workflow",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_compatibility": {
             "prefix": "TC_COMPAT",
             "description": "compatibility test cases across different browsers and platforms",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_performance": {
             "prefix": "TC_PERF",
             "description": "performance test cases focusing on load times and responsiveness",
-            "count": 15
+            "max_count": 15
         }
     }
     return base_configs.get(test_type, {})
 
-def generate_test_case(description: str, summary: str = "", selected_types: List[str] = None) -> Optional[str]:
+def generate_test_case(description: str, summary: str = "", selected_types: List[str] = None, source_type: str = None, url: str = None) -> Optional[str]:
     """Generate test cases based on user-selected types"""
     if not description:
         logger.error("No description provided for test case generation")
@@ -85,20 +82,9 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             logger.warning(f"Skipping unknown test type: {test_type}")
             continue
 
-        prompt = f"""
-        Task Title: {summary}
-        Task Description: {description}
-
-        Generate EXACTLY {config['count']} test cases for {config['description']}.
-        
-        For each test case:
-        1. Use the prefix {config['prefix']}
-        2. Focus exclusively on {test_type} scenarios
-        3. Include detailed steps
-        4. Specify expected results
-        5. Do not mix with other test types
-
-        Use this EXACT format for each test case:
+        # Prepare the prompt based on source type
+        base_prompt = f"""
+        Use this format for each test case:
 
         Title: {config['prefix']}_[Number]_[Brief_Title]
         Scenario: [Detailed scenario description]
@@ -109,7 +95,63 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
         Expected Result: [What should happen]
         Actual Result: [To be filled during execution]
         Priority: [High/Medium/Low]
+        
+        Ensure each test case covers a unique scenario and adds value.
         """
+
+        if source_type == 'url':
+            prompt = f"""
+            Website URL: {url}
+            Content Description: {description}
+
+            Generate test cases for {config['description']} (up to {config['max_count']} maximum).
+            Focus on testing the website's functionality, user interface, and user experience.
+            
+            IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
+            Consider the complexity and scope of the content - generate only what's truly needed.
+            Do not force additional test cases just to reach the maximum.
+            
+            For each test case:
+            1. Use the prefix {config['prefix']}
+            2. Focus exclusively on {test_type} scenarios for web testing
+            3. Include detailed steps that a QA engineer would follow
+            4. Specify expected results for web interactions
+            5. Consider cross-browser compatibility if relevant
+            6. Include mobile responsiveness testing if applicable
+            7. Do not mix with other test types
+            8. Ensure each test case covers a unique scenario
+
+            {base_prompt}
+            """
+        else:
+            prompt = f"""
+            Task Title: {summary}
+            Task Description: {description}
+
+            Generate test cases for {config['description']} (up to {config['max_count']} maximum).
+            
+            IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
+            Consider the complexity and scope of the content - generate only what's truly needed.
+            Do not force additional test cases just to reach the maximum.
+            
+            ANALYSIS REQUIREMENTS:
+            - Read and analyze the task description completely
+            - Identify all functional components mentioned
+            - Consider all possible user interactions
+            - Think about edge cases and boundary conditions
+            - Identify potential failure scenarios
+            - Consider different user roles and permissions if applicable
+            
+            For each test case:
+            1. Use the prefix {config['prefix']}
+            2. Focus exclusively on {test_type} scenarios
+            3. Include detailed steps
+            4. Specify expected results
+            5. Do not mix with other test types
+            6. Ensure each test case tests a unique scenario
+
+            {base_prompt}
+            """
 
         try:
             # Get API key
@@ -131,7 +173,7 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             response = current_llm.invoke([
                 {
                     "role": "system",
-                    "content": f"You are a QA engineer. Generate EXACTLY {config['count']} {test_type} test cases. Use {config['prefix']} as the prefix."
+                    "content": f"You are a senior QA engineer. Generate the appropriate number of {test_type} test cases (up to {config['max_count']} maximum) by analyzing the content complexity and generating only what's truly needed. Use {config['prefix']} as the prefix. Focus on quality and relevance over quantity."
                 },
                 {"role": "user", "content": prompt}
             ])
@@ -139,14 +181,14 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             if test_cases:
                 logger.info(f"Generated {test_type} test cases successfully")
                 # Add a section header for each test type to help with parsing
-                test_cases_with_header = f"TEST TYPE: {test_type}\n\n{test_cases}"
+                test_cases_with_header = f"TEST TYPE: {test_type}" + "\n\n" + f"{test_cases}"
                 all_test_cases.append(test_cases_with_header)
             else:
                 logger.warning(f"Received empty response for {test_type} test cases")
 
         except Exception as e:
             logger.error(f"Error generating {test_type} test cases: {str(e)}")
-            # Capture error in Sentry
+            # Capture error in MongoDB
             capture_exception(e, {
                 "test_type": test_type,
                 "config": config,

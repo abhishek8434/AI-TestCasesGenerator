@@ -1,8 +1,5 @@
-# Initialize Sentry for Image AI module
-from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
-
-# Initialize Sentry for the Image AI generator
-init_sentry("ai-test-case-generator-image")
+# Import error logging utilities for error tracking
+from utils.error_logger import capture_exception, capture_message, set_tag, set_context
 
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
@@ -74,32 +71,32 @@ def get_test_type_config(test_type: str) -> dict:
         "dashboard_functional": {
             "prefix": "TC_FUNC",
             "description": "functional test cases focusing on valid inputs and expected behaviors",
-            "count": 20
+            "max_count": 20
         },
         "dashboard_negative": {
             "prefix": "TC_NEG",
             "description": "negative test cases focusing on invalid inputs, error handling, and edge cases",
-            "count": 20
+            "max_count": 20
         },
         "dashboard_ui": {
             "prefix": "TC_UI",
             "description": "UI test cases focusing on visual elements and layout",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_ux": {
             "prefix": "TC_UX",
             "description": "user experience test cases focusing on user interaction and workflow",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_compatibility": {
             "prefix": "TC_COMPAT",
             "description": "compatibility test cases across different browsers and platforms",
-            "count": 15
+            "max_count": 15
         },
         "dashboard_performance": {
             "prefix": "TC_PERF",
             "description": "performance test cases focusing on load times and responsiveness",
-            "count": 15
+            "max_count": 15
         }
     }
     
@@ -153,20 +150,34 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                 continue
 
             prompt = f"""
-            Analyze the image and generate EXACTLY {config['count']} {test_type} test cases.
+            Analyze the image thoroughly and generate test cases for {test_type} (up to {config['max_count']} maximum).
             Focus ONLY on {config['description']}.
+            
+            IMPORTANT: Analyze the image content thoroughly and generate the appropriate number of relevant test cases.
+            Consider the complexity and scope of the image - generate only what's truly needed.
+            Do not force additional test cases just to reach the maximum.
+            
+            ANALYSIS REQUIREMENTS:
+            - Analyze all visual elements: buttons, forms, text, images, icons, layout
+            - Consider all possible user interactions visible in the image
+            - Identify edge cases and boundary conditions
+            - Consider different user roles and access levels if visible
+            - Think about potential failure scenarios and error conditions
+            - Analyze responsive design and cross-platform compatibility if applicable
 
-            Use this EXACT format for each test case:
+            Use this format for each test case:
 
             Title: {config['prefix']}_[Number]_[Brief_Title]
-            Scenario: [Detailed scenario description based on the image]
+            Scenario: [Detailed scenario description covering all aspects visible in the image]
             Steps to reproduce:
             1. [Step 1]
             2. [Step 2]
             ...
             Expected Result: [What should happen]
-            Actual Result: [To be filled during execution]
             Priority: [High/Medium/Low]
+            
+            Ensure each test case covers a unique scenario and adds value.
+            Focus on the most important and relevant test scenarios.
             """
 
             test_cases = None
@@ -192,7 +203,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                     response = current_llm.invoke([
                         {
                             "role": "system",
-                            "content": f"You are a QA engineer generating test cases from the provided image."
+                            "content": f"You are a senior QA engineer generating test cases from the provided image. Analyze the image thoroughly and generate the appropriate number of test cases based on the image complexity. Focus on quality and relevance over quantity."
                         },
                         {
                             "role": "user",
@@ -212,7 +223,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                     if test_cases:
                         logger.info(f"Successfully generated {test_type} test cases using model {model}")
                         # Add a section header for each test type to help with parsing
-                        test_cases_with_header = f"TEST TYPE: {test_type}\n\n{test_cases}"
+                        test_cases_with_header = f"TEST TYPE: {test_type}" + "\n\n" + f"{test_cases}"
                         all_test_cases.append(test_cases_with_header)
                         break
                     else:
@@ -253,7 +264,7 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
 
     except Exception as e:
         logger.error(f"Error in generate_test_case_from_image: {str(e)}", exc_info=True)
-        # Capture error in Sentry
+        # Capture error in MongoDB
         capture_exception(e, {
             "image_path": image_path,
             "selected_types": selected_types,
