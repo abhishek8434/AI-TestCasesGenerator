@@ -3,152 +3,502 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Error - AI Test Case Generator</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <title>404 - Page Not Found | AI Test Case Generator</title>
     <link rel="shortcut icon" href="/static/assets/images/favicon.png">
     <style>
-        /* Modern UI Styles from your design */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            height: 100vh;
+            color: #333;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 0 20px;
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
         }
 
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: none;
-            margin-top: 2rem;
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(40, 167, 69, 0.3);
+            border-radius: 50%;
+            animation: float-particle 15s infinite linear;
         }
 
-        .card-body {
-            padding: 40px;
-            text-align: center;
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
         }
 
         .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
             display: flex;
-            justify-content: flex-start;
+            justify-content: space-between;
             align-items: center;
-            padding: 24px 0;
-            border-bottom: 1px solid #dee2e6;
-            margin-bottom: 24px;
+            padding: 0 2rem;
         }
 
-        .logo > img {
-            max-height: 40px;
-        }
-
-        .center-content {
-            flex: 1;
-        }
-
-        h1.main-title {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            color: #041E2B;
-        }
-        
-        .subtitle {
+        .error-container {
+            margin-top: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 80px);
+            padding: 2rem;
             text-align: center;
-            color: rgba(4, 30, 43, 0.5);
-            margin-bottom: 0;
+            position: relative;
+            z-index: 10;
         }
 
-        /* Error Specific Styles */
-        .error-icon {
+        .error-code {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .error-number {
+            font-size: 12rem;
+            font-weight: 900;
+            color: #1a4a52;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+
+        .error-number:hover {
+            transform: scale(1.1) rotate(5deg);
+            color: #28a745;
+            text-shadow: 0 0 20px rgba(40, 167, 69, 0.5);
+        }
+
+        .error-number.shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        .detective-icon {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+            animation: float 3s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .detective-icon::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            top: 20px;
+            left: 30px;
+            animation: shine 2s ease-in-out infinite;
+        }
+
+        .detective-icon:hover {
+            transform: scale(1.2) rotate(15deg);
+            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.5);
+        }
+
+        .detective-figure {
             font-size: 4rem;
-            color: #dc3545; /* Bootstrap's danger color */
-            margin-bottom: 1rem;
+            color: white;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
         }
 
-        .error-title {
-            color: #dc3545;
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
+        .detective-icon:hover .detective-figure {
+            transform: scale(1.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes shine {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
         }
 
         .error-message {
-            color: #6c757d; /* Bootstrap's secondary text color */
-            font-size: 1.1rem;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-
-        /* Button Styles */
-        .btn-primary {
-            background-color: rgb(76, 171, 114);
-            border: 1px solid rgb(76, 171, 114);
-            padding: 12px 30px;
-            border-radius: 6px;
-            font-size: 1rem;
+            color: #1a4a52;
+            font-size: 1.5rem;
             font-weight: 600;
+            margin-bottom: 1rem;
+            max-width: 600px;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.5s forwards;
+        }
+
+        .error-description {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
+            line-height: 1.6;
+            max-width: 500px;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.7s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.9s forwards;
+        }
+
+        .btn-home {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
             text-decoration: none;
-            display: inline-block;
             transition: all 0.3s ease;
-            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover,
-        .btn-primary:focus {
-            background-color: rgba(76, 171, 114, 0.1);
-            border-color: rgb(76, 171, 114);
-            box-shadow: none;
-            color: rgb(76, 171, 114);
+        .btn-home:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(40, 167, 69, 0.4);
         }
 
-        @media (max-width: 767px) {
-            .header {
+        .fun-facts {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 280px;
+            transform: translateX(100%);
+            transition: all 0.5s ease;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .fun-facts.show {
+            transform: translateX(0);
+        }
+
+        .fun-facts h4 {
+            color: #1a4a52;
+            margin-bottom: 0.5rem;
+        }
+
+        .fun-facts p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .error-number {
+                font-size: 8rem;
+            }
+
+            .detective-icon {
+                width: 120px;
+                height: 120px;
+            }
+
+            .detective-figure {
+                font-size: 3rem;
+            }
+
+            .error-code {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .error-message {
+                font-size: 1.3rem;
+            }
+
+            .action-buttons {
                 flex-direction: column;
                 align-items: center;
             }
-            .logo {
-                margin-bottom: 1rem;
+
+            .btn-home {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
             }
-            .center-content {
-                text-align: center;
+
+            .fun-facts {
+                position: relative;
+                transform: none;
+                margin: 2rem auto;
                 max-width: 100%;
+            }
+        }
+
+        /* Cursor trail effect */
+        .cursor-trail {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: rgba(40, 167, 69, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+        }
+
+        @media (max-width: 480px) {
+            .error-number {
+                font-size: 6rem;
+            }
+
+            .detective-icon {
+                width: 100px;
+                height: 100px;
+            }
+
+            .detective-figure {
+                font-size: 2.5rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="logo">
-                <a href="/"><img src="/static/assets/images/favicon.png" alt="Logo"></a>
-            </div>
-            <div class="center-content">
-                <h1 class="main-title">AI-Powered Test Case Automation</h1>
-                <p class="subtitle mb-0">Error Page</p>
-            </div>
-        </header>
-        <div class="card">
-            <div class="card-body">
-                <div class="error-icon">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                </div>
-                <h2 class="error-title">Oops! Something went wrong</h2>
-                <p class="error-message">
-                    {% if error_message %}
-                        {{ error_message }}
-                    {% else %}
-                        An unexpected error occurred. Please try again or contact support if the problem persists.
-                    {% endif %}
-                </p>
-                <a href="/" class="btn btn-primary">
-                    <i class="bi bi-house"></i> Go Back Home
-                </a>
-            </div>
+    <div class="floating-particles" id="particles"></div>
+    
+    <header class="header">
+        <div class="nav-container">
+            <a href="/"><img src="/static/assets/images/eatance--logo.svg" alt="Logo"></a>
         </div>
+    </header>
+
+    <main class="error-container">
+        <div class="error-code">
+            <div class="error-number" id="error1">4</div>
+            <div class="detective-icon" id="detective">
+                <div class="detective-figure">🔍</div>
+            </div>
+            <div class="error-number" id="error2">4</div>
+        </div>
+
+        <h1 class="error-message">We are sorry, but the page you requested was not found</h1>
+        
+        <p class="error-description">
+            The page you're looking for might have been removed, had its name changed, 
+            or is temporarily unavailable. Don't worry, we'll help you find what you need!
+        </p>
+
+        <div class="action-buttons">
+            <a href="/" class="btn-home" id="homeBtn">
+                🏠 Back To Home
+            </a>
+        </div>
+    </main>
+
+    <div class="fun-facts" id="funFacts">
+        <h4>Did you know?</h4>
+        <p id="factText">404 errors got their name from the room number at CERN where the original web server was located!</p>
     </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Cursor trail effect
+        const cursors = [];
+        function createCursorTrail(e) {
+            const cursor = document.createElement('div');
+            cursor.className = 'cursor-trail';
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            document.body.appendChild(cursor);
+            cursors.push(cursor);
+
+            setTimeout(() => {
+                cursor.style.opacity = '0';
+                cursor.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    if (cursor.parentNode) {
+                        cursor.parentNode.removeChild(cursor);
+                    }
+                    cursors.splice(cursors.indexOf(cursor), 1);
+                }, 100);
+            }, 200);
+
+            if (cursors.length > 10) {
+                const oldCursor = cursors.shift();
+                if (oldCursor.parentNode) {
+                    oldCursor.parentNode.removeChild(oldCursor);
+                }
+            }
+        }
+
+        // Fun facts
+        const facts = [
+            "404 errors got their name from the room number at CERN where the original web server was located!",
+            "The first website ever created is still online at info.cern.ch",
+            "Google's 404 page includes a hidden easter egg game!",
+            "404 is the most common HTTP error code on the web",
+            "Some websites have made their 404 pages so creative they've become destinations!"
+        ];
+
+        let factIndex = 0;
+
+        function showNextFact() {
+            const factText = document.getElementById('factText');
+            factText.style.opacity = '0';
+            setTimeout(() => {
+                factText.textContent = facts[factIndex];
+                factText.style.opacity = '1';
+                factIndex = (factIndex + 1) % facts.length;
+            }, 300);
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // Show fun facts after delay
+            setTimeout(() => {
+                document.getElementById('funFacts').classList.add('show');
+            }, 2000);
+
+            // Cycle through facts every 5 seconds
+            setInterval(showNextFact, 5000);
+        });
+
+        document.addEventListener('mousemove', createCursorTrail);
+
+        // Error number interactions
+        document.getElementById('error1').addEventListener('click', function() {
+            this.classList.add('shake');
+            setTimeout(() => this.classList.remove('shake'), 500);
+        });
+
+        document.getElementById('error2').addEventListener('click', function() {
+            this.classList.add('shake');
+            setTimeout(() => this.classList.remove('shake'), 500);
+        });
+
+        // Detective icon interaction
+        let detectiveClicks = 0;
+        document.getElementById('detective').addEventListener('click', function() {
+            detectiveClicks++;
+            const figure = this.querySelector('.detective-figure');
+            
+            if (detectiveClicks === 1) {
+                figure.textContent = '🕵️';
+            } else if (detectiveClicks === 2) {
+                figure.textContent = '💀';
+            } else if (detectiveClicks === 3) {
+                figure.textContent = '😟';
+            } else if (detectiveClicks === 4) {
+                figure.textContent = '😩';
+            } else if (detectiveClicks === 5) {
+                figure.textContent = '😮';
+            } else if (detectiveClicks === 6) {
+                figure.textContent = '😵';
+                this.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)';
+                setTimeout(() => {
+                    figure.textContent = '🔍';
+                    this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    detectiveClicks = 0;
+                }, 2000);
+            }
+        });
+
+        // Fun facts click interaction
+        document.getElementById('funFacts').addEventListener('click', showNextFact);
+    </script>
 </body>
 </html>

@@ -3,476 +3,1199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-Powered Shared Test Case</title>
+    <title>AI-Powered Shared Test Case | AI Test Case Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="shortcut icon" href="/static/assets/images/favicon.png">
     <style>
-        /* Replace existing loader styles with new circular loader styles */
-        .loader-container {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
+        :root {
+            --primary-color: #4cab72;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --gray-color: #6b7280;
+            --light-gray: #f3f4f6;
+            --border-color: #e5e7eb;
         }
 
-        .percentage-loader {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .circular-loader {
-            width: 100%;
-            height: 100%;
-            transform: rotate(-90deg);
-        }
-
-        .loader-bg,
-        .loader-fg {
-            fill: none;
-            stroke-width: 10;
-            cx: 50;
-            cy: 50;
-            r: 45;
-        }
-
-        .loader-bg {
-            stroke: #ddd;
-        }
-
-        .loader-fg {
-            stroke: #FF3D00;
-            stroke-linecap: round;
-            transform-origin: center;
-            stroke-dasharray: 283;
-            stroke-dashoffset: 283;
-            transition: stroke-dashoffset 0.3s ease;
-        }
-
-        .loader-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
-            color: white;
-            font-weight: bold;
-        }
-
-        .loader {
-            width: 175px;
-            height: 80px;
-            display: block;
-            margin: auto;
-            background-image: radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), radial-gradient(circle 50px at 50px 50px, #FFF 100%, transparent 0), radial-gradient(circle 25px at 25px 25px, #FFF 100%, transparent 0), linear-gradient(#FFF 50px, transparent 0);
-            background-size: 50px 50px, 100px 76px, 50px 50px, 120px 40px;
-            background-position: 0px 30px, 37px 0px, 122px 30px, 25px 40px;
-            background-repeat: no-repeat;
-            position: relative;
-            box-sizing: border-box;
-        }
-
-        /* Keep existing loader animations */
-        .loader::after {
-            content: '';
-            left: 50%;
-            bottom: 0;
-            transform: translate(-50%, 0);
-            position: absolute;
-            border: 15px solid transparent;
-            border-top-color: #FF3D00;
-            box-sizing: border-box;
-            animation: fadePush 1s linear infinite;
-        }
-
-        .loader::before {
-            content: '';
-            left: 50%;
-            bottom: 30px;
-            transform: translate(-50%, 0);
-            position: absolute;
-            width: 15px;
-            height: 15px;
-            background: #FF3D00;
-            box-sizing: border-box;
-            animation: fadePush 1s linear infinite;
-        }
-
-        @keyframes fadePush {
-            0% {
-                transform: translate(-50%, -15px);
-                opacity: 0;
-            }
-
-            50% {
-                transform: translate(-50%, 0px);
-                opacity: 1;
-            }
-
-            100% {
-                transform: translate(-50%, 15px);
-                opacity: 0;
-            }
-        }
-
-        /* New styles for modern UI */
         body {
-            background-color: #f8f9fa;
+            background-color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
             max-width: 1280px;
             margin: 0 auto;
-            padding: 20 20px;
+            padding: 0 20px;
         }
 
-        a {
-            color: rgb(76, 171, 114);
-            text-decoration: none;
-            transition: all 0.3s ease !important;
-        }
-
-        a:hover {
-            font-weight: 700;
-            color: rgb(76, 171, 114);
-        }
-
-        .card {
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: none;
-        }
-
-        .form-label {
-            font-weight: 500;
-            color: #041E2B;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .form-label i {
-            color: #61b984;
-        }
-
-        .form-control,
-        .form-select {
-            border-radius: 6px;
-            border: 1px solid #ced4da;
-            padding: 0.5rem 0.75rem;
-        }
-
-        .btn-primary {
-            background-color: rgb(76, 171, 114);
-            border: 1px solid rgb(76, 171, 114);
-            padding: 8px 22px;
-            border-radius: 6px;
-            font-size: 14px;
-            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            border: 1px solid rgba(4, 30, 43, 0.5);
-            color: rgb(4, 30, 43);
-            padding: 8px 22px;
-            font-size: 14px;
-
-        }
-
-        .btn {
-            border-radius: 4px;
-            font-weight: 400;
-        }
-
-        .btn-primary:hover,
-        .btn-primary:focus {
-            background-color: rgba(76, 171, 114, 0.1);
-            border-color: rgb(76, 171, 114);
-            box-shadow: none;
-            color: rgb(76, 171, 114);
-            font-weight: 400;
-        }
-
-        .btn-secondary:hover,
-        .btn-secondary:focus {
-            font-weight: 400;
-            background-color: rgba(4, 30, 43, 0.1);
-            border-color: rgba(4, 30, 43, 0.5);
-            color: rgba(4, 30, 43, 1);
-            box-shadow: 0 14px 26px -12px rgba(4, 30, 43, 0.2), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(4, 30, 43, 0.2);
-        }
-
-        .btn:focus {
-            box-shadow: none !important;
-            font-weight: 400;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: rgb(76, 171, 114);
-            box-shadow: none;
-        }
-
-        div:has(input:focus)>.form-label,
-        div:has(select:focus)>.form-label {
-            color: rgb(76, 171, 114) !important;
-        }
-
-        h1 {
-            text-align: center;
-            color: #212529;
-            margin-bottom: 1rem;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: rgba(4, 30, 43, 0.5);
-            margin-bottom: 0;
-        }
-
-        .help-text {
-            text-align: center;
-            margin-top: 2rem;
-        }
-
+        /* Header Styles */
         .header {
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
+            background: #ffffff;
+            border-bottom: 1px solid var(--border-color);
             padding: 24px 0;
-            border-bottom: 1px solid #dee2e6;
-            margin-bottom: 24px;
+            margin-bottom: 32px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
         .logo {
-            margin-bottom: 12px;
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
         }
 
-        .logo>img {
-            max-height: 40px;
-        }
-
-        .center-content {
-            max-width: calc(100% - 456px);
-            flex: 1;
-        }
-
-        h1.main-title {
-            font-size: 1.8rem;
-            margin-bottom: 0;
-            color: #041E2B;
-        }
-
-        .card-body {
-            padding: 40px;
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            color: #041E2B;
-        }
-
-        .form-text {
-            color: rgba(4, 30, 43, 0.5);
-            font-size: 13px;
-        }
-
-        ::placeholder {
-            color: rgba(4, 30, 43, 0.5) !important;
-        }
-
-        .form-check-input:checked {
-            background-color: rgb(76, 171, 114);
-            border-color: rgb(76, 171, 114);
-        }
-
-        .form-check-input:focus {
-            box-shadow: none;
-        }
-
-        .form-control,
-        .form-select,
-        .form-check-label {
-            font-size: 14px;
-        }
-
-        .status-select {
+        .logo img {
             width: 100%;
-            min-width: 120px;
-            padding: 4px 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .logo img:not([src]), .logo img[src=""], .logo img[src*="error"] {
+            display: none;
+        }
+
+        .logo img:not([src]) + .logo-fallback,
+        .logo img[src=""] + .logo-fallback,
+        .logo img[src*="error"] + .logo-fallback {
+            display: flex;
+        }
+
+        .logo-fallback {
+            display: none;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .brand-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .main-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .jira-items {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .jira-tag {
+            background: var(--light-gray);
+            color: var(--gray-color);
+            padding: 4px 12px;
+            border-radius: 16px;
             font-size: 14px;
-            background-color: white;
-            color: #041E2B;
+            font-weight: 500;
         }
 
-        .status-select:focus {
-            border-color: rgb(76, 171, 114);
-            outline: none;
-            box-shadow: 0 0 0 0.2rem rgba(76, 171, 114, 0.25);
-        }
-
-        .status-select option {
-            padding: 8px;
-        }
-
-        .form-check {
-            flex: 0 0 calc(25% - 12px);
+        .generate-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
             cursor: pointer;
         }
 
-        .accordion-button {
-            background-color: rgba(4, 30, 43, 0.03);
-            border-color: rgba(4, 30, 43, 1);
-            color: rgba(4, 30, 43, 1);
+        .generate-btn:hover {
+            background: #3a8a5f; /* Darker shade of brand color */
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 171, 114, 0.3);
+            cursor: pointer;
         }
 
-        .accordion-button:not(.collapsed) {
-            background-color: rgba(76, 171, 114, 0.1);
-            border-color: rgb(76, 171, 114);
-            color: rgb(76, 171, 114);
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-left: auto;
         }
 
-        .accordion-button:not(.collapsed)::after {
-            display: none !important;
-        }
-
-        .accordion-button:focus {
-            box-shadow: 0 0 0 .25rem rgba(76, 171, 114, .25);
-        }
-
-        /* Remove accordion sign/arrow */
-        .accordion-button::after {
-            display: none !important;
-        }
-
-        .table {
+        .export-btn, .share-btn {
+            background: white;
+            color: var(--gray-color);
+            border: 1px solid var(--border-color);
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
             font-size: 14px;
-            color: rgba(4, 30, 43, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-width: 100px;
+            justify-content: center;
         }
 
-        .table-striped>tbody>tr:nth-of-type(odd)>* {
-            color: rgba(4, 30, 43, 0.7);
-            --bs-table-accent-bg: rgba(4, 30, 43, 0.05);
+        .export-btn:hover, .share-btn:hover {
+            background: var(--light-gray);
+            border-color: var(--gray-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .table thead>tr>th {
-            font-size: 15px;
-            color: rgba(4, 30, 43, 1);
+        /* Metrics Section */
+        .metrics-section {
+            margin-bottom: 32px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--gray-color);
             text-transform: uppercase;
-            background-color: rgba(4, 30, 43, 0.1);
+            letter-spacing: 0.5px;
+        }
+
+        .metric-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .metric-icon.total {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        .metric-icon.passed {
+            background: #dcfce7;
+            color: var(--success-color);
+        }
+
+        .metric-icon.failed {
+            background: #fee2e2;
+            color: var(--danger-color);
+        }
+
+        .metric-icon.untested {
+            background: var(--light-gray);
+            color: var(--gray-color);
+        }
+
+        .metric-icon.blocked {
+            background: #fef3c7;
+            color: var(--warning-color);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .metric-value.passed {
+            color: var(--success-color);
+        }
+
+        .metric-value.failed {
+            color: var(--danger-color);
+        }
+
+        .metric-value.untested {
+            color: var(--gray-color);
+        }
+
+        .metric-value.blocked {
+            color: var(--warning-color);
+        }
+
+        /* Test Cases Section */
+        .test-cases-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0;
+        }
+
+        .section-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .section-title-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .item-selector {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            padding: 4px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            width: fit-content;
+            max-width: 100%;
+        }
+
+        .item-tag {
+            background: white;
+            color: #6c757d;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .item-tag:hover {
+            background: #e9ecef;
+            color: #495057;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-tag.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 6px rgba(13, 110, 253, 0.25);
+        }
+
+        .item-selector.compact {
+            width: fit-content;
+            min-width: auto;
+            padding: 2px 6px;
+            background: rgba(248, 249, 250, 0.5);
+        }
+
+        .test-cases-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .test-case-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .test-case-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .test-case-id {
+            font-size: 14px;
+            color: var(--gray-color);
+            font-weight: 500;
+        }
+
+        .test-case-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .test-case-description {
+            font-size: 14px;
+            color: #6b7280;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .test-case-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .view-details-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary-color);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0;
+        }
+
+        .view-details-btn:hover {
+            text-decoration: underline;
+        }
+
+        .test-case-details {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .details-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .detail-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .detail-section strong {
+            font-weight: 600;
+            color: #111827;
+            font-size: 14px;
+        }
+
+        .detail-section p {
+            margin: 0;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .detail-section div {
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        /* Status dropdown styling */
+        .status-dropdown {
+            position: relative;
+        }
+
+        .status-select {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #111827;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(76, 171, 114, 0.1);
+        }
+
+        .status-select option {
+            background: white;
+            color: #111827;
+            padding: 8px;
+        }
+
+        /* Status badge styling */
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .status-badge.passed {
+            background: #dcfce7 !important;
+            color: var(--success-color) !important;
+        }
+
+        .status-badge.failed {
+            background: #fee2e2 !important;
+            color: var(--danger-color) !important;
+        }
+
+        .status-badge.blocked {
+            background: #fef3c7 !important;
+            color: var(--warning-color) !important;
+        }
+
+        .status-badge.not-tested {
+            background: var(--light-gray) !important;
+            color: var(--gray-color) !important;
+        }
+
+        .status-text {
+            margin: 0 4px;
+        }
+
+        .status-dropdown-icon {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .status-badge.open .status-dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 140px;
+            margin-top: 4px;
+        }
+
+        .status-option {
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+        }
+
+        .status-option:hover {
+            background: var(--light-gray);
+        }
+
+        .status-option:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .status-option:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .status-option i {
+            font-size: 14px;
+        }
+
+        /* Badge styling for status text in details */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        .badge.passed {
+            background: #dcfce7 !important;
+            color: var(--success-color) !important;
+        }
+
+        .badge.failed {
+            background: #fee2e2 !important;
+            color: var(--danger-color) !important;
+        }
+
+        .badge.blocked {
+            background: #fef3c7 !important;
+            color: var(--warning-color) !important;
+        }
+
+        .badge.not-tested {
+            background: var(--light-gray) !important;
+            color: var(--gray-color) !important;
+        }
+
+        /* Status-based border colors */
+        .test-case-card.status-passed {
+            border-color: var(--success-color);
+        }
+
+        .test-case-card.status-failed {
+            border-color: var(--danger-color);
+        }
+
+        .test-case-card.status-blocked {
+            border-color: var(--warning-color);
+        }
+
+        .test-case-card.status-not-tested {
+            border-color: var(--gray-color);
+        }
+
+        /* Enhanced hover effects with status-colored shadows */
+        .test-case-card.status-passed:hover {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+        }
+
+        .test-case-card.status-failed:hover {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+        }
+
+        .test-case-card.status-blocked:hover {
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+        }
+
+        .test-case-card.status-not-tested:hover {
+            box-shadow: 0 4px 12px rgba(107, 114, 128, 0.15);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+            }
+
+            .section-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: flex-start;
+            }
+
+            .test-case-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+
+        /* Analytics Section Styles */
+        .analytics-section {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 32px;
+            overflow: hidden;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .analytics-section .section-header {
+            width: 100%;
+            overflow: hidden;
+        }
+        
+        .analytics-section .section-title {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        
+        .analytics-section .section-actions {
+            flex-shrink: 0;
+        }
+        
+        .analytics-section .btn {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .charts-container {
+            margin-top: 24px;
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+            min-width: 600px;
+        }
+
+        .chart-container {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            min-width: 280px;
+            overflow: hidden;
+        }
+
+        .chart-container h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 16px;
+            text-align: center;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .chart-wrapper canvas {
+            max-width: 100%;
+            max-height: 100%;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        .chart-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-color);
+            text-align: center;
+            height: 100%;
+            width: 100%;
+            padding: 20px;
+        }
+
+        .chart-placeholder i {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .chart-placeholder p {
+            margin: 0;
+            font-size: 14px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Chart Legend Styles */
+        .chartjs-legend-item {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chartjs-legend-item.hidden {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: #6b7280 !important;
+        }
+
+        .legend-hidden {
+            text-decoration: line-through;
+            opacity: 0.6;
+            color: #6b7280 !important;
+        }
+
+        .chartjs-legend-item:hover {
+            opacity: 0.8;
+        }
+        
+        /* Ensure legend items show hand cursor */
+        .chart-container ul {
+            cursor: pointer;
+        }
+        
+        .chart-container ul li {
+            cursor: pointer;
+        }
+        
+        .chart-container ul li span {
+            cursor: pointer;
+        }
+        
+        /* Additional legend styling for better clickability */
+        .chartjs-legend {
+            cursor: pointer;
+        }
+        
+        .chartjs-legend li {
+            cursor: pointer !important;
+        }
+        
+        .chartjs-legend li span {
+            cursor: pointer !important;
+        }
+        
+        /* Make sure legend items are clickable */
+        .chart-container canvas + ul {
+            cursor: pointer;
+        }
+        
+        .chart-container canvas + ul li {
+            cursor: pointer !important;
+        }
+        
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #4cab72;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(76, 171, 114, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-top:hover {
+            background-color: #3a8a5f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 171, 114, 0.4);
+        }
+        
+        .back-to-top.show {
+            display: flex;
+        }
+
+        /* Responsive Design for Charts */
+        @media (max-width: 768px) {
+            .analytics-section {
+                padding: 16px;
+            }
+            
+            .analytics-section .section-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+            
+            .analytics-section .section-title {
+                font-size: 20px;
+            }
+            
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+            
+            .chart-row {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                min-width: auto;
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+                min-width: auto;
+            }
+            
+            .chart-container h4 {
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .analytics-section {
+                padding: 12px;
+            }
+            
+            .analytics-section .section-header {
+                gap: 8px;
+            }
+            
+            .analytics-section .section-title {
+                font-size: 18px;
+            }
+            
+            .analytics-section .btn {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            
+            .chart-wrapper {
+                height: 200px;
+            }
+            
+            .chart-container {
+                padding: 12px;
+            }
+            
+            .chart-container h4 {
+                font-size: 14px;
+            }
+            
+            .chart-placeholder i {
+                font-size: 36px;
+            }
+            
+            .chart-placeholder p {
+                font-size: 12px;
+            }
         }
 
         /* Add hidden class for toggling test cases visibility */
         .hidden {
             display: none !important;
         }
-
-        @media (min-width: 768px) {
-            .gap-md-0 {
-                gap: 0 !important;
-            }
+        
+        /* Custom button styles to match theme */
+        .analytics-btn, .export-btn, .share-btn, .close-analytics-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
         }
-
-        @media (max-width: 767px) {
-            .header {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .logo {
-                margin-bottom: 1rem;
-            }
-
-            .center-content {
-                text-align: center;
-                max-width: 100%;
-            }
+        
+        .analytics-btn:hover, .export-btn:hover, .share-btn:hover, .close-analytics-btn:hover {
+            background-color: #3a8a5f;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(76, 171, 114, 0.3);
         }
-
-        @media (max-width: 576px) {
-            .form-label i {
-                font-size: 1.2rem;
-            }
-
-            .form-control,
-            .form-select {
-                font-size: 0.9rem;
-            }
-
+        
+        .analytics-btn:active, .export-btn:active, .share-btn:active, .close-analytics-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(76, 171, 114, 0.3);
         }
-
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        
+        .analytics-btn:focus, .export-btn:focus, .share-btn:focus, .close-analytics-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(76, 171, 114, 0.2);
         }
     </style>
 </head>
 
 <body data-new-gr-c-s-check-loaded="14.1104.0" data-gr-ext-installed="">
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to Top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
     <div class="container">
-        <div class="header flex-column align-items-center gap-4 gap-md-0">
-            <div class="logo">
-                <img src="/static/assets/images/eatance--logo.svg" alt="">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="logo-section">
+                
+                    <div>
+                        <img src="/static/assets/images/eatance--logo.svg" alt="Eatance Logo">
+                        <div class="main-title">AI-Powered Generated Scenarios</div>
+                        <div class="jira-items" id="jiraItems">
+                            <!-- Shared test case info will be populated here -->
             </div>
-            <div class="d-flex justify-content-between w-100">
-                <h1 class="main-title">AI-Powered Shared Test Case</h1>
-                <a href="/" class="btn btn-primary">Generate New</a>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <a href="/" class="generate-btn">
+                        <i class="bi bi-plus"></i>
+                        Generate New
+                    </a>
+                </div>
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-body">
-                <div class="d-flex gap-2 w-100 mb-4">
-                    <button class="btn btn-primary flex-fill" id="copyTestCases">
-                        <i class="bi bi-clipboard"></i> Copy Test Cases
-                    </button>
-                    <button class="btn btn-primary flex-fill" id="downloadExcel">
-                        <i class="bi bi-file-earmark-excel"></i> Download Excel
-                    </button>
-                    <!-- <button class="btn btn-primary flex-fill" id="downloadTxt">
-                        <i class="bi bi-file-text"></i> Download TXT
-                    </button> -->
-                </div>
-
-                <div class="card">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">
-                            Test Cases for {{ test_case.item_id if test_case.item_id else 'Shared Test Case' }}
-                        </h5>
+        <!-- Metrics Section -->
+        <div class="metrics-section">
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Total Tests</div>
+                        <div class="metric-icon total">
+                            <i class="bi bi-list-ul"></i>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="table-container table-responsive" id="testCaseTable">
-                            <div class="text-center">Loading test cases...</div>
+                    <div class="metric-value" id="totalTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Pass</div>
+                        <div class="metric-icon passed">
+                            <i class="bi bi-check"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value passed" id="passedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Fail</div>
+                        <div class="metric-icon failed">
+                            <i class="bi bi-x"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value failed" id="failedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Not Tested</div>
+                        <div class="metric-icon untested">
+                            <i class="bi bi-dash-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value untested" id="untestedTests">0</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-header">
+                        <div class="metric-title">Blocked</div>
+                        <div class="metric-icon blocked">
+                            <i class="bi bi-exclamation-circle"></i>
+                        </div>
+                    </div>
+                    <div class="metric-value blocked" id="blockedTests">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Dashboard Section -->
+        <div class="analytics-section" id="analyticsSection" style="display: none;">
+            <div class="section-header">
+                <div class="section-title">Analytics Dashboard</div>
+                <div class="section-actions">
+                    <button class="close-analytics-btn" id="closeAnalytics">
+                        <i class="bi bi-x-lg"></i>
+                        Close Analytics
+                    </button>
+                </div>
+            </div>
+            
+            <div class="charts-container">
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <h4>Test Case Status Distribution</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="statusChart"></canvas>
+                            <div id="statusPlaceholder" class="chart-placeholder">
+                                <i class="bi bi-pie-chart"></i>
+                                <p>No data available for status distribution</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h4>Test Case Type Distribution</h4>
+                        <div class="chart-wrapper">
+                            <canvas id="typeChart"></canvas>
+                            <div id="typePlaceholder" class="chart-placeholder">
+                                <i class="bi bi-bar-chart"></i>
+                                <p>No data available for type distribution</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const testData = {{ test_case.test_data| tojson | safe }};
-                    const shareKey = {{ test_case.key| tojson | safe }};
-                    const itemId = {{ test_case.item_id| tojson | safe }};
-                    const container = document.getElementById('testCaseTable');
+        <!-- Test Cases Section -->
+        <div class="test-cases-section">
+            <div class="section-header">
+                <div class="section-title-container">
+                    <div class="section-title">For <span id="sourceType">Shared</span>: <span id="itemIdsDisplay">{{ test_case.item_id if test_case.item_id else 'Shared Test Case' }}</span></div>
+                    <div class="item-selector compact" id="itemSelector">
+                        <!-- Item IDs will be populated here as clickable tags -->
+                    </div>
+                        </div>
+                <div class="section-actions">
+                    <button class="analytics-btn" id="showAnalytics">
+                        <i class="bi bi-graph-up"></i>
+                        Show Analytics
+                    </button>
+                    <button class="export-btn" id="copyTestCases">
+                        <i class="bi bi-clipboard"></i>
+                        Copy
+                    </button>
+                    <button class="share-btn" id="downloadExcel">
+                        <i class="bi bi-download"></i>
+                        Export
+                    </button>
+                </div>
+                </div>
+
+            <!-- Test Cases Grid -->
+            <div class="test-cases-grid" id="testCaseTable">
+                <div class="text-center">Loading test cases...</div>
+            </div>
+            </div>
+
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+                <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Chart variables
+        let statusChart = null;
+        let typeChart = null;
+        let testCases = [];
+
+        // Analytics tracking functions
+        let sessionId = null;
+        
+        function getSessionId() {
+            if (!sessionId) {
+                sessionId = localStorage.getItem('session_id');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('session_id', sessionId);
+                }
+            }
+            return sessionId;
+        }
+        
+        function trackAnalyticsEvent(eventType, eventData = {}) {
+            const urlKey = window.location.pathname.split('/').pop();
+            
+            fetch('/api/analytics/track', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    event_type: eventType,
+                    event_data: {
+                        url_key: urlKey,
+                        ...eventData
+                    },
+                    session_id: getSessionId()
+                })
+            }).catch(error => console.error('Failed to track event:', error));
+        }
+        
+        function trackPageVisit(page) {
+            fetch('/api/analytics/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: getSessionId(),
+                    page_visited: page
+                })
+            }).catch(error => console.error('Failed to track page visit:', error));
+        }
+        
+        // Scroll to top on page refresh
+        window.addEventListener('beforeunload', function() {
+            window.scrollTo(0, 0);
+        });
+        
+        // Also scroll to top when page loads
+        window.addEventListener('load', function() {
+            window.scrollTo(0, 0);
+        });
+        
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Track page visit
+            trackPageVisit('view');
+            
+            const testData = {{ test_case.test_data| tojson | safe }};
+            const shareKey = {{ test_case.key| tojson | safe }};
+            const itemId = {{ test_case.item_id| tojson | safe }};
+            const container = document.getElementById('testCaseTable');
                     const copyBtn = document.getElementById('copyTestCases');
                     const excelBtn = document.getElementById('downloadExcel');
                     const txtBtn = document.getElementById('downloadTxt');
@@ -480,16 +1203,45 @@
                     // Store the share key in a global variable for use in status updates
                     window.testCaseShareKey = shareKey;
 
+                    // Update header with shared test case info
+                    const jiraItemsElement = document.getElementById('jiraItems');
+                    if (jiraItemsElement) {
+                        jiraItemsElement.textContent = `Shared Test Case: ${itemId || 'Shared Test Case'}`;
+                    }
+
+                    // Update section title and item selector
+                    const sourceTypeElement = document.getElementById('sourceType');
+                    const itemIdsDisplayElement = document.getElementById('itemIdsDisplay');
+                    const itemSelectorElement = document.getElementById('itemSelector');
+                    
+                    if (sourceTypeElement) {
+                        sourceTypeElement.textContent = 'Shared';
+                    }
+                    
+                    if (itemIdsDisplayElement) {
+                        itemIdsDisplayElement.textContent = itemId || 'Shared Test Case';
+                    }
+                    
+                    if (itemSelectorElement) {
+                        // Hide the item selector for shared test cases since they're all from the same source
+                        itemSelectorElement.style.display = 'none';
+                    }
+
                     // Display test cases
                     try {
+                        console.log('Test data:', testData);
+                        console.log('Test data type:', typeof testData);
+                        console.log('Is array:', Array.isArray(testData));
+                        
                         if (Array.isArray(testData)) {
-                            const table = createTestCaseTable(testData);
-                            container.innerHTML = '';
-                            container.appendChild(table);
+                            console.log('Displaying test cases...');
+                            await displayTestCases(testData);
+                            updateMetrics(testData);
                             
                             // Add status observer to track changes
                             addStatusChangeObserver();
                         } else {
+                            console.log('Test data is not an array, displaying as JSON');
                             container.innerHTML = `<pre class="bg-light p-3">${JSON.stringify(testData, null, 2)}</pre>`;
                         }
                     } catch (error) {
@@ -680,18 +1432,31 @@
                             // Store the button in a global variable for access in status update function
                             window.downloadExcelBtn = this;
                             
-                            // Get fresh status values directly from DOM elements
-                            const statusSelects = document.querySelectorAll('.status-select');
+                            // Build fresh status values snapshot
                             const freshStatusValues = {};
                             
-                            statusSelects.forEach(select => {
-                                const testCaseId = select.getAttribute('data-test-case-id');
-                                const status = select.value;
-                                if (testCaseId && status) {
-                                    freshStatusValues[testCaseId] = status;
-                                    console.log(`Download Excel - Fresh status for ${testCaseId}: ${status}`);
-                                }
-                            });
+                            // 1) Prefer in-memory test data which we keep updated on status change
+                            if (Array.isArray(testData)) {
+                                testData.forEach(tc => {
+                                    const id = tc['Title'] || '';
+                                    const val = tc['Status'] || '';
+                                    if (id && val) {
+                                        freshStatusValues[id] = val;
+                                    }
+                                });
+                            }
+                            
+                            // 2) Also merge from any visible table selects (if table is used)
+                            const statusSelects = document.querySelectorAll('.status-select');
+                            if (statusSelects && statusSelects.length) {
+                                statusSelects.forEach(select => {
+                                    const testCaseId = select.getAttribute('data-test-case-id');
+                                    const status = select.value;
+                                    if (testCaseId && status) {
+                                        freshStatusValues[testCaseId] = status;
+                                    }
+                                });
+                            }
                             
                             const statusParam = encodeURIComponent(JSON.stringify(freshStatusValues));
                             
@@ -776,7 +1541,6 @@
                                 const status = currentStatusValues[testCaseId] || testCase['Status'] || '';
                                 content += `Status: ${status || 'Not set'}\n\n`;
                                 
-                                content += `Actual Result: [To be filled during execution]\n\n`;
                                 content += `Priority: ${testCase.Priority || 'Not specified'}\n`;
                             });
 
@@ -796,6 +1560,488 @@
                         } catch (error) {
                             console.error('Error downloading TXT file:', error);
                             alert('Failed to download TXT file');
+                        }
+                    });
+
+                    // Display test cases in card format
+                    async function displayTestCases(testCases) {
+                        console.log('displayTestCases called with:', testCases);
+                        
+                        // Store test cases globally for analytics
+                        window.testCases = testCases;
+                        
+                        const container = document.getElementById('testCaseTable');
+                        if (!container) {
+                            console.error('Container not found');
+                            return;
+                        }
+                        
+                        // Load status values from API first
+                        let statusValues = {};
+                        try {
+                            const response = await fetch(`/api/shared-status?key=${window.testCaseShareKey}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.status_values) {
+                                    statusValues = data.status_values;
+                                    console.log('Loaded status values:', statusValues);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error loading status values:', error);
+                        }
+                        
+                        container.innerHTML = '';
+                        
+                        testCases.forEach((testCase, index) => {
+                            const title = testCase.Title || 'Untitled Test Case';
+                            const scenario = testCase.Scenario || 'No scenario provided';
+                            
+                            // Use status from API if available, otherwise use default
+                            const currentStatus = statusValues[title] || testCase.Status || 'Not Tested';
+                            console.log(`Status for ${title}: ${currentStatus} (from API: ${statusValues[title]}, from testCase: ${testCase.Status})`);
+                            
+                            const statusClass = getStatusClass(currentStatus);
+                            console.log(`Status class for ${currentStatus}: ${statusClass}`);
+                            const shortDescription = scenario.length > 100 ? scenario.substring(0, 100) + '...' : scenario;
+                            
+                            const card = document.createElement('div');
+                            card.className = `test-case-card status-${statusClass}`;
+                            card.setAttribute('data-test-case-title', title);
+                            
+                            card.innerHTML = `
+                                <div class="test-case-header">
+                                    <div class="test-case-id">${title}</div>
+                                    <div class="status-badge ${statusClass}" onclick="toggleStatusDropdown('${title}', this, event)">
+                                        <i class="bi ${getStatusIcon(currentStatus)}"></i>
+                                        <span class="status-text">${currentStatus}</span>
+                                        <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                                        <div class="status-dropdown" id="status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Not Tested')">
+                                                <i class="bi bi-dash-circle"></i>
+                                                <span>Not Tested</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Pass')">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Pass</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Fail')">
+                                                <i class="bi bi-x-circle"></i>
+                                                <span>Fail</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Blocked')">
+                                                <i class="bi bi-exclamation-circle"></i>
+                                                <span>Blocked</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="test-case-title">${title}</div>
+                                <div class="test-case-description">${shortDescription}</div>
+                                <div class="test-case-actions">
+                                    <button type="button" class="view-details-btn" onclick="toggleDetails('${title}', this)">
+                                        <i class="bi bi-chevron-down"></i>
+                                        View Details
+                                    </button>
+                                </div>
+                                <div class="test-case-details" id="details-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                    <div class="details-content">
+                                        <div class="detail-section">
+                                            <strong>Scenario:</strong>
+                                            <p>${scenario}</p>
+                                        </div>
+                                        <div class="detail-section">
+                                            <strong>Steps to Reproduce:</strong>
+                                            <div>${formatSteps(testCase.Steps)}</div>
+                                        </div>
+                                        <div class="detail-section">
+                                            <strong>Expected Result:</strong>
+                                            <p>${testCase['Expected Result'] || 'Not provided'}</p>
+                                        </div>
+                                        <div class="detail-section">
+                                            <strong>Status:</strong>
+                                            <span class="badge ${statusClass}">${currentStatus}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            container.appendChild(card);
+                            
+                            // Update the test case data with the correct status
+                            testCase.Status = currentStatus;
+                        });
+                    }
+                    
+                    // Helper functions for status
+                    function getStatusClass(status) {
+                        switch (status.toLowerCase()) {
+                            case 'pass': return 'passed';
+                            case 'fail': return 'failed';
+                            case 'blocked': return 'blocked';
+                            default: return 'not-tested';
+                        }
+                    }
+
+                    function getStatusIcon(status) {
+                        switch (status.toLowerCase()) {
+                            case 'pass': return 'bi-check-circle';
+                            case 'fail': return 'bi-x-circle';
+                            case 'blocked': return 'bi-exclamation-circle';
+                            default: return 'bi-dash-circle';
+                        }
+                    }
+                    
+                    // Update metrics
+                    function updateMetrics(testCases) {
+                        const totalTests = testCases.length;
+                        let passed = 0, failed = 0, untested = 0, blocked = 0;
+                        
+                        testCases.forEach(testCase => {
+                            const status = testCase.Status || 'Not Tested';
+                            switch (status) {
+                                case 'Pass': passed++; break;
+                                case 'Fail': failed++; break;
+                                case 'Blocked': blocked++; break;
+                                default: untested++; break;
+                            }
+                        });
+                        
+                        document.getElementById('totalTests').textContent = totalTests;
+                        document.getElementById('passedTests').textContent = passed;
+                        document.getElementById('failedTests').textContent = failed;
+                        document.getElementById('untestedTests').textContent = untested;
+                        document.getElementById('blockedTests').textContent = blocked;
+                    }
+                    
+                    // Format steps for display
+                    function formatSteps(steps) {
+                        if (!steps) return 'No steps provided';
+                        
+                        if (Array.isArray(steps)) {
+                            return steps.map((step, index) => `${index + 1}. ${step}`).join('<br>');
+                        } else if (typeof steps === 'string') {
+                            return steps;
+                        }
+                        
+                        return 'Steps not available';
+                    }
+                    
+                    // Toggle test case details - make it global
+                    window.toggleDetails = function(title, button) {
+                        const detailsId = `details-${title.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                        const detailsElement = document.getElementById(detailsId);
+                        const icon = button.querySelector('i');
+                        
+                        if (detailsElement.style.display === 'none') {
+                            detailsElement.style.display = 'block';
+                            icon.className = 'bi bi-chevron-up';
+                        } else {
+                            detailsElement.style.display = 'none';
+                            icon.className = 'bi bi-chevron-down';
+                        }
+                    };
+
+                    // Status dropdown toggle function
+                    window.toggleStatusDropdown = function(title, badgeElement, event) {
+                        event.stopPropagation();
+                        
+                        // Close all other dropdowns first
+                        const allDropdowns = document.querySelectorAll('.status-dropdown');
+                        const allBadges = document.querySelectorAll('.status-badge');
+                        
+                        allDropdowns.forEach(dropdown => {
+                            if (dropdown.id !== `status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}`) {
+                                dropdown.style.display = 'none';
+                            }
+                        });
+                        
+                        allBadges.forEach(badge => {
+                            badge.classList.remove('open');
+                        });
+                        
+                        // Toggle current dropdown
+                        const dropdownId = `status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}`;
+                        const dropdown = document.getElementById(dropdownId);
+                        
+                        if (dropdown.style.display === 'none') {
+                            dropdown.style.display = 'block';
+                            badgeElement.classList.add('open');
+                        } else {
+                            dropdown.style.display = 'none';
+                            badgeElement.classList.remove('open');
+                        }
+                    };
+
+                    // Update status function
+                    window.updateStatus = function(title, newStatus) {
+                        console.log('updateStatus called with:', title, newStatus);
+                        
+                        // Find the test case and update its status
+                        const testCase = testData.find(tc => tc.Title === title);
+                        console.log('testCase found:', !!testCase);
+                        
+                        if (testCase) {
+                            testCase.Status = newStatus;
+                            console.log('Updated testCase.Status to:', newStatus);
+                            
+                            // Find the card element using data attribute
+                            const cardElement = document.querySelector(`[data-test-case-title="${title}"]`);
+                            console.log('cardElement found:', !!cardElement);
+                            
+                            if (cardElement) {
+                                const statusClass = getStatusClass(newStatus);
+                                const statusIcon = getStatusIcon(newStatus);
+                                
+                                console.log('Updating badge with statusClass:', statusClass, 'statusIcon:', statusIcon);
+                                console.log('New status:', newStatus, 'Status class:', statusClass);
+                                
+                                // Update the top status badge
+                                const badgeElement = cardElement.querySelector('.status-badge');
+                                if (badgeElement) {
+                                    console.log('Found badge element, updating class from:', badgeElement.className, 'to:', `status-badge ${statusClass}`);
+                                    badgeElement.className = `status-badge ${statusClass}`;
+                                    badgeElement.innerHTML = `
+                                        <i class="bi ${statusIcon}"></i>
+                                        <span class="status-text">${newStatus}</span>
+                                        <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                                        <div class="status-dropdown" id="status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Not Tested')">
+                                                <i class="bi bi-dash-circle"></i>
+                                                <span>Not Tested</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Pass')">
+                                                <i class="bi bi-check-circle"></i>
+                                                <span>Pass</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Fail')">
+                                                <i class="bi bi-x-circle"></i>
+                                                <span>Fail</span>
+                                            </div>
+                                            <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Blocked')">
+                                                <i class="bi bi-exclamation-circle"></i>
+                                                <span>Blocked</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                    console.log('Badge element updated, new className:', badgeElement.className);
+                                }
+                                
+                                // Update the details section status badge
+                                const detailsBadge = cardElement.querySelector('.detail-section .badge');
+                                if (detailsBadge) {
+                                    detailsBadge.className = `badge ${statusClass}`;
+                                    detailsBadge.textContent = newStatus;
+                                }
+                                
+                                // Update the card border
+                                console.log('Updating card border with statusClass:', statusClass);
+                                cardElement.className = `test-case-card status-${statusClass}`;
+                            }
+                            
+                            // Update metrics
+                            updateMetrics(testData);
+                            // Refresh analytics if shown
+                            refreshAnalyticsIfVisible();
+                            // Update metrics
+                            updateMetrics(testData);
+                            // Refresh analytics if shown
+                            refreshAnalyticsIfVisible();
+                            
+                            // Save status to MongoDB
+                            console.log('Calling saveStatusToMongoDB...');
+                            saveStatusToMongoDB(title, newStatus);
+                            
+                            // Close the dropdown
+                            const dropdown = document.getElementById(`status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}`);
+                            if (dropdown) {
+                                dropdown.style.display = 'none';
+                                const badgeElement = cardElement.querySelector('.status-badge');
+                                if (badgeElement) {
+                                    badgeElement.classList.remove('open');
+                                }
+                            }
+                        } else {
+                            console.error('Test case not found:', title);
+                        }
+                    };
+
+                    // Function to save status to MongoDB
+                    function saveStatusToMongoDB(testCaseId, status) {
+                        console.log('saveStatusToMongoDB called with:', testCaseId, status);
+                        
+                        const urlKey = window.testCaseShareKey;
+                        console.log('urlKey:', urlKey);
+                        
+                        if (!urlKey) {
+                            console.error('No share key available');
+                            return;
+                        }
+
+                        // Show saving indicator
+                        const cardElement = document.querySelector(`[data-test-case-title="${testCaseId}"]`);
+                        console.log('cardElement found:', !!cardElement);
+                        
+                        if (cardElement) {
+                            const badgeElement = cardElement.querySelector('.status-badge');
+                            if (badgeElement) {
+                                badgeElement.innerHTML = `
+                                    <i class="bi bi-hourglass-split"></i>
+                                    <span class="status-text">Saving...</span>
+                                `;
+                                badgeElement.style.opacity = '0.7';
+                            }
+                        }
+
+                        const requestData = {
+                            key: urlKey,
+                            test_case_id: testCaseId,
+                            status: status,
+                            shared_view: true
+                        };
+                        
+                        console.log('Sending request with data:', requestData);
+
+                        fetch('/api/update-status', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(requestData)
+                        })
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Response data:', data);
+                            
+                            if (data.success) {
+                                console.log(`Status updated successfully for ${testCaseId}: ${status}`);
+                                
+                                // Restore normal appearance
+                                if (cardElement) {
+                                    const badgeElement = cardElement.querySelector('.status-badge');
+                                    if (badgeElement) {
+                                        badgeElement.style.opacity = '1';
+                                    }
+                                }
+                                
+                                // Show success indicator briefly
+                                setTimeout(() => {
+                                    if (cardElement) {
+                                        const badgeElement = cardElement.querySelector('.status-badge');
+                                        if (badgeElement) {
+                                            badgeElement.style.background = '#dcfce7';
+                                            badgeElement.style.color = '#10b981';
+                                            badgeElement.innerHTML = `
+                                                <i class="bi bi-check-circle"></i>
+                                                <span class="status-text">Saved!</span>
+                                            `;
+                                            
+                                            // Restore normal appearance after 1 second
+                                            setTimeout(() => {
+                                                const statusClass = getStatusClass(status);
+                                                const statusIcon = getStatusIcon(status);
+                                                badgeElement.className = `status-badge ${statusClass}`;
+                                                badgeElement.innerHTML = `
+                                                    <i class="bi ${statusIcon}"></i>
+                                                    <span class="status-text">${status}</span>
+                                                    <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                                                    <div class="status-dropdown" id="status-dropdown-${testCaseId.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                                        <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Not Tested')">
+                                                            <i class="bi bi-dash-circle"></i>
+                                                            <span>Not Tested</span>
+                                                        </div>
+                                                        <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Pass')">
+                                                            <i class="bi bi-check-circle"></i>
+                                                            <span>Pass</span>
+                                                        </div>
+                                                        <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Fail')">
+                                                            <i class="bi bi-x-circle"></i>
+                                                            <span>Fail</span>
+                                                        </div>
+                                                        <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Blocked')">
+                                                            <i class="bi bi-exclamation-circle"></i>
+                                                            <span>Blocked</span>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }, 1000);
+                                        }
+                                    }
+                                }, 500);
+                                
+                            } else {
+                                console.error('Failed to update status:', data.error);
+                                throw new Error(data.error || 'Failed to update status');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error updating status:', error);
+                            
+                            // Show error and revert
+                            if (cardElement) {
+                                const badgeElement = cardElement.querySelector('.status-badge');
+                                if (badgeElement) {
+                                    badgeElement.style.opacity = '1';
+                                    badgeElement.innerHTML = `
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <span class="status-text">Error</span>
+                                    `;
+                                    badgeElement.style.background = '#fee2e2';
+                                    badgeElement.style.color = '#ef4444';
+                                    
+                                    // Revert after 2 seconds
+                                    setTimeout(() => {
+                                        const statusClass = getStatusClass(status);
+                                        const statusIcon = getStatusIcon(status);
+                                        badgeElement.className = `status-badge ${statusClass}`;
+                                        badgeElement.innerHTML = `
+                                            <i class="bi ${statusIcon}"></i>
+                                            <span class="status-text">${status}</span>
+                                            <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                                            <div class="status-dropdown" id="status-dropdown-${testCaseId.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
+                                                <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Not Tested')">
+                                                    <i class="bi bi-dash-circle"></i>
+                                                    <span>Not Tested</span>
+                                                </div>
+                                                <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Pass')">
+                                                    <i class="bi bi-check-circle"></i>
+                                                    <span>Pass</span>
+                                                </div>
+                                                <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Fail')">
+                                                    <i class="bi bi-x-circle"></i>
+                                                    <span>Fail</span>
+                                                </div>
+                                                <div class="status-option" onclick="event.stopPropagation(); updateStatus('${testCaseId}', 'Blocked')">
+                                                    <i class="bi bi-exclamation-circle"></i>
+                                                    <span>Blocked</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }, 2000);
+                                }
+                            }
+                        });
+                    }
+
+                    // Close dropdowns when clicking outside
+                    document.addEventListener('click', function(event) {
+                        if (!event.target.closest('.status-badge')) {
+                            const allDropdowns = document.querySelectorAll('.status-dropdown');
+                            const allBadges = document.querySelectorAll('.status-badge');
+                            
+                            allDropdowns.forEach(dropdown => {
+                                dropdown.style.display = 'none';
+                            });
+                            
+                            allBadges.forEach(badge => {
+                                badge.classList.remove('open');
+                            });
                         }
                     });
 
@@ -1057,8 +2303,442 @@
                         }
                     }
                     
+                    // Add status change observer
+                    function addStatusChangeObserver() {
+                        // This function is called after displaying test cases
+                        // Status change handling is already implemented in the card creation
+                        console.log('Status change observer added');
+                    }
+                    
                     // Start polling for status updates
                     setupStatusPolling();
+
+                    // Analytics functionality
+                    const showAnalyticsBtn = document.getElementById('showAnalytics');
+                    const closeAnalyticsBtn = document.getElementById('closeAnalytics');
+                    const analyticsSection = document.getElementById('analyticsSection');
+
+                    // Show Analytics button click handler
+                    showAnalyticsBtn.addEventListener('click', function() {
+                        analyticsSection.style.display = 'block';
+                        createStatusChart();
+                        createTypeChart();
+                        
+                        // Track analytics event
+                        trackAnalyticsEvent('analytics_viewed', {
+                            page: 'view',
+                            share_key: shareKey
+                        });
+                    });
+
+                    // Close Analytics button click handler
+                    closeAnalyticsBtn.addEventListener('click', function() {
+                        analyticsSection.style.display = 'none';
+                    });
+
+                    // Chart creation functions
+                    function createStatusChart() {
+                        const ctx = document.getElementById('statusChart');
+                        const placeholder = document.getElementById('statusPlaceholder');
+                        
+                        if (statusChart) {
+                            statusChart.destroy();
+                        }
+
+                        // Calculate status distribution
+                        const statusData = calculateStatusDistribution();
+                        
+                        // Store original data for reference
+                        window.originalStatusData = {
+                            passed: statusData.passed,
+                            failed: statusData.failed,
+                            blocked: statusData.blocked,
+                            untested: statusData.untested
+                        };
+                        
+                        // Track which items are hidden by user clicks (not original zeros)
+                        window.hiddenByUser = [false, false, false, false];
+                        
+                        console.log('Status distribution data:', statusData);
+                        
+                        const container = ctx.closest('.chart-container');
+                        
+                        if (statusData.passed === 0 && statusData.failed === 0 && statusData.blocked === 0 && statusData.untested === 0) {
+                            ctx.style.display = 'none';
+                            placeholder.style.display = 'flex';
+                            container.classList.add('compact');
+                            return;
+                        }
+
+                        ctx.style.display = 'block';
+                        placeholder.style.display = 'none';
+                        container.classList.remove('compact');
+
+                        // Plugin to draw strikethrough over legend items that are hidden by user
+                        const strikeLegendPlugin = {
+                            id: 'strikeLegend',
+                            afterDraw(chart) {
+                                const legend = chart.legend;
+                                if (!legend || !window.hiddenByUser) return;
+                                const ctx2 = chart.ctx;
+                                legend.legendItems.forEach((item, i) => {
+                                    const isHiddenByUser = window.hiddenByUser[i];
+                                    if (!isHiddenByUser) return;
+                                    const box = legend.legendHitBoxes && legend.legendHitBoxes[i];
+                                    if (!box) return;
+                                    const y = box.top + box.height / 2;
+                                    const startX = box.left;
+                                    const endX = box.left + box.width;
+                                    ctx2.save();
+                                    ctx2.strokeStyle = '#6b7280';
+                                    ctx2.lineWidth = 2;
+                                    ctx2.beginPath();
+                                    ctx2.moveTo(startX, y);
+                                    ctx2.lineTo(endX, y);
+                                    ctx2.stroke();
+                                    ctx2.restore();
+                                });
+                            }
+                        };
+                        if (window.Chart && !Chart.registry.plugins.get('strikeLegend')) {
+                            Chart.register(strikeLegendPlugin);
+                        }
+
+                        statusChart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Pass', 'Fail', 'Blocked', 'Not Tested'],
+                                datasets: [{
+                                    data: [statusData.passed, statusData.failed, statusData.blocked, statusData.untested],
+                                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b', '#6b7280'],
+                                    borderWidth: 0,
+                                    hoverOffset: 4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                layout: {
+                                    padding: {
+                                        top: 10,
+                                        bottom: 10
+                                    }
+                                },
+                                animation: {
+                                    duration: 1000,
+                                    easing: 'easeInOutQuart'
+                                },
+                                // Removed onClick handler - only legend clicks are allowed
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                        labels: {
+                                            padding: 20,
+                                            usePointStyle: true,
+                                            generateLabels: function(chart) {
+                                                const data = chart.data;
+                                                if (data.labels.length && data.datasets.length) {
+                                                    return data.labels.map((label, i) => {
+                                                        const dataset = data.datasets[0];
+                                                        const value = dataset.data[i];
+                                                        const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                                        const originalValue = originalValues[i];
+                                                        const isHidden = value === 0;
+                                                        const originalColors = ['#10b981', '#ef4444', '#f59e0b', '#6b7280'];
+                                                        
+                                                        // Calculate percentage based on original total, not current total
+                                                        const originalTotal = originalValues.reduce((a, b) => a + b, 0);
+                                                        const percentage = originalTotal > 0 ? ((originalValue / originalTotal) * 100).toFixed(1) : '0.0';
+                                                        
+                                                        return {
+                                                            text: `${label}: ${originalValue} (${percentage}%)`,
+                                                            fillStyle: isHidden ? originalColors[i] : dataset.backgroundColor[i],
+                                                            strokeStyle: isHidden ? originalColors[i] : dataset.backgroundColor[i],
+                                                            lineWidth: 0,
+                                                            pointStyle: 'circle',
+                                                            hidden: false,
+                                                            index: i,
+                                                            isHidden: isHidden
+                                                        };
+                                                    });
+                                                }
+                                                return [];
+                                            }
+                                        },
+                                        onHover: function(e, legendItem, legend) {
+                                            const target = e.native?.target || e.native?.dom || e.native;
+                                            if (target && target.style) target.style.cursor = 'pointer';
+                                        },
+                                        onLeave: function(e, legendItem, legend) {
+                                            const target = e.native?.target || e.native?.dom || e.native;
+                                            if (target && target.style) target.style.cursor = 'default';
+                                        },
+                                        onClick: function(e, legendItem, legend) {
+                                            const index = legendItem.index;
+                                            const chart = legend.chart;
+                                            const dataset = chart.data.datasets[0];
+                                            const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                            const originalColors = ['#10b981', '#ef4444', '#f59e0b', '#6b7280'];
+                                            
+                                            // Toggle user hidden state
+                                            if (window.hiddenByUser[index]) {
+                                                // Show: restore original value and mark as not hidden by user
+                                                dataset.data[index] = originalValues[index];
+                                                dataset.backgroundColor[index] = originalColors[index];
+                                                window.hiddenByUser[index] = false;
+                                            } else {
+                                                // Hide: set to 0 and mark as hidden by user
+                                                dataset.data[index] = 0;
+                                                dataset.backgroundColor[index] = 'rgba(128, 128, 128, 0.3)';
+                                                window.hiddenByUser[index] = true;
+                                            }
+                                            chart.update();
+                                            setTimeout(() => { applyLegendStyling(chart); }, 100);
+                                        }
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                const label = context.label || '';
+                                                const value = context.parsed;
+                                                const originalValues = [window.originalStatusData.passed, window.originalStatusData.failed, window.originalStatusData.blocked, window.originalStatusData.untested];
+                                                const originalValue = originalValues[context.dataIndex];
+                                                const originalTotal = originalValues.reduce((a, b) => a + b, 0);
+                                                const percentage = originalTotal > 0 ? ((originalValue / originalTotal) * 100).toFixed(1) : '0.0';
+                                                return `${label}: ${originalValue} (${percentage}%)`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Apply initial legend styling
+                        setTimeout(() => {
+                            applyLegendStyling(statusChart);
+                        }, 200);
+                    }
+
+                    function createTypeChart() {
+                        const ctx = document.getElementById('typeChart');
+                        const placeholder = document.getElementById('typePlaceholder');
+                        
+                        if (typeChart) {
+                            typeChart.destroy();
+                        }
+
+                        // Calculate type distribution
+                        const typeData = calculateTypeDistribution();
+                        const isSingleBar = Array.isArray(typeData) && typeData.length === 1;
+                        
+                        console.log('Type distribution data:', typeData);
+                        
+                        const container = ctx.closest('.chart-container');
+                        
+                        if (typeData.length === 0) {
+                            ctx.style.display = 'none';
+                            placeholder.style.display = 'flex';
+                            container.classList.add('compact');
+                            return;
+                        }
+
+                        ctx.style.display = 'block';
+                        placeholder.style.display = 'none';
+                        container.classList.remove('compact');
+
+                        const colors = ['#4CAA72', '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE'];
+
+                        typeChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: typeData.map(item => item.type),
+                                datasets: [{
+                                    label: 'Count',
+                                    data: typeData.map(item => item.count),
+                                    backgroundColor: typeData.map((item, index) => colors[index % colors.length]),
+                                    borderWidth: 0,
+                                    borderRadius: 4,
+                                    borderSkipped: false,
+                                    // Consistent bar width regardless of data points
+                                    maxBarThickness: 40,
+                                    barPercentage: 0.8,
+                                    categoryPercentage: 0.8
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                layout: {
+                                    padding: {
+                                        top: 10,
+                                        bottom: 10
+                                    }
+                                },
+                                animation: {
+                                    duration: 1000,
+                                    easing: 'easeInOutQuart'
+                                },
+                                interaction: {
+                                    intersect: false,
+                                    mode: 'index'
+                                },
+                                scales: {
+                                    x: {
+                                        ticks: {
+                                            maxRotation: 45,
+                                            minRotation: 0,
+                                            autoSkip: true,
+                                            maxTicksLimit: 10
+                                        }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            stepSize: 1,
+                                            callback: function(value) {
+                                                return value.toLocaleString();
+                                            }
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(context) {
+                                                return `${context.dataset.label}: ${context.parsed.y.toLocaleString()}`;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    function calculateStatusDistribution() {
+                        const inMemory = (window.testCases && window.testCases.length > 0) ? window.testCases : [];
+                        const testCasesToUse = inMemory.length > 0 ? inMemory : testData;
+                        let passed = 0, failed = 0, blocked = 0, untested = 0;
+                        
+                        testCasesToUse.forEach(testCase => {
+                            const status = testCase.Status || 'Not Tested';
+                            switch (status.toLowerCase()) {
+                                case 'pass': passed++; break;
+                                case 'fail': failed++; break;
+                                case 'blocked': blocked++; break;
+                                default: untested++; break;
+                            }
+                        });
+                        
+                        return { passed, failed, blocked, untested };
+                    }
+
+                    function calculateTypeDistribution() {
+                        const testCasesToUse = (window.testCases && window.testCases.length > 0) ? window.testCases : testData;
+
+                        // Use the same fixed set of types used on the results page
+                        const defaultFormTestTypes = [
+                            'Functional - Positive Tests',
+                            'Functional - Negative Test',
+                            'UI Tests',
+                            'Compatibility Tests',
+                            'Performance Tests',
+                            'UX Tests'
+                        ];
+
+                        const typeCount = {};
+                        // Initialize counts to 0 so missing categories don't appear unless present
+                        defaultFormTestTypes.forEach(type => {
+                            typeCount[type] = 0;
+                        });
+
+                        // Count strictly by the provided Type field
+                        testCasesToUse.forEach(tc => {
+                            const type = tc.Type;
+                            if (type && defaultFormTestTypes.includes(type)) {
+                                typeCount[type] = (typeCount[type] || 0) + 1;
+                            }
+                        });
+
+                        // Convert to chart format, only include types with data and sort by count desc
+                        return Object.entries(typeCount)
+                            .filter(([type, count]) => count > 0)
+                            .map(([type, count]) => ({ type, count }))
+                            .sort((a, b) => b.count - a.count);
+                    }
+                    
+                    // Function to apply strikethrough effect to legend items
+                    function applyLegendStyling(chart) {
+                        if (!chart || !chart.legend || !window.hiddenByUser) return;
+                        
+                        const legendContainer = chart.canvas.parentElement;
+                        if (legendContainer) {
+                            // Support different legend DOM structures across browsers/Chart.js
+                            const legendItems = legendContainer.querySelectorAll('li, .chartjs-legend li, .chartjs-legend-item, ul li');
+                            
+                            legendItems.forEach((item, index) => {
+                                if (index < window.hiddenByUser.length) {
+                                    const isHiddenByUser = window.hiddenByUser[index];
+                                    const textElement = item.querySelector('span, label, div');
+                                    const target = textElement || item; // fallback to LI itself
+                                    if (isHiddenByUser) {
+                                        target.style.textDecoration = 'line-through';
+                                        target.style.opacity = '0.6';
+                                        target.style.color = '#6b7280';
+                                    } else {
+                                        target.style.textDecoration = 'none';
+                                        target.style.opacity = '1';
+                                        target.style.color = '';
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    
+                    // Function to reset charts to original state
+                    function resetCharts() {
+                        if (statusChart) {
+                            createStatusChart();
+                        }
+                        if (typeChart) {
+                            createTypeChart();
+                        }
+                    }
+
+                    // Refresh analytics only if the analytics section is visible
+                    function refreshAnalyticsIfVisible() {
+                        const analyticsSection = document.getElementById('analyticsSection');
+                        if (!analyticsSection) return;
+                        const isVisible = analyticsSection.style.display !== 'none';
+                        if (isVisible) {
+                            try {
+                                createStatusChart();
+                                createTypeChart();
+                            } catch (e) {
+                                console.error('Failed to refresh analytics charts:', e);
+                            }
+                        }
+                    }
+                });
+                
+                // Back to Top Button functionality
+                const backToTopButton = document.getElementById('backToTop');
+                
+                window.addEventListener('scroll', () => {
+                    if (window.pageYOffset > 300) {
+                        backToTopButton.classList.add('show');
+                    } else {
+                        backToTopButton.classList.remove('show');
+                    }
+                });
+                
+                backToTopButton.addEventListener('click', () => {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 });
             </script>
         </div>

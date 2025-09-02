@@ -12,8 +12,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="shortcut icon" href="/static/assets/images/favicon.png?v={{ timestamp if timestamp else '1' }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* Modern circular loader styles */
+        /* COMMENTED OUT: Modern circular loader styles */
+        /*
         .loader-container {
             display: none;
             position: fixed;
@@ -21,7 +25,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -33,6 +37,7 @@
             position: relative;
             background: white;
             border-radius: 50%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 
         .loader-spinner {
@@ -52,7 +57,206 @@
             transform: translate(-50%, -50%);
             font-size: 24px;
             font-weight: bold;
-            color: #333;
+            color: #4CAA72;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .loader-message {
+            position: absolute;
+            top: calc(50% + 80px);
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 16px;
+            font-weight: 500;
+            color: white;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        */
+        
+        /* NEW: Animated file loader styles */
+        .loader-container {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loader-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2.5rem;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            text-align: center;
+            min-width: 500px;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+            margin: 2rem;
+        }
+        
+        .loader-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4cab72, #1d4354, #4cab72);
+            background-size: 200% 100%;
+            animation: shimmer 2s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        .loader-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .loader-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #4cab72, #1d4354);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 24px rgba(76, 171, 114, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .loader-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .loader-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0;
+            color: #1a202c;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.2;
+            background: linear-gradient(135deg, #1a202c, #4cab72);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .loader-description {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-bottom: 2rem;
+            color: #4a5568;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            max-width: 450px;
+            padding: 0 1rem;
+        }
+        
+        .loader-subtitle {
+            font-size: 0.875rem;
+            font-weight: 400;
+            margin-top: 1rem;
+            color: #718096;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.4;
+            padding: 0.5rem 1rem;
+            background: rgba(76, 171, 114, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(76, 171, 114, 0.2);
+        }
+        
+        .loader-con {
+            position: relative;
+            width: 300px;
+            height: 100px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .pfile {
+            position: absolute;
+            bottom: 25px;
+            width: 40px;
+            height: 50px;
+            background: linear-gradient(90deg, #1d4354, #4cab72);
+            border-radius: 4px;
+            transform-origin: center;
+            animation: flyRight 3s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .pfile::before {
+            content: "";
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            width: 28px;
+            height: 4px;
+            background-color: #ffffff;
+            border-radius: 2px;
+        }
+
+        .pfile::after {
+            content: "";
+            position: absolute;
+            top: 13px;
+            left: 6px;
+            width: 18px;
+            height: 4px;
+            background-color: #ffffff;
+            border-radius: 2px;
+        }
+
+        @keyframes flyRight {
+            0% {
+                left: -10%;
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                left: 45%;
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                left: 100%;
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+
+        .pfile {
+            animation-delay: calc(var(--i) * 0.6s);
         }
 
         /* Form validation styles - matching the image */
@@ -76,7 +280,7 @@
 
         .form-control.is-valid {
             border-color: #198754 !important;
-            border-width: 2px !important;
+        
             box-shadow: none !important;
             background-image: none !important;
             background-repeat: no-repeat !important;
@@ -719,6 +923,336 @@
             color: #61b984;
         }
 
+        /* Information icon styles */
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background-color: #4CAA72;
+            color: white !important;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        /* Index page specific info icon styling - ensure white color */
+        .index-page .info-icon,
+        .info-icon.index-page-icon,
+        .index-page .form-label .info-icon,
+        .index-page .form-label span.info-icon {
+            color: white !important;
+            background-color: #4CAA72 !important;
+        }
+        
+        /* Override any conflicting CSS for info icons specifically */
+        .index-page .info-icon,
+        .index-page .form-label .info-icon,
+        .index-page .form-label span.info-icon,
+        .index-page .form-label *:has(.info-icon),
+        .index-page .form-label .info-icon * {
+            color: white !important;
+        }
+        
+        /* Custom color for image processing note */
+        .image-processing-note {
+            color: rgb(197, 109, 15) !important;
+        }
+        
+        .image-processing-note i {
+            color: rgb(197, 109, 15) !important;
+        }
+        
+        /* Custom color for URL accessibility warning */
+        .url-accessibility-warning {
+            color: rgb(197, 109, 15) !important;
+        }
+        
+        .url-accessibility-warning i {
+            color: rgb(197, 109, 15) !important;
+        }
+        
+
+
+        .info-icon:hover {
+            background-color: #3a8a5f;
+            cursor: pointer;
+        }
+
+        .field-with-info {
+            position: relative;
+        }
+
+        /* Suggestions container close button */
+        .suggestions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 12px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .suggestions-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #6c757d;
+            font-size: 11px;
+        }
+        
+        .refresh-indicator i {
+            animation: spin 1s linear infinite;
+            font-size: 10px;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .suggestions-close-btn {
+            background: none;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .suggestions-close-btn:hover {
+            background-color: #e9ecef;
+            color: #333;
+        }
+
+        .info-popup {
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            background-color: white;
+            color: #333;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            max-width: 350px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.2s ease, visibility 0.2s ease;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 1px solid #e0e0e0;
+            margin-bottom: 8px;
+            pointer-events: auto;
+        }
+
+        .info-popup::before {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 6px solid white;
+        }
+
+        .info-popup.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .info-popup .popup-content {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            padding-right: 20px;
+        }
+
+        .info-popup .popup-link {
+            color: #4CAA72;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .info-popup .popup-link:hover {
+            text-decoration: underline;
+        }
+
+        .popup-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            color: #666;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .popup-close:hover {
+            background: #e9ecef;
+            color: #333;
+            border-color: #adb5bd;
+        }
+
+        /* File input styling */
+        input[type="file"] {
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            height: 38px;
+            min-height: 38px;
+            max-height: 38px;
+            line-height: 1.5;
+            box-sizing: border-box;
+        }
+
+        input[type="file"]:focus {
+            border-color: #4CAA72;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 0.2rem rgba(76, 170, 114, 0.25);
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background-color: #4CAA72;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: #4CAA72;
+            color: #4CAA72;
+        }
+
+        input[type="file"]::file-selector-button {
+            background-color: #4CAA72;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background-color: rgba(76, 171, 114, 0.1);
+            border-color: #4CAA72;
+            color: #4CAA72;
+        }
+
+        /* Item ID field loading state */
+        .item-id-field-loading .multi-select-input {
+            border-color: #4cab72 !important;
+        }
+        
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background-color: #4cab72;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(76, 171, 114, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .back-to-top:hover {
+            background-color: #3a8a5f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(76, 171, 114, 0.4);
+        }
+        
+        .back-to-top.show {
+            display: flex;
+        }
+        
+        @media (max-width: 768px) {
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+        }
+
+        /* Loading suggestions styling */
+        .loading-suggestions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            color: #4CAA72;
+            font-style: italic;
+        }
+
+        .loading-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4CAA72;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
         .form-control,
         .form-select {
             border-radius: 6px;
@@ -762,6 +1296,24 @@
             border-color: rgba(4, 30, 43, 0.5);
             color: rgba(4, 30, 43, 1);
             box-shadow: 0 14px 26px -12px rgba(4, 30, 43, 0.2), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(4, 30, 43, 0.2);
+        }
+        
+        /* Analytics button brand styling */
+        .btn-outline-success {
+            color: rgb(76, 171, 114) !important;
+            border-color: rgb(76, 171, 114) !important;
+            background-color: transparent;
+            padding: 8px 22px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .btn-outline-success:hover,
+        .btn-outline-success:focus {
+            background-color: rgb(76, 171, 114) !important;
+            border-color: rgb(76, 171, 114) !important;
+            color: white !important;
+            box-shadow: 0 14px 26px -12px rgba(76, 171, 114, 0.42), 0 4px 23px 0 rgba(0, 0, 0, 0.12), 0 8px 10px -5px rgba(76, 171, 114, 0.20);
         }
 
         .btn:focus {
@@ -910,7 +1462,21 @@
             .form-select {
                 font-size: 0.9rem;
             }
-
+            
+            .btn {
+                font-size: 0.9rem;
+                padding: 6px 12px;
+            }
+            
+            .verify-status {
+                font-size: 12px;
+                padding: 8px 12px;
+            }
+            
+            .spinner {
+                width: 14px;
+                height: 14px;
+            }
         }
 
         /* Clean, professional spinner for buttons */
@@ -1219,16 +1785,13 @@
 
 <body>
 
-    <!-- Alert container removed - using inline messages instead -->
 
-    <div class="loader-container">
-        <div class="loader">
-            <div class="loader-spinner"></div>
-            <div class="loader-text">0%</div>
-        </div>
-    </div>
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to Top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
 
-    <div class="container">
+    <div class="container index-page">
         <div
             class="header flex-column justify-content-between justify-content-md-start align-items-center gap-4 gap-md-0">
             <div class="logo">
@@ -1239,7 +1802,12 @@
                 <p class="subtitle">Automatically generate test cases from Jira or Azure DevOps tickets, or even images—powered by AI-driven automation for faster, smarter QA workflows.</p>
             </div>
             <div class="right-content">
-
+                <a href="/analytics" class="btn btn-outline-success me-2" title="View Analytics">
+                    <i class="bi bi-graph-up"></i> Analytics Dashboard
+                </a>
+                <!-- <a href="/comparison" class="btn btn-outline-primary" title="View Comparison">
+                    <i class="bi bi-bar-chart"></i> Compare Solutions
+                </a> -->
             </div>
         </div>
 
@@ -1251,46 +1819,86 @@
                 </div>
                 <form id="generatorForm">
                     <div class="row mb-5">
-                        <div class=" col-md-6">
+                        <div class=" col-md-6 field-with-info">
                             <label class="form-label">
                                 <i class="bi bi-gear"></i>
                                 Source Type
+                                <span class="info-icon" onclick="toggleInfoPopup('source-type-popup')">i</span>
                             </label>
-                            <select class="form-select" id="sourceType" name="sourceType">
-                                <option value="jira">Jira</option>
-                                <option value="azure">Azure DevOps</option>
-                                <option value="image">Image</option>
-                            </select>
+                            <div class="info-popup" id="source-type-popup">
+                                <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'source-type-popup')" type="button">&times;</button>
+                                <div class="popup-content">Choose the source type for generating test cases. Select Jira or Azure DevOps for project management tools, Image for screenshots/mockups, or Site URL for website analysis.</div>
+                                <a href="/documentation" class="popup-link" target="_blank">
+                                    <i class="bi bi-book"></i>
+                                    View Documentation
+                                </a>
+                            </div>
+                            <div class="position-relative">
+                                <select class="form-select" id="sourceType" name="sourceType">
+                                    <option value="jira">Jira</option>
+                                    <option value="azure">Azure DevOps</option>
+                                    <option value="image">Image</option>
+                                    <option value="url">Site URL</option>
+                                </select>
+                                <i class="bi bi-chevron-down position-absolute" style="right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #6c757d; z-index: 10;"></i>
+                            </div>
                         </div>
                     </div>
 
                     <div id="jiraFields" class="mb-5">
                         <h5 class="mb-4 border-bottom pb-3">Connection Details</h5>
                         <div class="row ">
-                            <div class="mb-4 col-md-6">
+                            <div class="mb-4 col-md-6 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-link"></i>
                                     Jira URL
+                                    <span class="info-icon" onclick="toggleInfoPopup('jira-url-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="jira-url-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'jira-url-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter your Jira instance URL (e.g., https://your-company.atlassian.net)</div>
+                                    <a href="/documentation#jira" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="text" class="form-control" name="jiraUrl" id="jiraUrl"
                                     placeholder="https://your-domain.atlassian.net" required>
                                 <div class="form-validation-error" id="jiraUrl-error">Please enter a valid Jira URL</div>
                             </div>
-                            <div class="mb-4 col-md-6">
+                            <div class="mb-4 col-md-6 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-person"></i>
                                     Jira User
+                                    <span class="info-icon" onclick="toggleInfoPopup('jira-user-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="jira-user-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'jira-user-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter your Atlassian account email address</div>
+                                    <a href="/documentation#jira" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="text" class="form-control" name="jiraUser" id="jiraUser" placeholder="email@example.com"
                                     required>
                                 <div class="form-validation-error" id="jiraUser-error">Please enter a valid email address</div>
                             </div>
 
-                            <div class="col-md-6 mb-4">
+                            <div class="col-md-6 mb-4 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-key"></i>
                                     Jira API Token
+                                    <span class="info-icon" onclick="toggleInfoPopup('jira-token-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="jira-token-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'jira-token-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Generate an API token from your Atlassian account settings under Security > API tokens</div>
+                                    <a href="/documentation#jira" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="password" class="form-control" name="jiraToken" id="jiraToken"  placeholder="Generate an API token in your Atlassian account settings" required>
                                 <div class="form-text"></div>
                                 <div class="form-validation-error" id="jiraToken-error">Please enter your Jira API token</div>
@@ -1312,35 +1920,71 @@
                     <div id="azureFields" style="display: none;">
                         <h5 class="mb-4 border-bottom pb-3">Connection Details</h5>
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-link"></i>
                                     Azure DevOps URL
+                                    <span class="info-icon" onclick="toggleInfoPopup('azure-url-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="azure-url-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'azure-url-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter your Azure DevOps organization URL (e.g., https://dev.azure.com/your-organization)</div>
+                                    <a href="/documentation#azure" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="text" class="form-control" name="azureUrl" id="azureUrl" placeholder="https://dev.azure.com/your-organization" required>
                                 <div class="form-validation-error" id="azureUrl-error">Please enter a valid Azure DevOps URL</div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-building"></i>
                                     Azure Organization
+                                    <span class="info-icon" onclick="toggleInfoPopup('azure-org-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="azure-org-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'azure-org-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter your Azure DevOps organization name</div>
+                                    <a href="/documentation#azure" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="text" class="form-control" name="azureOrg" id="azureOrg" placeholder="your-organization" required>
                                 <div class="form-validation-error" id="azureOrg-error">Please enter your Azure organization</div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-folder"></i>
                                     Azure Project
+                                    <span class="info-icon" onclick="toggleInfoPopup('azure-project-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="azure-project-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'azure-project-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter your Azure DevOps project name</div>
+                                    <a href="/documentation#azure" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="text" class="form-control" name="azureProject" id="azureProject" placeholder="your-project" required>
                                 <div class="form-validation-error" id="azureProject-error">Please enter your Azure project</div>
                             </div>
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 field-with-info">
                                 <label class="form-label">
                                     <i class="bi bi-key"></i>
                                     Azure PAT
+                                    <span class="info-icon" onclick="toggleInfoPopup('azure-pat-popup')">i</span>
                                 </label>
+                                <div class="info-popup" id="azure-pat-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'azure-pat-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Generate a Personal Access Token from Azure DevOps User Settings > Personal Access Tokens</div>
+                                    <a href="/documentation#azure" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
                                 <input type="password" class="form-control" name="azurePat" id="azurePat" placeholder="Generate an PAT token in your Azure account settings" required>
                                 <div class="form-text"></div>
                                 <div class="form-validation-error" id="azurePat-error">Please enter your Azure Personal Access Token</div>
@@ -1360,22 +2004,74 @@
                     </div>
 
                     <div id="imageFields" style="display: none;">
-                        <div class="mb-4 col-md-12">
+                        <h5 class="mb-4 border-bottom pb-3">Connection Details</h5>
+                        <div class="mb-4 col-md-6 field-with-info">
                             <label class="form-label">
                                 <i class="bi bi-image"></i>
                                 Upload Image
+                                <span class="info-icon" onclick="toggleInfoPopup('image-upload-popup')">i</span>
                             </label>
+                            <div class="info-popup" id="image-upload-popup">
+                                <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'image-upload-popup')" type="button">&times;</button>
+                                <div class="popup-content">Upload a screenshot or image containing UI elements, requirements, or design mockups for test case generation</div>
+                                <a href="/documentation#image" class="popup-link" target="_blank">
+                                    <i class="bi bi-book"></i>
+                                    View Documentation
+                                </a>
+                            </div>
                             <input type="file" class="form-control" name="imageFile" id="imageFile" accept="image/*">
-                            <div class="form-text">Upload an image containing the test case requirements</div>
+                            <div class="form-text">Upload an image in PNG, JPG, or JPEG format only.</div>
+                            <div class="form-text text-warning image-processing-note">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Note:</strong> Processing images may take a little longer than other sources.
+                            </div>
                             <div class="form-validation-error" id="imageFile-error">Please select an image file</div>
                         </div>
                     </div>
 
-                    <div class="mb-4 col-md-12" id="itemIdField">
+                    <div id="urlFields" style="display: none;">
+                        <h5 class="mb-4 border-bottom pb-3">Connection Details</h5>
+                        <div class="row">
+                            <div class="mb-4 col-md-6 field-with-info">
+                                <label class="form-label">
+                                    <i class="bi bi-globe"></i>
+                                    Website URL
+                                    <span class="info-icon" onclick="toggleInfoPopup('website-url-popup')">i</span>
+                                </label>
+                                <div class="info-popup" id="website-url-popup">
+                                    <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'website-url-popup')" type="button">&times;</button>
+                                    <div class="popup-content">Enter a publicly accessible website URL to generate test cases based on the page content and structure</div>
+                                    <a href="/documentation#url" class="popup-link" target="_blank">
+                                        <i class="bi bi-book"></i>
+                                        View Documentation
+                                    </a>
+                                </div>
+                                <input type="url" class="form-control" name="siteUrl" id="siteUrl" 
+                                    placeholder="https://example.com/login">
+                                <div class="form-text">Enter the website URL to generate test cases.</div>
+                                <div class="form-text url-accessibility-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    <strong>Note:</strong> URL must be public. Sites requiring login or authentication are not supported.
+                                </div>
+                                <div class="form-validation-error" id="siteUrl-error">Please enter a valid website URL</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 col-md-12 field-with-info" id="itemIdField">
                         <label class="form-label">
                             <i class="bi bi-card-list"></i>
-                            Item ID(s) <span class="text-muted" id="itemCountLabel">(0/5)</span>
+                            Item ID(s) <span class="text-muted" id="itemCountLabel">(0/10)</span>
+                            <span class="info-icon" onclick="toggleInfoPopup('item-id-popup')">i</span>
                         </label>
+                        <div class="info-popup" id="item-id-popup">
+                            <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'item-id-popup')" type="button">&times;</button>
+                            <div class="popup-content">Enter the specific ticket/work item IDs you want to analyze (e.g., PROJ-123, ABC-456). You can select multiple items for batch processing.</div>
+                            <a href="/documentation" class="popup-link" target="_blank">
+                                <i class="bi bi-book"></i>
+                                View Documentation
+                            </a>
+                        </div>
                         <div class="multi-select-container">
                             <div class="multi-select-input-wrapper">
                                 <div class="selected-items-container" id="selectedItemsContainer"></div>
@@ -1384,6 +2080,7 @@
                             </div>
                             <div id="itemIdSuggestions" class="suggestions-container" style="display: none;"></div>
                         </div>
+                        <div class="form-text">Select up to 10 items for batch processing. All available items will be fetched from your source.</div>
                         <div class="form-validation-error" id="itemIdInput-error">Please enter at least one Item ID</div>
                     </div>
                     <!-- Test Case Types selection -->
@@ -1403,11 +2100,20 @@
 
 
                     </div> -->
-                    <div class="mb-4">
+                    <div class="mb-4 field-with-info" id="testCaseTypesSection">
                         <label class="form-label">
                             <i class="bi bi-list-check"></i>
                             Test Case Types
+                            <span class="info-icon" onclick="toggleInfoPopup('test-case-types-popup')">i</span>
                         </label>
+                        <div class="info-popup" id="test-case-types-popup">
+                            <button class="popup-close" onclick="closeInfoPopupWithEvent(event, 'test-case-types-popup')" type="button">&times;</button>
+                            <div class="popup-content">Select the types of test cases you want to generate. You can choose multiple types for comprehensive testing coverage.</div>
+                            <a href="/documentation" class="popup-link" target="_blank">
+                                <i class="bi bi-book"></i>
+                                View Documentation
+                            </a>
+                        </div>
                         <div class="field d-flex flex-column flex-md-row flex-wrap gap-3 mb-4">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" value="dashboard_functional"
@@ -1463,14 +2169,42 @@
                             <i class="bi bi-arrow-clockwise"></i> Reset Form
                         </button>
                     </div>
+                    <div class="generation-note mt-3">
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-info-circle"></i>
+                            AI will generate test cases based on your selected items — this may take some time.
+                        </p>
+                    </div>
                 </form>
             </div>
         </div>
 
         <p class="help-text">
             Need help? Check the <a
-                href="https://eatanceapp.com/" target="_blank">documentation</a>
+                href="/documentation" target="_blank">documentation</a>
         </p>
+    </div>
+
+    <!-- Loader Container -->
+    <div class="loader-container" id="loaderContainer">
+        <div class="loader-content">
+            <div class="loader-header">
+                <div class="loader-icon">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <h1 class="loader-title">Generating Test Cases</h1>
+            </div>
+            <p class="loader-description">Please wait while the AI analyzes your project and generates the test cases.</p>
+            <div class="loader-con">
+                <div style="--i: 0;" class="pfile"></div>
+                <div style="--i: 1;" class="pfile"></div>
+                <div class="pfile" style="--i: 2;"></div>
+                <div class="pfile" style="--i: 3;"></div>
+                <div class="pfile" style="--i: 4;"></div>
+                <div class="pfile" style="--i: 5;"></div>
+            </div>
+            <p class="loader-subtitle">This process may take a few moments...</p>
+        </div>
     </div>
 
     <!-- Keep existing scripts -->
@@ -1480,13 +2214,16 @@
         let jiraItems = [];
         let azureItems = [];
         let selectedItems = [];
+        let isDropdownOpen = false;
+        let blurTimeout = null;
+        let isSelectingItem = false;
         
         // Function to add item to selected items array and display as chip
         function addSelectedItem(itemId, itemTitle = null, itemType = null) {
-            if (selectedItems.length >= 5) {
-                showSectionMessage('itemIdField', 'Maximum 5 items allowed', 'warning');
-                return false;
-            }
+                    if (selectedItems.length >= ITEM_ID_LIMIT) {
+            showSectionMessage('itemIdField', `Maximum ${ITEM_ID_LIMIT} items allowed for batch processing`, 'warning');
+            return false;
+        }
             
             if (selectedItems.some(item => item.id === itemId)) {
                 showSectionMessage('itemIdField', 'Item already selected', 'warning');
@@ -1536,6 +2273,93 @@
             return selectedItems.map(item => item.id).join(',');
         }
         
+        // Improved dropdown management functions
+        function openDropdown() {
+            isDropdownOpen = true;
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'block';
+            }
+        }
+        
+        function closeDropdown() {
+            isDropdownOpen = false;
+            if (blurTimeout) {
+                clearTimeout(blurTimeout);
+                blurTimeout = null;
+            }
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none';
+            }
+        }
+        
+        function scheduleDropdownClose() {
+            if (blurTimeout) {
+                clearTimeout(blurTimeout);
+            }
+            blurTimeout = setTimeout(() => {
+                if (!isSelectingItem) {
+                    closeDropdown();
+                }
+            }, 150); // Reduced from 200ms to 150ms
+        }
+        
+        // Improved suggestion selection function
+        function selectSuggestion(itemId) {
+            console.log('🔥 selectSuggestion called with:', itemId);
+            isSelectingItem = true;
+            
+            // Find the item details from the suggestions
+            const sourceType = document.getElementById('sourceType').value;
+            let items = [];
+            if (sourceType === 'jira') {
+                const storedItems = localStorage.getItem('jiraItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            } else if (sourceType === 'azure') {
+                const storedItems = localStorage.getItem('azureItems');
+                if (storedItems) {
+                    items = JSON.parse(storedItems);
+                }
+            }
+            
+            const item = items.find(item => item.id === itemId);
+            
+            // Add the selected item to the array and display as chip
+            if (addSelectedItem(itemId, item?.title, item?.type)) {
+                // Clear the input field after successful selection
+                const itemIdInput = document.getElementById('itemIdInput');
+                itemIdInput.value = '';
+                
+                // Close dropdown immediately
+                closeDropdown();
+                
+                // Focus back on input for next selection after a short delay
+                setTimeout(() => {
+                    itemIdInput.focus();
+                    // Add a longer delay before resetting the flag to prevent reopening
+                    setTimeout(() => {
+                        isSelectingItem = false;
+                    }, 100);
+                }, 50);
+            } else {
+                isSelectingItem = false;
+            }
+        }
+        
+        // Improved close suggestions function
+        function closeSuggestions(event) {
+            // Prevent default behavior to avoid form submission
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            closeDropdown();
+        }
+
         // Inline message system
         function showGeneralMessage(message, type = 'info') {
             const generalMessage = document.getElementById('generalMessage');
@@ -1610,7 +2434,9 @@
             const field = document.getElementById(fieldId);
             if (!field) return true;
             
-            const isValid = validationFn(field.value);
+            // Use File object for file inputs; string value for others
+            const valueToValidate = field.type === 'file' ? (field.files && field.files[0]) : field.value;
+            const isValid = validationFn(valueToValidate);
             if (isValid) {
                 clearFieldError(fieldId);
                 field.classList.add('is-valid');
@@ -1674,6 +2500,57 @@
             return new Promise(resolve => setTimeout(resolve, 10));
         }
 
+        // Analytics tracking
+        let sessionId = null;
+        
+        // Generate session ID if not exists
+        function getSessionId() {
+            if (!sessionId) {
+                sessionId = localStorage.getItem('session_id');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('session_id', sessionId);
+                }
+            }
+            return sessionId;
+        }
+        
+        // Track page visit
+        function trackPageVisit(page) {
+            fetch('/api/analytics/session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    session_id: getSessionId(),
+                    page_visited: page
+                })
+            }).catch(error => console.error('Failed to track page visit:', error));
+        }
+        
+        // Track user event
+        function trackEvent(eventType, eventData = {}) {
+            fetch('/api/analytics/track', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    event_type: eventType,
+                    event_data: eventData,
+                    session_id: getSessionId()
+                })
+            }).catch(error => console.error('Failed to track event:', error));
+        }
+        
+        // Track form interactions
+        // Removed form_interaction tracking as requested
+        function trackFormInteraction(interactionType, data = {}) {
+            // Function kept for compatibility but no longer tracks events
+            console.log('Form interaction:', interactionType, data);
+        }
+        
         // Global error handler
         window.onerror = function (message, source, lineno, colno, error) {
             console.error('Global error caught:', { message, source, lineno, colno });
@@ -1701,8 +2578,15 @@
             return value && value.trim() !== '';
         }
 
-        function validateFile(file) {
-            return file && file.name;
+        function validateFile(fileOrValue) {
+            // Support both File object and string path
+            if (fileOrValue instanceof File) {
+                return !!fileOrValue && !!fileOrValue.name;
+            }
+            if (typeof fileOrValue === 'string') {
+                return fileOrValue.trim() !== '';
+            }
+            return false;
         }
 
         function validateItemIds(value) {
@@ -1726,8 +2610,8 @@
             return checkboxes.length > 0;
         }
 
-        // Item ID limit configuration
-        const ITEM_ID_LIMIT = 5;
+        // Item ID limit configuration - increased for batch processing
+        const ITEM_ID_LIMIT = 10; // Reduced from 50 to 10 items
 
         function updateItemCount() {
             const countLabel = document.getElementById('itemCountLabel');
@@ -1735,7 +2619,7 @@
             if (!countLabel) return;
             
             const count = selectedItems.length;
-            const maxItems = 5;
+            const maxItems = ITEM_ID_LIMIT;
             
             // Update the label with current/max format
             countLabel.textContent = `(${count}/${maxItems})`;
@@ -1745,7 +2629,7 @@
             } else if (count < maxItems) {
                 countLabel.className = 'text-success';
             } else if (count === maxItems) {
-                countLabel.className = 'text-danger';
+                countLabel.className = 'text-warning';
             } else {
                 countLabel.className = 'text-danger';
             }
@@ -1753,8 +2637,383 @@
             console.log(`Selected items: ${count}/${maxItems}`);
         }
 
+        // Information popup functions
+        function toggleInfoPopup(popupId) {
+            // Close all other popups first
+            const allPopups = document.querySelectorAll('.info-popup');
+            allPopups.forEach(popup => {
+                popup.classList.remove('show');
+            });
+            
+            // Toggle the clicked popup
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.classList.toggle('show');
+            }
+        }
+
+        function showInfoPopup(popupId) {
+            // Close all other popups first
+            const allPopups = document.querySelectorAll('.info-popup');
+            allPopups.forEach(popup => {
+                popup.classList.remove('show');
+            });
+            
+            // Show the specified popup
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.classList.add('show');
+            }
+        }
+
+        function closeInfoPopup(popupId) {
+            const popup = document.getElementById(popupId);
+            if (popup) {
+                popup.classList.remove('show');
+            }
+        }
+
+        function closeInfoPopupWithEvent(event, popupId) {
+            event.preventDefault();
+            event.stopPropagation();
+            closeInfoPopup(popupId);
+        }
+
+        // Add hover functionality to info icons
+        function setupInfoIconHover() {
+            const infoIcons = document.querySelectorAll('.info-icon');
+            infoIcons.forEach(icon => {
+                const popupId = icon.getAttribute('onclick')?.match(/toggleInfoPopup\('([^']+)'\)/)?.[1];
+                if (popupId) {
+                    // Add hover event listeners
+                    icon.addEventListener('mouseenter', () => {
+                        showInfoPopup(popupId);
+                    });
+                    
+                    // Add mouse leave event to close popup when leaving the icon
+                    icon.addEventListener('mouseleave', (e) => {
+                        // Check if mouse is moving to the popup
+                        const popup = document.getElementById(popupId);
+                        if (popup && !popup.contains(e.relatedTarget)) {
+                            // Add a small delay to allow moving to popup
+                            setTimeout(() => {
+                                if (!popup.matches(':hover') && !icon.matches(':hover')) {
+                                    closeInfoPopup(popupId);
+                                }
+                            }, 100);
+                        }
+                    });
+                    
+                    // Add hover event listeners to the popup itself
+                    const popup = document.getElementById(popupId);
+                    if (popup) {
+                        popup.addEventListener('mouseenter', () => {
+                            // Keep popup open when hovering over it
+                        });
+                        
+                        popup.addEventListener('mouseleave', () => {
+                            // Close popup when leaving it
+                            closeInfoPopup(popupId);
+                        });
+                    }
+                }
+            });
+        }
+
+        // Function to display all available items
+        function displayAllItems(items) {
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (!suggestionsContainer) return;
+            
+            suggestionsContainer.innerHTML = '';
+            
+            if (items && items.length > 0) {
+                // Add header with close button
+                const header = document.createElement('div');
+                header.className = 'suggestions-header';
+                header.innerHTML = `
+                    <span>Select an item (${items.length} available)</span>
+                    <button type="button" class="suggestions-close-btn" onclick="closeSuggestions(event)" title="Close">×</button>
+                `;
+                suggestionsContainer.appendChild(header);
+                
+                items.forEach(item => {
+                    const suggestionItem = document.createElement('div');
+                    suggestionItem.className = 'suggestion-item';
+                    suggestionItem.innerHTML = `
+                        <div class="item-id">${item.id}</div>
+                        <div class="item-title">${item.title || ''}</div>
+                    `;
+                    suggestionItem.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectSuggestion(item.id);
+                    });
+                    suggestionsContainer.appendChild(suggestionItem);
+                });
+                
+                openDropdown();
+            } else {
+                suggestionsContainer.innerHTML = '<div class="no-suggestions">No items available</div>';
+                openDropdown();
+            }
+        }
+        
+        // Function to display items with refresh indicator
+        function displayAllItemsWithRefresh(items, sourceType, isRefreshing = false) {
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (!suggestionsContainer) return;
+            
+            suggestionsContainer.innerHTML = '';
+            
+            if (items && items.length > 0) {
+                // Add header with close button and refresh indicator
+                const header = document.createElement('div');
+                header.className = 'suggestions-header';
+                header.innerHTML = `
+                    <div class="suggestions-header-left">
+                        <span>Select an item (${items.length} available)</span>
+                        ${isRefreshing ? `
+                        <div class="refresh-indicator">
+                            <i class="bi bi-arrow-clockwise"></i>
+                            <span>Refreshing...</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <button type="button" class="suggestions-close-btn" onclick="closeSuggestions(event)" title="Close">×</button>
+                `;
+                suggestionsContainer.appendChild(header);
+                
+                items.forEach(item => {
+                    const suggestionItem = document.createElement('div');
+                    suggestionItem.className = 'suggestion-item';
+                    suggestionItem.innerHTML = `
+                        <div class="item-id">${item.id}</div>
+                        <div class="item-title">${item.title || ''}</div>
+                    `;
+                    suggestionItem.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        selectSuggestion(item.id);
+                    });
+                    suggestionsContainer.appendChild(suggestionItem);
+                });
+                
+                openDropdown();
+            } else {
+                suggestionsContainer.innerHTML = '<div class="no-suggestions">No items available</div>';
+                openDropdown();
+            }
+        }
+
+        // Function to show refresh state in dropdown
+        function showRefreshState(items, sourceType) {
+            displayAllItemsWithRefresh(items, sourceType, true);
+        }
+
+        // Function to close suggestions dropdown
+        function closeSuggestions(event) {
+            // Prevent default behavior to avoid form submission
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (suggestionsContainer) {
+                suggestionsContainer.style.display = 'none';
+            }
+        }
+
+        // Function to show loading state in suggestions
+        function showLoadingSuggestions() {
+            const suggestionsContainer = document.getElementById('itemIdSuggestions');
+            if (!suggestionsContainer) return;
+            
+            suggestionsContainer.innerHTML = `
+                <div class="suggestions-header">
+                    <span>Loading items...</span>
+                    <button type="button" class="suggestions-close-btn" onclick="closeSuggestions(event)" title="Close">×</button>
+                </div>
+                <div class="loading-suggestions">
+                    <div class="loading-spinner"></div>
+                    <span>Fetching items...</span>
+                </div>
+            `;
+            openDropdown();
+        }
+
+        // Close popups when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.info-icon') && !e.target.closest('.info-popup')) {
+                const allPopups = document.querySelectorAll('.info-popup');
+                allPopups.forEach(popup => {
+                    popup.classList.remove('show');
+                });
+            }
+            
+            // Close suggestions dropdown when clicking outside
+            if (!e.target.closest('#itemIdField') && !e.target.closest('#itemIdSuggestions')) {
+                closeDropdown();
+            }
+        });
+
+        // Close suggestions dropdown with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (isDropdownOpen) {
+                    closeDropdown();
+                }
+            }
+        });
+
+        // Scroll to top on page refresh
+        window.addEventListener('beforeunload', function() {
+            window.scrollTo(0, 0);
+        });
+        
+        // Also scroll to top when page loads
+        window.addEventListener('load', function() {
+            window.scrollTo(0, 0);
+        });
+        
         // Add real-time validation listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Setup hover functionality for info icons
+            setupInfoIconHover();
+            
+            // Item ID field click handler
+            const itemIdField = document.getElementById('itemIdField');
+            
+            // Add click handler to existing itemIdInput
+            const existingItemIdInput = document.getElementById('itemIdInput');
+            if (existingItemIdInput) {
+                existingItemIdInput.addEventListener('click', async function(e) {
+                    // Prevent blur event from hiding suggestions immediately
+                    e.stopPropagation();
+                    
+                    // Don't open dropdown if we're in the middle of selecting an item
+                    if (isSelectingItem) {
+                        return;
+                    }
+                    
+                    const sourceType = document.getElementById('sourceType').value;
+                    
+                    // Only fetch items for Jira and Azure DevOps
+                    if (sourceType === 'jira' || sourceType === 'azure') {
+                        // Check if we have cached items
+                        const storageKey = sourceType === 'jira' ? 'jiraItems' : 'azureItems';
+                        const cachedItems = localStorage.getItem(storageKey);
+                        let existingItems = cachedItems ? JSON.parse(cachedItems) : [];
+                        
+                        // Show existing items immediately if available
+                        if (existingItems.length > 0) {
+                            // Show refresh state with existing items
+                            showRefreshState(existingItems, sourceType);
+                        } else {
+                            // Show loader immediately if no cached items
+                            itemIdField.classList.add('item-id-field-loading');
+                            showLoadingSuggestions();
+                        }
+                        
+                        // Add a small delay to ensure UI is updated
+                        await new Promise(resolve => setTimeout(resolve, 50));
+                        
+                        try {
+                            // Fetch fresh items in background
+                            let newItems = [];
+                            if (sourceType === 'jira') {
+                                // Get Jira credentials from form fields
+                                const jiraUrl = document.getElementById('jiraUrl').value;
+                                const jiraUser = document.getElementById('jiraUser').value;
+                                const jiraToken = document.getElementById('jiraToken').value;
+                                
+                                if (jiraUrl && jiraUser && jiraToken) {
+                                    await fetchJiraItems(jiraUrl, jiraUser, jiraToken);
+                                    // Get updated items from localStorage
+                                    const storedItems = localStorage.getItem('jiraItems');
+                                    newItems = storedItems ? JSON.parse(storedItems) : [];
+                                } else {
+                                    if (existingItems.length === 0) {
+                                        showSectionMessage('itemIdField', 'Please fill in all Jira credentials first.', 'warning');
+                                    }
+                                    return;
+                                }
+                            } else if (sourceType === 'azure') {
+                                // Get Azure credentials from form fields
+                                const azureUrl = document.getElementById('azureUrl').value;
+                                const azureOrg = document.getElementById('azureOrg').value;
+                                const azureProject = document.getElementById('azureProject').value;
+                                const azurePat = document.getElementById('azurePat').value;
+                                
+                                if (azureUrl && azureOrg && azureProject && azurePat) {
+                                    await fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                                    // Get updated items from localStorage
+                                    const storedItems = localStorage.getItem('azureItems');
+                                    newItems = storedItems ? JSON.parse(storedItems) : [];
+                                } else {
+                                    if (existingItems.length === 0) {
+                                        showSectionMessage('itemIdField', 'Please fill in all Azure DevOps credentials first.', 'warning');
+                                    }
+                                    return;
+                                }
+                            }
+                            
+                            // Update display with new items
+                            if (newItems.length > 0) {
+                                displayAllItemsWithRefresh(newItems, sourceType, false);
+                            }
+                            
+                        } catch (error) {
+                            console.error('Error fetching items:', error);
+                            if (existingItems.length === 0) {
+                                showSectionMessage('itemIdField', 'Failed to fetch items. Please try again.', 'error');
+                            }
+                        } finally {
+                            // Hide loader
+                            itemIdField.classList.remove('item-id-field-loading');
+                        }
+                    }
+                });
+            }
+            // Track page visit
+            trackPageVisit('index');
+            
+            // Track source type changes
+            document.getElementById('sourceType').addEventListener('change', function() {
+                trackFormInteraction('source_type_changed', { new_source_type: this.value });
+            });
+            
+            // Track test case type selections
+            document.querySelectorAll('input[name="testCaseTypes[]"]').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    trackFormInteraction('test_case_type_toggled', { 
+                        test_case_type: this.value, 
+                        checked: this.checked 
+                    });
+                });
+            });
+            
+            // Track item selection
+            const originalAddSelectedItem = window.addSelectedItem;
+            window.addSelectedItem = function(itemId, itemTitle, itemType) {
+                const result = originalAddSelectedItem(itemId, itemTitle, itemType);
+                if (result) {
+                    trackFormInteraction('item_selected', { 
+                        item_id: itemId, 
+                        item_title: itemTitle, 
+                        item_type: itemType 
+                    });
+                }
+                return result;
+            };
+            
+            // Track item removal
+            const originalRemoveSelectedItem = window.removeSelectedItem;
+            window.removeSelectedItem = function(itemId) {
+                trackFormInteraction('item_removed', { item_id: itemId });
+                return originalRemoveSelectedItem(itemId);
+            };
 
             // Add event listeners to remove focus from buttons after click
             document.addEventListener('click', function(e) {
@@ -1869,19 +3128,27 @@
                         e.preventDefault();
                         e.stopPropagation();
                         console.log('🔥 ESCAPE - Hiding suggestions');
-                        suggestionsContainer.style.display = 'none';
+                        closeDropdown();
                     }
                 }, true); // Use capture phase
                 
                 // Add blur event listener to hide suggestions
                 itemIdInput.addEventListener('blur', function() {
-                    // Delay hiding suggestions to allow for clicks
-                    setTimeout(() => {
-                        const suggestionsContainer = document.getElementById('itemIdSuggestions');
-                        if (suggestionsContainer) {
-                            suggestionsContainer.style.display = 'none';
-                        }
-                    }, 200);
+                    // Check if we're currently loading items
+                    if (itemIdField.classList.contains('item-id-field-loading')) {
+                        return; // Don't hide suggestions while loading
+                    }
+                    
+                    // Schedule dropdown close with improved timing
+                    scheduleDropdownClose();
+                });
+                
+                // Add focus event listener to prevent reopening dropdown after selection
+                itemIdInput.addEventListener('focus', function() {
+                    // If we just finished selecting an item, don't reopen the dropdown
+                    if (isSelectingItem) {
+                        return;
+                    }
                 });
             }
             
@@ -2072,12 +3339,12 @@
                 }
 
                 // Get item IDs from selected items array
-                if (sourceType !== 'image') {
+                if (sourceType === 'jira' || sourceType === 'azure') {
                     if (selectedItems.length === 0) {
                         showFieldError('itemIdInput', 'Please enter at least one Item ID');
                         hasErrors = true;
-                    } else if (selectedItems.length > 5) {
-                        showFieldError('itemIdInput', `Maximum 5 Item IDs allowed. You selected ${selectedItems.length}.`);
+                    } else if (selectedItems.length > ITEM_ID_LIMIT) {
+                        showFieldError('itemIdInput', `Maximum ${ITEM_ID_LIMIT} Item IDs allowed for batch processing. You selected ${selectedItems.length}.`);
                         hasErrors = true;
                     }
                 }
@@ -2088,12 +3355,9 @@
                     testCaseTypes: selectedTypes
                 };
 
-                if (sourceType !== 'image') {
+                if (sourceType === 'jira' || sourceType === 'azure') {
                     data.itemId = selectedItems.map(item => item.id);
-                }
-
-                // Add debugging for item IDs
-                if (sourceType !== 'image') {
+                    // Add debugging for item IDs
                     console.log('Selected items array:', selectedItems);
                     console.log('Number of item IDs:', selectedItems.length);
                 }
@@ -2224,12 +3488,83 @@
 
                 // Show loader
                 const loader = document.querySelector('.loader-container');
-                loader.style.display = 'flex';
+                if (loader) {
+                    loader.style.display = 'flex';
+                }
 
                 console.log('Sending request with data:', data);
 
+                // Track form submission with timing
+                const submissionStartTime = Date.now();
+                trackFormInteraction('form_submitted', {
+                    source_type: sourceType,
+                    test_case_types: selectedTypes,
+                    item_count: selectedItems.length,
+                    batch_size: selectedItems.length > 10 ? 'large' : selectedItems.length > 5 ? 'medium' : 'small',
+                    submission_start_time: submissionStartTime
+                });
+                
+                // Store start time for later timing calculations
+                window.generationStartTime = submissionStartTime;
+
+                // Show batch processing message for multiple items
+                if ((sourceType === 'jira' || sourceType === 'azure') && selectedItems.length > 10) {
+                    showGeneralMessage(`Processing ${selectedItems.length} items in batch mode. This may take a few minutes.`, 'info');
+                    // Store item count for progress tracking
+                    window.selectedItemsCount = selectedItems.length;
+                }
+
                 // Make API request directly
-                if (sourceType === 'image') {
+                if (sourceType === 'url') {
+                    console.log('=== URL SOURCE TYPE DETECTED ===');
+                    // For URL, validate the URL field
+                    const siteUrl = document.getElementById('siteUrl').value.trim();
+                    console.log('Site URL:', siteUrl);
+                    if (!siteUrl) {
+                        showFieldError('siteUrl', 'Please enter a website URL');
+                        hasErrors = true;
+                    }
+                    try {
+                        new URL(siteUrl);
+                        console.log('URL validation passed');
+                    } catch (error) {
+                        console.log('URL validation failed:', error);
+                        showFieldError('siteUrl', 'Please enter a valid website URL (e.g., https://example.com)');
+                        hasErrors = true;
+                    }
+                    data.url_config = { url: siteUrl };
+                    console.log('URL config added to data:', data);
+                    
+                    // Make fetch request for URL
+                    console.log('Making URL fetch request with data:', data);
+                    fetch('/api/generate', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(data)
+                    })
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.error) {
+                                showNotification('Error: ' + result.error, 'error');
+                                if (loader) loader.style.display = 'none';
+                                return;
+                            }
+                            
+                            // Store the URL key for use in redirection
+                            window.generatedUrlKey = result.url_key;
+
+                            // Poll for completion
+                            checkGenerationStatus(loader, result, null);
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showNotification('Error: ' + error.message, 'error');
+                            if (loader) loader.style.display = 'none';
+                        });
+                        
+                } else if (sourceType === 'image') {
                     // For image, use FormData and traditional form submission
                     const formData = new FormData(form);
 
@@ -2256,7 +3591,7 @@
                         .then(result => {
                             if (result.error) {
                                 showNotification('Error: ' + result.error, 'error');
-                                loader.style.display = 'none';
+                                if (loader) loader.style.display = 'none';
                                 return;
                             }
 
@@ -2269,7 +3604,7 @@
                         .catch(error => {
                             console.error('Error:', error);
                             showNotification('Error: ' + error.message, 'error');
-                            loader.style.display = 'none';
+                            if (loader) loader.style.display = 'none';
                         });
 
                 } else {
@@ -2286,7 +3621,7 @@
                         .then(result => {
                             if (result.error) {
                                 showNotification('Error: ' + result.error, 'error');
-                                loader.style.display = 'none';
+                                if (loader) loader.style.display = 'none';
                                 return;
                             }
                             
@@ -2299,7 +3634,7 @@
                         .catch(error => {
                             console.error('Error:', error);
                             showNotification('Error: ' + error.message, 'error');
-                            loader.style.display = 'none';
+                            if (loader) loader.style.display = 'none';
                         });
                 }
 
@@ -2617,7 +3952,7 @@
             const sourceType = document.getElementById('sourceType').value;
             
             if (input.length < 1) {
-                suggestionsContainer.style.display = 'none';
+                closeDropdown();
                 return;
             }
             
@@ -2653,12 +3988,15 @@
 
             if (filteredItems.length > 0) {
                 const selectedCount = selectedItems.length;
-                const maxItems = 5;
+                const maxItems = ITEM_ID_LIMIT;
                 const remainingCount = maxItems - selectedCount;
                 const tipText = selectedCount > 0 ? ` (${selectedCount}/${maxItems} selected)` : ' - Click to select';
                 
                 suggestionsContainer.innerHTML = `
-                    <div class="suggestion-header">Suggestions${tipText}</div>
+                    <div class="suggestions-header">
+                        <span>Suggestions${tipText}</span>
+                        <button type="button" class="suggestions-close-btn" onclick="closeSuggestions(event)" title="Close">×</button>
+                    </div>
                     ${filteredItems.map(item => `
                         <div class="suggestion-item" onclick="selectSuggestion('${item.id}')">
                             <div class="item-id">${item.id}</div>
@@ -2667,46 +4005,13 @@
                         </div>
                     `).join('')}
                 `;
-                suggestionsContainer.style.display = 'block';
+                openDropdown();
                 
                 // Clear any existing highlights when new suggestions are shown
                 const suggestions = suggestionsContainer.querySelectorAll('.suggestion-item');
                 suggestions.forEach(item => item.classList.remove('highlighted'));
             } else {
-                suggestionsContainer.style.display = 'none';
-            }
-        }
-
-        function selectSuggestion(itemId) {
-            // Find the item details from the suggestions
-            const sourceType = document.getElementById('sourceType').value;
-            let items = [];
-            if (sourceType === 'jira') {
-                const storedItems = localStorage.getItem('jiraItems');
-                if (storedItems) {
-                    items = JSON.parse(storedItems);
-                }
-            } else if (sourceType === 'azure') {
-                const storedItems = localStorage.getItem('azureItems');
-                if (storedItems) {
-                    items = JSON.parse(storedItems);
-                }
-            }
-            
-            const item = items.find(item => item.id === itemId);
-            
-            // Add the selected item to the array and display as chip
-            if (addSelectedItem(itemId, item?.title, item?.type)) {
-                // Clear the input field after successful selection
-                const itemIdInput = document.getElementById('itemIdInput');
-                itemIdInput.value = '';
-                
-                // Hide suggestions
-                const suggestionsContainer = document.getElementById('itemIdSuggestions');
-                suggestionsContainer.style.display = 'none';
-                
-                // Focus back on input for next selection
-                itemIdInput.focus();
+                closeDropdown();
             }
         }
 
@@ -2935,25 +4240,37 @@
             const jiraFields = document.getElementById('jiraFields');
             const azureFields = document.getElementById('azureFields');
             const imageFields = document.getElementById('imageFields');
+            const urlFields = document.getElementById('urlFields');
             const itemIdField = document.getElementById('itemIdField');
+            const testCaseTypesSection = document.getElementById('testCaseTypesSection');
 
+            // Hide all fields first
             jiraFields.style.display = 'none';
             azureFields.style.display = 'none';
             imageFields.style.display = 'none';
+            urlFields.style.display = 'none';
+            itemIdField.style.display = 'none';
+            testCaseTypesSection.style.display = 'none';
 
             if (this.value === 'jira') {
                 jiraFields.style.display = 'block';
                 itemIdField.style.display = 'block';
+                testCaseTypesSection.style.display = 'block';
             } else if (this.value === 'azure') {
                 azureFields.style.display = 'block';
                 itemIdField.style.display = 'block';
+                testCaseTypesSection.style.display = 'block';
             } else if (this.value === 'image') {
                 imageFields.style.display = 'block';
-                itemIdField.style.display = 'none';
+                testCaseTypesSection.style.display = 'block';
+            } else if (this.value === 'url') {
+                urlFields.style.display = 'block';
+                testCaseTypesSection.style.display = 'block';
+                // Don't show Item ID for URL
             }
 
             const itemIdInput = document.getElementById('itemIdInput');
-            if (this.value === 'image') {
+            if (this.value === 'image' || this.value === 'url') {
                 itemIdField.style.display = 'none';
                 itemIdInput.removeAttribute('required');
             } else {
@@ -3123,23 +4440,64 @@
             showGeneralMessage('Item IDs and Test Case Types have been reset', 'success');
         }
 
+        // COMMENTED OUT: Old loader functions
+        /*
         // Function to check test case generation status
         function updateLoader(percentage) {
             const loader = document.querySelector('.loader-container');
-            if (percentage > 0) {
-                loader.style.display = 'flex';
-                loader.style.opacity = percentage / 100;
-                updateLoaderPercentage(percentage);
-            } else {
-                loader.style.display = 'none';
-                loader.style.opacity = 0;
-                updateLoaderPercentage(0);
+            if (loader) {
+                if (percentage > 0) {
+                    loader.style.display = 'flex';
+                    // Keep opacity at 1 (fully visible) regardless of percentage
+                    loader.style.opacity = 1;
+                    updateLoaderPercentage(percentage);
+                } else {
+                    loader.style.display = 'none';
+                    loader.style.opacity = 0;
+                    updateLoaderPercentage(0);
+                }
             }
         }
 
         function updateLoaderPercentage(percentage) {
             const loaderText = document.querySelector('.loader-text');
-            loaderText.textContent = percentage + '%';
+            if (loaderText) {
+                loaderText.textContent = percentage + '%';
+            }
+        }
+
+        function updateLoaderWithItemProgress(percentage, currentItem, totalItems) {
+            const loaderText = document.querySelector('.loader-text');
+            if (loaderText) {
+                if (currentItem && totalItems) {
+                    loaderText.textContent = `${percentage}% (${currentItem}/${totalItem} items)`;
+                } else {
+                    loaderText.textContent = percentage + '%';
+                }
+            }
+        }
+        */
+        
+        // NEW: Simplified loader functions for animated loader
+        function updateLoader(percentage) {
+            const loader = document.querySelector('.loader-container');
+            if (loader) {
+                if (percentage > 0) {
+                    loader.style.display = 'flex';
+                } else {
+                    loader.style.display = 'none';
+                }
+            }
+        }
+
+        function updateLoaderPercentage(percentage) {
+            // No longer needed with animated loader
+            // Keeping for compatibility
+        }
+
+        function updateLoaderWithItemProgress(percentage, currentItem, totalItems) {
+            // No longer needed with animated loader
+            // Keeping for compatibility
         }
 
         async function checkGenerationStatus(loader, result, itemIds) {
@@ -3159,6 +4517,15 @@
 
                     const response = await fetch('/api/generation-status');
                     const status = await response.json();
+                    
+                    // Debug logging
+                    console.log('Generation status response:', status);
+                    console.log('Phase:', status.phase, 'Current type:', status.current_test_type);
+                    console.log('Final URL key from status:', status.final_url_key);
+                    console.log('Window generated URL key:', window.generatedUrlKey);
+                    if (status.log && status.log.length) {
+                        console.log('Recent log:', status.log[status.log.length - 1]);
+                    }
 
                     // In the checkGenerationStatus function
                     if (!status.is_generating) {
@@ -3166,8 +4533,9 @@
                         const finalAnimation = setInterval(() => {
                             if (currentProgress >= 100) {
                                 clearInterval(finalAnimation);
-                                // Use the stored URL key for redirection
-                                window.location.href = `/results?token=${window.generatedUrlKey}`;
+                                // Use the final URL key from status if available, otherwise fall back to stored key
+                                const finalUrlKey = status.final_url_key || window.generatedUrlKey;
+                                window.location.href = `/results?token=${finalUrlKey}`;
                                 return;
                             }
                             currentProgress += 2;
@@ -3180,26 +4548,51 @@
                     if (retryCount >= maxRetries) {
                         updateLoader(100);
                         alert('Generation is taking too long. You will be redirected to the results page.');
-                        window.location.href = `/results?token=${window.generatedUrlKey}`;
+                        const finalUrlKey = status.final_url_key || window.generatedUrlKey;
+                        window.location.href = `/results?token=${finalUrlKey}`;
                         return;
                     }
 
                     // Calculate progress percentage
                     if (status.total_types > 0) {
-                        // Base progress calculation
-                        const targetProgress = (status.completed_types / status.total_types) * 90; // Max 90% until complete
+                        // Use backend progress if available, otherwise calculate from completed types
+                        let targetProgress;
+                        if (status.progress_percentage !== undefined && status.progress_percentage > 0) {
+                            targetProgress = status.progress_percentage * 0.9; // Scale to 90% max
+                        } else {
+                            // Fallback calculation
+                            targetProgress = (status.completed_types / status.total_types) * 90; // Max 90% until complete
+                        }
 
                         // Smooth progress animation
                         if (targetProgress > currentProgress) {
                             const progressDiff = targetProgress - currentProgress;
                             const step = Math.max(0.5, progressDiff / 10); // Minimum step of 0.5%
                             currentProgress += step;
-                            updateLoader(currentProgress);
+                            
+                            // Show item progress for large batches
+                            if (window.selectedItemsCount && window.selectedItemsCount > 10) {
+                                const completedItems = Math.floor((status.completed_types / status.total_types) * window.selectedItemsCount);
+                                updateLoaderWithItemProgress(currentProgress, completedItems, window.selectedItemsCount);
+                            } else {
+                                updateLoader(currentProgress);
+                            }
                         }
                     }
 
                     retryCount++;
-                    setTimeout(checkStatus, 2000); // Poll every 2 seconds
+                    
+                    // Fallback progress update for large batches
+                    if (window.selectedItemsCount && window.selectedItemsCount > 10 && retryCount > 5) {
+                        // After 5 seconds, start showing incremental progress
+                        const fallbackProgress = Math.min(90, 5 + (retryCount * 2)); // 5% + 2% per second
+                        if (fallbackProgress > currentProgress) {
+                            currentProgress = fallbackProgress;
+                            updateLoader(currentProgress);
+                        }
+                    }
+                    
+                    setTimeout(checkStatus, 1000); // Poll every 1 second for better responsiveness
                 } catch (error) {
                     console.error('Error checking generation status:', error);
                     retryCount++;
@@ -3207,8 +4600,8 @@
                 }
             };
 
-            // Start with 0%
-            updateLoader(0);
+            // Start with 5% to show process has begun
+            updateLoader(5);
             // Start checking status
             checkStatus();
         }
@@ -3216,6 +4609,24 @@
         // Add console logging to help debug the issue
         // console.log('Setting up form submission handler');
 
+        // Back to Top Button functionality
+        const backToTopButton = document.getElementById('backToTop');
+        
+        window.addEventListener('scroll', () => {
+            if (window.pageYOffset > 300) {
+                backToTopButton.classList.add('show');
+            } else {
+                backToTopButton.classList.remove('show');
+            }
+        });
+        
+        backToTopButton.addEventListener('click', () => {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
         // Add window load event to ensure everything is ready
         window.onload = function () {
             console.log('Window loaded completely');
