@@ -1,8 +1,8 @@
-# Initialize Sentry before any other imports
-from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
+# Initialize error logging before any other imports
+from utils.error_logger import init_error_logger, capture_exception, capture_message, set_tag, set_context
 
-# Initialize Sentry for the main application
-init_sentry("ai-test-case-generator-main")
+# Initialize error logging for the main application
+init_error_logger("ai-test-case-generator-main")
 
 from flask import Flask, request, jsonify, send_file, render_template, after_this_request
 from flask_cors import CORS
@@ -14,10 +14,12 @@ from utils.file_handler import save_test_script, save_excel_report, extract_test
 from utils.mongo_handler import MongoHandler
 import os
 import json
-import datetime
+from datetime import datetime, timedelta
 import math
 import re
 import logging
+import requests
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 CORS(app)
@@ -29,13 +31,28 @@ logger = logging.getLogger(__name__)
 @app.route('/')
 def index():
     # Add cache-busting timestamp
-    timestamp = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     return render_template('index.html', timestamp=timestamp)
+
+@app.route('/analytics')
+def analytics_dashboard():
+    """Analytics dashboard page"""
+    return render_template('analytics.html')
+
+@app.route('/documentation')
+def documentation():
+    """Documentation page"""
+    return render_template('documentation.html')
+
+@app.route('/comparison')
+def comparison():
+    """Competitive analysis comparison page"""
+    return render_template('comparison.html')
 
 @app.route('/test')
 def test():
     logger.info("=== TEST ENDPOINT CALLED ===")
-    return jsonify({'message': 'Server is working!', 'timestamp': datetime.datetime.now().strftime('%Y%m%d%H%M%S')})
+    return jsonify({'message': 'Server is working!', 'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')})
 
 @app.route('/results')
 def results():
@@ -66,6 +83,10 @@ generation_status = {
     'is_generating': False,
     'completed_types': set(),
     'total_types': set(),
+    'phase': '',
+    'current_test_type': '',
+    'log': [],
+    'progress_percentage': 0,
     'lock': Lock()
 }
 
@@ -96,13 +117,45 @@ def generate():
         # Get source type and item IDs for tracking
         source_type = data.get('sourceType') if data else None
         
+        # Track generate button click with start time
+        generation_start_time = datetime.utcnow()
+        mongo_handler = None
+        try:
+            mongo_handler = MongoHandler()
+            event_data = {
+                "event_type": "generate_button_click",
+                "event_data": {
+                    "source_type": source_type,
+                    "test_case_types": selected_types,
+                    "item_count": len(data.get('itemId', [])) if data and data.get('itemId') else 0,
+                    "generation_start_time": generation_start_time.isoformat()
+                },
+                "session_id": data.get('session_id'),
+                "user_agent": request.headers.get('User-Agent'),
+                "ip_address": request.remote_addr,
+                "source_type": source_type,
+                "test_case_types": selected_types,
+                "item_count": len(data.get('itemId', [])) if data and data.get('itemId') else 0
+            }
+            mongo_handler.track_event(event_data)
+        except Exception as e:
+            logger.error(f"Failed to track generate button click: {str(e)}")
+            # Continue with generation even if analytics fails
+        
         # Update generation status
         with generation_status['lock']:
             generation_status['is_generating'] = True
             generation_status['completed_types'] = set()
+            generation_status['phase'] = 'starting'
+            generation_status['current_test_type'] = ''
+            generation_status['log'] = []
+            generation_status['progress_percentage'] = 0
             # For multiple item IDs, track combinations of item_id and test_type
             if source_type == 'image':
                 generation_status['total_types'] = set(f"image_{test_type}" for test_type in selected_types)
+            elif source_type == 'url':
+                # Track URL test types directly
+                generation_status['total_types'] = set(f"url_{test_type}" for test_type in selected_types)
             else:
                 # For Jira/Azure, create combinations of item_id and test_type
                 item_ids = data.get('itemId', [])
@@ -113,7 +166,250 @@ def generate():
         # # Log the request for debugging
         # logger.info(f"Generation request - Types: {selected_types}")
         
-        if source_type == 'image':
+        if source_type == 'url':
+            logger.info("=== URL SOURCE TYPE DETECTED ===")
+            logger.info(f"Received data: {data}")
+            print(f"[DEBUG] URL request received: {data}")  # Immediate console output
+            
+            # Initialize item_ids for URL source type (empty list since URLs don't have item IDs)
+            item_ids = []
+            
+            # Handle URL source type
+            url_config = data.get('url_config', {})
+            url = url_config.get('url', '').strip()
+            logger.info(f"URL from config: {url}")
+            print(f"[DEBUG] URL extracted: {url}")  # Immediate console output
+            
+            if not url:
+                print("[DEBUG] No URL found in request")  # Immediate console output
+                return jsonify({'error': 'URL is required'}), 400
+                
+            try:
+                print(f"[DEBUG] Starting URL processing for: {url}")  # Immediate console output
+                # Validate URL format
+                parsed_url = urlparse(url)
+                if not all([parsed_url.scheme, parsed_url.netloc]):
+                    print("[DEBUG] Invalid URL format")  # Immediate console output
+                    return jsonify({'error': 'Invalid URL format'}), 400
+                    
+                # Try to access the URL with better error handling
+                print(f"[DEBUG] Testing URL accessibility: {url}")  # Immediate console output
+                try:
+                    response = requests.get(url, timeout=10, headers={
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                    })
+                    print(f"[DEBUG] URL response status: {response.status_code}")  # Immediate console output
+                    # Accept any 2xx status code, not just 200
+                    if response.status_code < 200 or response.status_code >= 300:
+                        print(f"[DEBUG] URL not accessible, status: {response.status_code}")  # Immediate console output
+                        # Don't return error, just log it and continue
+                        logger.warning(f"URL returned status {response.status_code}, but continuing anyway")
+                except Exception as url_error:
+                    print(f"[DEBUG] URL access error: {url_error}")  # Immediate console output
+                    # Don't return error, just log it and continue
+                    logger.warning(f"Could not access URL: {url_error}, but continuing anyway")
+                    
+                # Import generator lazily
+                print("[DEBUG] Importing URL generator...")  # Immediate console output
+                try:
+                    from ai.url_generator import generate_url_test_cases
+                    logger.info("Successfully imported URL generator")
+                    print("[DEBUG] URL generator imported successfully")  # Immediate console output
+                except Exception as import_error:
+                    logger.error(f"Error importing URL generator: {import_error}")
+                    print(f"[DEBUG] Import error: {import_error}")  # Immediate console output
+                    return jsonify({'error': f'Error importing URL generator: {import_error}'}), 500
+
+                # Resolve selected test case types
+                test_case_types = selected_types if selected_types else ['dashboard_functional']
+                logger.info(f"Selected types from request: {selected_types}")
+                logger.info(f"Test case types to generate: {test_case_types}")
+                print(f"[DEBUG] Test case types: {test_case_types}")  # Immediate console output
+
+                # Generate a unique key for the results
+                import uuid
+                url_key = str(uuid.uuid4())
+                print(f"[DEBUG] Generated URL key: {url_key}")  # Immediate console output
+
+                # Run URL generation asynchronously so the client can poll progress
+                import threading
+                print("[DEBUG] Starting async URL generation thread...")  # Immediate console output
+                
+                def _run_url_generation_async(target_url, types, result_key):
+                    try:
+                        print(f"[DEBUG ASYNC] Starting for URL: {target_url}, types: {types}")  # Immediate console output
+                        logger.info("[URL ASYNC] Starting direct URL content generation")
+                        
+                        # Record generation start time for tracking
+                        generation_start_time = datetime.utcnow()
+                        
+                        with generation_status['lock']:
+                            generation_status['phase'] = 'fetching_content'
+                            generation_status['log'].append(f"Fetching content from {target_url}")
+                        
+                        # 1) Fetch website content directly
+                        print("[DEBUG ASYNC] Importing URL generator...")  # Immediate console output
+                        from ai.url_generator import generate_url_test_cases
+                        print(f"[DEBUG ASYNC] Fetching content from: {target_url}")  # Immediate console output
+                        
+                        # 2) Generate test cases directly from URL content
+                        with generation_status['lock']:
+                            generation_status['phase'] = 'ai_generation'
+                            generation_status['log'].append(f"Generating test cases from URL content for types: {types}")
+                        
+                        test_cases_local = generate_url_test_cases(target_url, types)
+                        logger.info(f"[URL ASYNC] Direct URL generation finished, has content: {bool(test_cases_local)}")
+
+                        if not test_cases_local:
+                            raise RuntimeError('Failed to generate test cases from URL content')
+
+                        # 3) Save results
+                        test_cases_filename_local = f"url_test_cases_{result_key}.txt"
+                        # Create uploads directory if it doesn't exist
+                        uploads_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+                        os.makedirs(uploads_dir, exist_ok=True)
+                        test_cases_filepath_local = os.path.join(uploads_dir, test_cases_filename_local)
+                        with open(test_cases_filepath_local, 'w', encoding='utf-8') as f:
+                            f.write(f"URL: {target_url}\n")
+                            f.write(f"Generated Test Cases (via direct URL content analysis):\n\n")
+                            f.write(test_cases_local)
+                        
+                        # Generate Excel file like Jira/Azure
+                        file_base_name = f"url_test_cases_{result_key}"
+                        excel_file = save_excel_report(test_cases_local, file_base_name)
+                        logger.info(f"[URL ASYNC] Generated Excel file: {excel_file}")
+
+                        # Create task record
+                        task_local = {
+                            'url_key': result_key,
+                            'source_type': 'url',
+                            'url': target_url,
+                            'test_case_types': types,
+                            'content_file': test_cases_filepath_local,
+                            'status': 'completed',
+                            'created_at': datetime.now()
+                        }
+                        try:
+                            mongo_handler_local = MongoHandler()
+                            # Parse the test cases into structured format like Jira/Azure
+                            logger.info(f"[URL ASYNC] About to parse test cases. Type: {type(test_cases_local)}, Length: {len(test_cases_local) if test_cases_local else 0}")
+                            logger.info(f"[URL ASYNC] First 500 chars of test cases: {test_cases_local[:500] if test_cases_local else 'None'}")
+                            
+                            structured_test_data = parse_traditional_format(test_cases_local)
+                            logger.info(f"[URL ASYNC] Parsed test data. Type: {type(structured_test_data)}, Length: {len(structured_test_data) if structured_test_data else 0}")
+                            
+                            # Debug: Check if steps are being parsed
+                            if structured_test_data:
+                                for i, test_case in enumerate(structured_test_data):
+                                    steps = test_case.get('Steps', [])
+                                    logger.info(f"[URL ASYNC] Test case {i+1} '{test_case.get('Title', 'Unknown')}' has {len(steps)} steps")
+                                    if steps:
+                                        logger.info(f"[URL ASYNC] First step: {steps[0]}")
+                                    else:
+                                        logger.warning(f"[URL ASYNC] No steps found for test case {i+1}")
+                            
+                            # Ensure structured_test_data is a list, not a string
+                            if isinstance(structured_test_data, str):
+                                logger.error(f"[URL ASYNC] parse_traditional_format returned a string instead of a list: {structured_test_data[:200]}")
+                                # Create a fallback structure
+                                structured_test_data = [{
+                                    'Section': 'General',
+                                    'Title': 'Generated Test Case',
+                                    'Scenario': 'Test scenario from URL content',
+                                    'Steps': ['Step 1: Navigate to the URL', 'Step 2: Verify content'],
+                                    'Expected Result': 'Content should be accessible and functional'
+                                }]
+                            elif not isinstance(structured_test_data, list):
+                                logger.error(f"[URL ASYNC] parse_traditional_format returned unexpected type: {type(structured_test_data)}")
+                                structured_test_data = []
+                            
+                            # Use save_test_case like Image source type to get proper URL key format
+                            url_key_final = mongo_handler_local.save_test_case({
+                                'test_cases': test_cases_local,
+                                'source_type': 'url',
+                                'url': target_url,
+                                'test_case_types': types,
+                                'test_data': structured_test_data  # Use structured data for frontend display
+                            }, result_key)
+                            logger.info(f"[URL ASYNC] Saved test case with URL key: {url_key_final}")
+                        except Exception as me:
+                            logger.error(f"[URL ASYNC] Failed to save test case: {me}")
+                            logger.error(f"[URL ASYNC] Exception type: {type(me)}")
+                            import traceback
+                            logger.error(f"[URL ASYNC] Full traceback: {traceback.format_exc()}")
+                            # Set a fallback URL key for tracking
+                            url_key_final = result_key
+                        
+                        # Track successful URL test case generation (moved outside try-catch)
+                        try:
+                            generation_end_time = datetime.utcnow()
+                            generation_duration = (generation_end_time - generation_start_time).total_seconds()
+                            
+                            event_data = {
+                                "event_type": "test_case_generated",
+                                "event_data": {
+                                    "url_key": url_key_final,
+                                    "source_type": "url",
+                                    "test_case_types": types,
+                                    "item_count": 1,  # URL generation is always 1 item
+                                    "files_generated": 1,  # URL generates 1 file
+                                    "generation_duration_seconds": generation_duration,
+                                    "generation_start_time": generation_start_time.isoformat(),
+                                    "generation_end_time": generation_end_time.isoformat(),
+                                    "average_time_per_item": generation_duration
+                                },
+                                "session_id": None,  # URL generation doesn't have session_id in async context
+                                "user_agent": "URL Generator",  # Default for async generation
+                                "ip_address": "127.0.0.1",  # Default for async generation
+                                "source_type": "url",
+                                "test_case_types": types,
+                                "item_count": 1
+                            }
+                            mongo_handler_local.track_event(event_data)
+                            logger.info(f"[URL ASYNC] Tracked URL test case generation event")
+                        except Exception as tracking_error:
+                            logger.error(f"[URL ASYNC] Failed to track URL test case generation: {tracking_error}")
+
+                        # Mark progress completed and store the final URL key
+                        with generation_status['lock']:
+                            generation_status['completed_types'] = set(generation_status['total_types'])
+                            generation_status['is_generating'] = False
+                            generation_status['progress_percentage'] = 100
+                            generation_status['phase'] = 'completed'
+                            generation_status['log'].append('Generation completed')
+                            generation_status['final_url_key'] = url_key_final  # Store the final URL key
+                            logger.info(f"[URL ASYNC] Set final_url_key in generation status: {url_key_final}")
+                    except Exception as gen_err:
+                        logger.error(f"[URL ASYNC] Error: {gen_err}")
+                        with generation_status['lock']:
+                            generation_status['is_generating'] = False
+                            generation_status['phase'] = 'error'
+                            generation_status['log'].append(f"Error: {gen_err}")
+
+                # Log in status for visibility
+                with generation_status['lock']:
+                    generation_status['phase'] = 'queued'
+                    generation_status['log'].append(f"Queued URL generation for {url} with types: {test_case_types}")
+
+                threading.Thread(target=_run_url_generation_async, args=(url, test_case_types, url_key), daemon=True).start()
+
+                # Immediately return so frontend can start polling progress
+                return jsonify({'url_key': url_key})
+                
+            except requests.RequestException as e:
+                with generation_status['lock']:
+                    generation_status['is_generating'] = False
+                return jsonify({'error': f'Failed to access URL: {str(e)}'}), 400
+            except Exception as e:
+                logger.error(f"Error processing URL content: {str(e)}")
+                with generation_status['lock']:
+                    generation_status['is_generating'] = False
+                return jsonify({'error': f'Error processing URL content: {str(e)}'}), 500
+
+        elif source_type == 'image':
+            # Initialize item_ids for image source type (empty list since images don't have item IDs)
+            item_ids = []
+            
             # Handle image upload
             if 'imageFile' not in request.files:
                 return jsonify({'error': 'No image file uploaded'}), 400
@@ -124,8 +420,7 @@ def generate():
                 
             # Create unique identifier for the image
             import uuid
-            import datetime
-            unique_id = f"{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
+            unique_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
             
             # Save the uploaded image in a permanent storage
             image_storage = os.path.join(os.path.dirname(__file__), 'tests', 'images')
@@ -264,12 +559,41 @@ def generate():
                     # Create MongoDB handler and save test case data
                     mongo_handler = MongoHandler()
                     url_key = mongo_handler.save_test_case({
-                        'files': results,
                         'test_cases': formatted_test_cases,
                         'source_type': 'image',
                         'image_id': unique_id,
                         'test_data': structured_test_data  # Add structured data for frontend display
                     }, unique_id)
+                    
+                    # Track successful image test case generation with timing
+                    generation_end_time = datetime.utcnow()
+                    generation_duration = (generation_end_time - generation_start_time).total_seconds()
+                    
+                    try:
+                        if mongo_handler:
+                            event_data = {
+                                "event_type": "test_case_generated",
+                                "event_data": {
+                                    "url_key": url_key,
+                                    "source_type": "image",
+                                    "test_case_types": selected_types,
+                                    "item_count": 1,  # Image has 1 item
+                                    "files_generated": len(results),
+                                    "generation_duration_seconds": generation_duration,
+                                    "generation_start_time": generation_start_time.isoformat(),
+                                    "generation_end_time": generation_end_time.isoformat(),
+                                    "average_time_per_item": generation_duration
+                                },
+                                "session_id": data.get('session_id'),
+                                "user_agent": request.headers.get('User-Agent'),
+                                "ip_address": request.remote_addr,
+                                "source_type": "image",
+                                "test_case_types": selected_types,
+                                "item_count": 1
+                            }
+                            mongo_handler.track_event(event_data)
+                    except Exception as e:
+                        logger.error(f"Failed to track image test case generation: {str(e)}")
                     
                     # Mark all test types as completed
                     with generation_status['lock']:
@@ -320,6 +644,14 @@ def generate():
             logger.info(f"Processed item_ids: {item_ids} (count: {len(item_ids)})")
             logger.info(f"Selected test types: {selected_types}")
             
+            # Log batch processing info
+            if len(item_ids) > 10:
+                logger.info(f"Large batch detected: {len(item_ids)} items. Processing in batches...")
+            elif len(item_ids) > 5:
+                logger.info(f"Medium batch detected: {len(item_ids)} items.")
+            else:
+                logger.info(f"Small batch: {len(item_ids)} items.")
+            
             results = {}
             all_types_processed = True
             
@@ -364,6 +696,9 @@ def generate():
                                     # Track completion per item ID and type
                                     completion_key = f"{item_id}_{test_type}"
                                     generation_status['completed_types'].add(completion_key)
+                                    # Log progress for debugging
+                                    progress = (len(generation_status['completed_types']) / len(generation_status['total_types'])) * 100
+                                    logger.info(f"Progress update: {len(generation_status['completed_types'])}/{len(generation_status['total_types'])} = {progress:.1f}%")
                                 logger.info(f"Successfully generated {test_type} test cases for {item_id}")
                             else:
                                 logger.warning(f"No test cases generated for {test_type} for {item_id}")
@@ -436,6 +771,9 @@ def generate():
                                     # Track completion per item ID and type
                                     completion_key = f"{item_id}_{test_type}"
                                     generation_status['completed_types'].add(completion_key)
+                                    # Log progress for debugging
+                                    progress = (len(generation_status['completed_types']) / len(generation_status['total_types'])) * 100
+                                    logger.info(f"Progress update: {len(generation_status['completed_types'])}/{len(generation_status['total_types'])} = {progress:.1f}%")
                                 logger.info(f"Successfully generated {test_type} test cases for {item_id}")
                             else:
                                 all_types_processed = False
@@ -500,14 +838,44 @@ def generate():
                                 'status': ''
                             })
             
-            # Create MongoDB handler and save test case data
-            mongo_handler = MongoHandler()
-            url_key = mongo_handler.save_test_case({
-                'files': results,
-                'test_cases': formatted_test_cases,
-                'source_type': source_type,
-                'item_ids': item_ids
-            }, item_ids[0] if item_ids else None)
+                                # Create MongoDB handler and save test case data
+                    mongo_handler = MongoHandler()
+                    url_key = mongo_handler.save_test_case({
+                        'files': results,
+                        'test_cases': formatted_test_cases,
+                        'source_type': source_type,
+                        'item_ids': item_ids
+                    }, item_ids[0] if item_ids else None)
+                    
+                    # Track successful test case generation with timing
+                    generation_end_time = datetime.utcnow()
+                    generation_duration = (generation_end_time - generation_start_time).total_seconds()
+                    
+                    try:
+                        if mongo_handler:
+                            event_data = {
+                                "event_type": "test_case_generated",
+                                "event_data": {
+                                    "url_key": url_key,
+                                    "source_type": source_type,
+                                    "test_case_types": selected_types,
+                                    "item_count": len(item_ids),
+                                    "files_generated": len(results),
+                                    "generation_duration_seconds": generation_duration,
+                                    "generation_start_time": generation_start_time.isoformat(),
+                                    "generation_end_time": generation_end_time.isoformat(),
+                                    "average_time_per_item": generation_duration / len(item_ids) if item_ids else 0
+                                },
+                                "session_id": data.get('session_id'),
+                                "user_agent": request.headers.get('User-Agent'),
+                                "ip_address": request.remote_addr,
+                                "source_type": source_type,
+                                "test_case_types": selected_types,
+                                "item_count": len(item_ids)
+                            }
+                            mongo_handler.track_event(event_data)
+                    except Exception as e:
+                        logger.error(f"Failed to track test case generation: {str(e)}")
             
             return jsonify({
                 'success': True,
@@ -517,7 +885,7 @@ def generate():
             
     except Exception as e:
         logger.error(f"Error during generation: {str(e)}", exc_info=True)
-        # Capture error in Sentry with context
+        # Capture error in MongoDB with context
         capture_exception(e, {
             "source_type": source_type,
             "selected_types": selected_types,
@@ -533,6 +901,25 @@ def generate():
 @app.route('/api/download/<path:filename>')
 def download_file(filename):
     try:
+        # Track download attempt
+        try:
+            mongo_handler = MongoHandler()
+            event_data = {
+                "event_type": "file_download_attempted",
+                "event_data": {
+                    "filename": filename,
+                    "file_type": filename.split('.')[-1] if '.' in filename else 'unknown'
+                },
+                "user_agent": request.headers.get('User-Agent'),
+                "ip_address": request.remote_addr,
+                "source_type": None,
+                "test_case_types": [],
+                "item_count": 0
+            }
+            mongo_handler.track_event(event_data)
+        except Exception as e:
+            logger.error(f"Failed to track download attempt: {str(e)}")
+        
         # Handle cloud deployment paths
         base_dir = os.path.dirname(__file__)
         generated_dir = os.path.join(base_dir, 'tests', 'generated')
@@ -672,6 +1059,26 @@ def download_file(filename):
             else:
                 response = send_file(file_path, as_attachment=True)
             
+        # Track successful download
+        try:
+            event_data = {
+                "event_type": "file_download_successful",
+                "event_data": {
+                    "filename": filename,
+                    "file_type": filename.split('.')[-1] if '.' in filename else 'unknown',
+                    "file_size": os.path.getsize(file_path) if os.path.exists(file_path) else 0,
+                    "custom_filename": custom_filename
+                },
+                "user_agent": request.headers.get('User-Agent'),
+                "ip_address": request.remote_addr,
+                "source_type": None,
+                "test_case_types": [],
+                "item_count": 0
+            }
+            mongo_handler.track_event(event_data)
+        except Exception as e:
+            logger.error(f"Failed to track successful download: {str(e)}")
+        
         # Add cache control headers to prevent caching
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
         response.headers["Pragma"] = "no-cache"
@@ -867,7 +1274,7 @@ def update_status():
                 {
                     "$set": {
                         f"status.{test_case_id}": status,
-                        "status_updated_at": datetime.datetime.now()
+                        "status_updated_at": datetime.now()
                     }
                 }
             )
@@ -919,6 +1326,7 @@ def share_test_case():
         
         test_data = data.get('test_data')
         item_id = data.get('item_id')
+        item_ids = data.get('item_ids', [])
         status_values = data.get('status_values', {})
         
         if not test_data:
@@ -930,7 +1338,11 @@ def share_test_case():
             return jsonify({'error': 'Database connection error'}), 500
 
         # Save the test case with status values
-        url_key = mongo_handler.save_test_case(test_data, item_id)
+        # Use item_ids if provided, otherwise fall back to item_id
+        if item_ids and len(item_ids) > 0:
+            url_key = mongo_handler.save_test_case(test_data, item_ids[0] if len(item_ids) == 1 else item_ids)
+        else:
+            url_key = mongo_handler.save_test_case(test_data, item_id)
         
         # If status values were provided, save them too
         if status_values:
@@ -941,10 +1353,57 @@ def share_test_case():
                 logger.error(f"Error saving status values: {e}")
                 # Continue without status values if there's an error
         
-        # Create the share URL
-        share_url = f"{request.host_url.rstrip('/')}/view/{url_key}"
+        # Create the share URL - use BASE_URL from settings or detect from request headers
+        from config.settings import BASE_URL
         
-        logger.info(f"Generated share URL: {share_url}")
+        # Try to get the actual domain from request headers (for production)
+        if request.headers.get('X-Forwarded-Host'):
+            # Use the forwarded host (common in production with reverse proxies)
+            base_url = f"https://{request.headers.get('X-Forwarded-Host')}"
+        elif request.headers.get('X-Forwarded-Proto') and request.headers.get('Host'):
+            # Use forwarded protocol and host
+            protocol = request.headers.get('X-Forwarded-Proto', 'https')
+            base_url = f"{protocol}://{request.headers.get('Host')}"
+        elif request.headers.get('Host') and not request.headers.get('Host').startswith('127.0.0.1') and not request.headers.get('Host').startswith('localhost'):
+            # Use the Host header if it's not localhost
+            base_url = f"https://{request.headers.get('Host')}"
+        else:
+            # Fall back to BASE_URL from settings
+            base_url = BASE_URL.rstrip('/')
+        
+        share_url = f"{base_url}/view/{url_key}"
+        
+        # Log URL generation details for debugging
+        logger.info(f"URL generation details:")
+        logger.info(f"  - X-Forwarded-Host: {request.headers.get('X-Forwarded-Host')}")
+        logger.info(f"  - X-Forwarded-Proto: {request.headers.get('X-Forwarded-Proto')}")
+        logger.info(f"  - Host: {request.headers.get('Host')}")
+        logger.info(f"  - BASE_URL from settings: {BASE_URL}")
+        logger.info(f"  - Selected base_url: {base_url}")
+        logger.info(f"  - Generated share URL: {share_url}")
+        logger.info(f"  - Request URL: {request.url}")
+        logger.info(f"  - Request base URL: {request.base_url}")
+        
+        # Track successful share creation
+        try:
+            event_data = {
+                "event_type": "share_created_successfully",
+                "event_data": {
+                    "url_key": url_key,
+                    "share_url": share_url,
+                    "test_data_count": len(test_data) if isinstance(test_data, list) else 1,
+                    "has_status_values": bool(status_values),
+                    "status_values_count": len(status_values) if status_values else 0
+                },
+                "user_agent": request.headers.get('User-Agent'),
+                "ip_address": request.remote_addr,
+                "source_type": None,
+                "test_case_types": [],
+                "item_count": 0
+            }
+            mongo_handler.track_event(event_data)
+        except Exception as e:
+            logger.error(f"Failed to track successful share creation: {str(e)}")
         
         return jsonify({
             'success': True,
@@ -958,6 +1417,25 @@ def share_test_case():
 @app.route('/view/<url_key>')
 def view_shared_test_case(url_key):
     try:
+        # Track view page visit
+        try:
+            mongo_handler = MongoHandler()
+            event_data = {
+                "event_type": "shared_page_visited",
+                "event_data": {
+                    "url_key": url_key,
+                    "format": request.args.get('format', 'html')
+                },
+                "user_agent": request.headers.get('User-Agent'),
+                "ip_address": request.remote_addr,
+                "source_type": None,
+                "test_case_types": [],
+                "item_count": 0
+            }
+            mongo_handler.track_event(event_data)
+        except Exception as e:
+            logger.error(f"Failed to track view page visit: {str(e)}")
+        
         # Check if JSON format was requested
         format_param = request.args.get('format', '').lower()
         want_json = format_param == 'json'
@@ -1162,7 +1640,7 @@ def download_shared_excel(url_key):
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"
         response.headers["X-Status-Updated-Count"] = str(updated_count)
-        response.headers["X-Status-Update-Time"] = str(datetime.datetime.now())
+        response.headers["X-Status-Update-Time"] = str(datetime.now())
         
         return response
     except Exception as e:
@@ -1190,8 +1668,13 @@ def get_generation_status():
                 'completed_types': list(generation_status['completed_types']),
                 'total_types': list(generation_status['total_types']),
                 'progress_percentage': progress_percentage,
-                'files_ready': not generation_status['is_generating']
+                'files_ready': not generation_status['is_generating'],
+                'phase': generation_status.get('phase', ''),
+                'current_test_type': generation_status.get('current_test_type', ''),
+                'log': list(generation_status.get('log', [])),
+                'final_url_key': generation_status.get('final_url_key', '')  # Include final URL key when available
             }
+            logger.info(f"Generation status response - final_url_key: {response['final_url_key']}")
         return jsonify(response)
     except Exception as e:
         logger.error(f"Error getting generation status: {str(e)}")
@@ -1219,19 +1702,180 @@ def get_shared_status():
         response_data = {
             'success': True,
             'status_values': status_values,
-            'timestamp': str(datetime.datetime.now())  # Add timestamp for debugging
+            'timestamp': str(datetime.now())  # Add timestamp for debugging
         }
         
         # Include file paths if requested
         if include_files:
             doc = mongo_handler.collection.find_one({"url_key": url_key})
-            if doc and 'test_data' in doc:
-                # Check for different document structures
-                if 'files' in doc['test_data']:
-                    response_data['files'] = doc['test_data']['files']
-                elif isinstance(doc['test_data'], list):
-                    # This is a shared view document with test data array
-                    response_data['test_data'] = doc['test_data']
+            if doc:
+                # Always include the document data for source_type and item_ids
+                response_data['document'] = doc
+                
+                if 'test_data' in doc:
+                    # Check for different document structures
+                    if 'files' in doc['test_data']:
+                        response_data['files'] = doc['test_data']['files']
+                        
+                        # Extract item IDs from files structure
+                        files_data = doc['test_data']['files']
+                        if files_data:
+                            # Extract item IDs from file keys
+                            item_ids = list(files_data.keys())
+                            logger.info(f"Extracted item IDs from files: {item_ids}")
+                            
+                            # Update the document with proper item_ids
+                            doc['item_ids'] = item_ids
+                            # Remove the old item_id if it exists
+                            if 'item_id' in doc:
+                                del doc['item_id']
+                            
+                            # Add source_type from test_data if available
+                            if 'source_type' in doc['test_data']:
+                                doc['source_type'] = doc['test_data']['source_type']
+                                logger.info(f"Added source_type to document: {doc['source_type']}")
+                            else:
+                                # Set default source type based on context
+                                doc['source_type'] = 'Jira'
+                                logger.info(f"Using default source_type: Jira")
+                            
+                            # Update response_data document
+                            response_data['document'] = doc
+                        
+                        # Extract test cases from files structure
+                        try:
+                            from utils.file_handler import parse_traditional_format
+                            # Get test cases from ALL files, not just the first one
+                            all_test_cases = []
+                            
+                            # Process each file to get test cases
+                            for file_key, file_data in files_data.items():
+                                logger.info(f"Processing file: {file_key}")
+                                
+                                if 'test_cases' in file_data and isinstance(file_data['test_cases'], str):
+                                    test_cases_content = file_data['test_cases']
+                                    logger.info(f"Found test cases content for {file_key} (length: {len(test_cases_content)})")
+                                    
+                                    parsed_test_cases = parse_traditional_format(test_cases_content)
+                                    if parsed_test_cases:
+                                        # Add item identifier to test case titles to distinguish them
+                                        for tc in parsed_test_cases:
+                                            if 'Title' in tc:
+                                                tc['Title'] = f"{tc['Title']} ({file_key})"
+                                        
+                                        all_test_cases.extend(parsed_test_cases)
+                                        logger.info(f"Successfully parsed {len(parsed_test_cases)} test cases from {file_key}")
+                                    else:
+                                        logger.warning(f"No test cases parsed from {file_key}")
+                                else:
+                                    logger.warning(f"No test_cases string found in {file_key}")
+                            
+                            if all_test_cases:
+                                response_data['test_data'] = all_test_cases
+                                logger.info(f"Successfully combined {len(all_test_cases)} total test cases from all files")
+                                # Don't process test_cases array if we successfully processed files
+                                return jsonify(response_data)
+                            else:
+                                logger.warning("No test cases found in any files")
+                        except Exception as e:
+                            logger.warning(f"Error parsing test cases from files: {e}")
+                            import traceback
+                            logger.warning(f"Traceback: {traceback.format_exc()}")
+                            
+                    # Handle Image and URL source types that store test_data directly
+                    elif 'test_data' in doc and isinstance(doc['test_data'], list):
+                        logger.info(f"Found direct test_data list for {doc.get('source_type', 'unknown')} source type")
+                        response_data['test_data'] = doc['test_data']
+                        
+                        # For URL source type, use the actual URL as item_id instead of file keys
+                        if doc.get('source_type') == 'url' and 'url' in doc:
+                            doc['item_ids'] = [doc['url']]
+                            logger.info(f"Set URL as item_id: {doc['url']}")
+                        # For Image source type, use a descriptive identifier
+                        elif doc.get('source_type') == 'image':
+                            doc['item_ids'] = ['Uploaded Image']
+                            logger.info(f"Set Image item_id: Uploaded Image")
+                        
+                        response_data['document'] = doc
+                        logger.info(f"Successfully loaded {len(doc['test_data'])} test cases from direct test_data")
+                        return jsonify(response_data)
+                    
+                    # Handle nested test_data structure (URL generation stores data this way)
+                    elif 'test_data' in doc and isinstance(doc['test_data'], dict):
+                        logger.info(f"Found nested test_data dict for {doc.get('source_type', 'unknown')} source type")
+                        
+                        nested_test_data = doc['test_data']
+                        
+                        # Check if this is URL data with nested structure
+                        if 'source_type' in nested_test_data and nested_test_data['source_type'] == 'url':
+                            logger.info(f"Found URL data with nested structure")
+                            
+                            # Extract the actual test cases from the nested structure
+                            if 'test_data' in nested_test_data and isinstance(nested_test_data['test_data'], list):
+                                response_data['test_data'] = nested_test_data['test_data']
+                                
+                                # Set the source type and URL from the nested structure
+                                doc['source_type'] = nested_test_data['source_type']
+                                doc['url'] = nested_test_data.get('url', '')
+                                doc['item_ids'] = [nested_test_data.get('url', '')]
+                                
+                                response_data['document'] = doc
+                                logger.info(f"Successfully loaded {len(nested_test_data['test_data'])} URL test cases from nested structure")
+                                return jsonify(response_data)
+                        
+                        # Check if this is Image data with nested structure
+                        elif 'source_type' in nested_test_data and nested_test_data['source_type'] == 'image':
+                            logger.info(f"Found Image data with nested structure")
+                            
+                            # Extract the actual test cases from the nested structure
+                            if 'test_data' in nested_test_data and isinstance(nested_test_data['test_data'], list):
+                                response_data['test_data'] = nested_test_data['test_data']
+                                
+                                # Set the source type and image_id from the nested structure
+                                doc['source_type'] = nested_test_data['source_type']
+                                doc['image_id'] = nested_test_data.get('image_id', '')
+                                doc['item_ids'] = ['Uploaded Image']
+                                
+                                response_data['document'] = doc
+                                logger.info(f"Successfully loaded {len(nested_test_data['test_data'])} Image test cases from nested structure")
+                                return jsonify(response_data)
+                            
+                    # Only process test_cases array if files processing failed
+                    if 'test_cases' in doc['test_data'] and isinstance(doc['test_data']['test_cases'], list):
+                        # Handle the test_cases array structure
+                        test_cases_list = doc['test_data']['test_cases']
+                        logger.info(f"Found test_cases list with {len(test_cases_list)} items")
+                        
+                        # Convert the test_cases structure to the expected format
+                        converted_test_cases = []
+                        for tc in test_cases_list:
+                            if isinstance(tc, dict) and 'content' in tc:
+                                # Parse the content string
+                                content = tc.get('content', '')
+                                if content and isinstance(content, str):
+                                    # Try to parse this content as a test case
+                                    from utils.file_handler import parse_traditional_format
+                                    parsed = parse_traditional_format(content)
+                                    if parsed:
+                                        converted_test_cases.extend(parsed)
+                                    else:
+                                        # If parsing fails, create a basic test case
+                                        test_case = {
+                                            'Title': tc.get('test_case_id', 'Unknown'),
+                                            'Scenario': 'Scenario extracted from content',
+                                            'Steps': 'Steps extracted from content',
+                                            'Expected Result': 'Expected result extracted from content',
+                                            'Status': tc.get('status', 'Not Tested')
+                                        }
+                                        converted_test_cases.append(test_case)
+                        
+                        if converted_test_cases:
+                            response_data['test_data'] = converted_test_cases
+                            logger.info(f"Successfully converted {len(converted_test_cases)} test cases from test_cases structure")
+                            
+                    elif isinstance(doc['test_data'], list):
+                        # This is a shared view document with test data array
+                        response_data['test_data'] = doc['test_data']
             
         response = jsonify(response_data)
         
@@ -1243,6 +1887,199 @@ def get_shared_status():
         return response
     except Exception as e:
         logger.error(f"Error retrieving shared status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+# Analytics tracking endpoints
+@app.route('/api/analytics/track', methods=['POST'])
+def track_analytics():
+    """Track user events and interactions"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Get client information
+        event_data = {
+            "event_type": data.get("event_type"),
+            "event_data": data.get("event_data", {}),
+            "session_id": data.get("session_id"),
+            "user_agent": request.headers.get('User-Agent'),
+            "ip_address": request.remote_addr,
+            "source_type": data.get("source_type"),
+            "test_case_types": data.get("test_case_types", []),
+            "item_count": data.get("item_count", 0)
+        }
+        
+        mongo_handler = MongoHandler()
+        success = mongo_handler.track_event(event_data)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Event tracked successfully'})
+        else:
+            return jsonify({'error': 'Failed to track event'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error tracking analytics: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/session', methods=['POST'])
+def track_session():
+    """Track user session and page visits"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Get client information
+        session_data = {
+            "session_id": data.get("session_id"),
+            "user_agent": request.headers.get('User-Agent'),
+            "ip_address": request.remote_addr,
+            "referrer": request.headers.get('Referer'),
+            "page_visited": data.get("page_visited"),
+            "country": data.get("country"),
+            "city": data.get("city")
+        }
+        
+        mongo_handler = MongoHandler()
+        success = mongo_handler.track_user_session(session_data)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Session tracked successfully'})
+        else:
+            return jsonify({'error': 'Failed to track session'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error tracking session: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/summary', methods=['GET'])
+def get_analytics_summary():
+    """Get analytics summary"""
+    try:
+        # Parse date filters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Parse other filters
+        source_type = request.args.get('source_type')
+        
+        # Fallback to days parameter if no date range provided
+        days = request.args.get('days', 30, type=int)
+        
+        mongo_handler = MongoHandler()
+        
+        # Pass all filters to the summary function
+        summary = mongo_handler.get_analytics_summary(
+            start_date=start_date,
+            end_date=end_date,
+            days=days,
+            source_type=source_type
+        )
+        
+        if summary:
+            return jsonify({'success': True, 'data': summary})
+        else:
+            return jsonify({'error': 'Failed to get analytics summary'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error getting analytics summary: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/detailed', methods=['GET'])
+def get_detailed_analytics():
+    """Get detailed analytics with filters"""
+    try:
+        filters = {}
+        
+        # Parse date filters and normalize to full-day bounds
+        start_date = request.args.get('start_date')
+        if start_date:
+            try:
+                # Support plain YYYY-MM-DD by anchoring to start of day
+                if len(start_date) == 10:
+                    filters['start_date'] = datetime.strptime(start_date, '%Y-%m-%d')
+                else:
+                    filters['start_date'] = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+            except Exception:
+                filters['start_date'] = datetime.strptime(start_date[:10], '%Y-%m-%d')
+        
+        end_date = request.args.get('end_date')
+        if end_date:
+            try:
+                if len(end_date) == 10:
+                    # Make end inclusive by extending to end of day
+                    end_dt = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1) - timedelta(milliseconds=1)
+                    filters['end_date'] = end_dt
+                else:
+                    filters['end_date'] = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+            except Exception:
+                end_dt = datetime.strptime(end_date[:10], '%Y-%m-%d') + timedelta(days=1) - timedelta(milliseconds=1)
+                filters['end_date'] = end_dt
+        
+        # Parse other filters
+        event_type = request.args.get('event_type')
+        if event_type:
+            filters['event_type'] = event_type
+        
+        source_type = request.args.get('source_type')
+        if source_type:
+            filters['source_type'] = source_type
+        
+        mongo_handler = MongoHandler()
+        events = mongo_handler.get_detailed_analytics(filters)
+        
+        if events is not None:
+            return jsonify({'success': True, 'data': events})
+        else:
+            return jsonify({'error': 'Failed to get detailed analytics'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error getting detailed analytics: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/analytics/errors', methods=['GET'])
+def get_error_analytics():
+    """Get error analytics from MongoDB"""
+    try:
+        from utils.error_logger import error_logger
+        
+        # Get query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        level = request.args.get('level')  # Optional filter by log level
+        
+        # Calculate days from date range if provided
+        if start_date and end_date:
+            try:
+                start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+                end_datetime = datetime.strptime(end_date, '%Y-%m-%d')
+                # Calculate days difference
+                days_diff = (end_datetime - start_datetime).days
+                # Use the larger of the calculated days or 30 as fallback
+                days = max(days_diff, 30)
+            except Exception as e:
+                logger.warning(f"Error parsing date range, using default 30 days: {e}")
+                days = 30
+        else:
+            # Fallback to days parameter if no date range provided
+            days = int(request.args.get('days', 30))
+        
+        # Get error summary
+        error_summary = error_logger.get_error_summary(
+            days=days, 
+            level=level,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
+        if 'error' in error_summary:
+            return jsonify({'error': error_summary['error']}), 500
+        
+        return jsonify({'success': True, 'data': error_summary})
+        
+    except Exception as e:
+        logger.error(f"Error getting error analytics: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/mongo-document/<url_key>', methods=['GET'])
@@ -1303,11 +2140,11 @@ def notify_status_change():
             {"url_key": url_key},
             {
                 "$set": {
-                    "status_updated_at": datetime.datetime.now(),
+                    "status_updated_at": datetime.now(),
                     "last_status_change": {
                         "test_case_id": test_case_id,
                         "status": status,
-                        "timestamp": datetime.datetime.now()
+                        "timestamp": datetime.now()
                     }
                 }
             }
@@ -1409,7 +2246,7 @@ def debug_force_sync():
         mongo_handler.collection.update_one(
             {"url_key": url_key},
             {"$set": {
-                "status_force_synced_at": datetime.datetime.now(),
+                "status_force_synced_at": datetime.now(),
                 "status_force_sync_count": doc.get("status_force_sync_count", 0) + 1
             }}
         )
@@ -1451,7 +2288,7 @@ def health_check():
         
         return jsonify({
             'status': 'healthy',
-            'timestamp': datetime.datetime.now().isoformat(),
+            'timestamp': datetime.now().isoformat(),
             'mongodb': mongo_status,
             'filesystem': fs_status,
             'environment': 'production' if os.getenv('RENDER') else 'development'
@@ -1460,7 +2297,7 @@ def health_check():
         return jsonify({
             'status': 'unhealthy',
             'error': str(e),
-            'timestamp': datetime.datetime.now().isoformat()
+            'timestamp': datetime.now().isoformat()
         }), 500
 
 @app.route('/api/verify-api-key')
@@ -1633,6 +2470,36 @@ def verify_jira_connection():
         logger.error(f"Jira verification error: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/test-url', methods=['POST'])
+def test_url():
+    """Test if a URL is accessible"""
+    try:
+        data = request.json
+        url = data.get('url', '').strip()
+        
+        if not url:
+            return jsonify({'success': False, 'error': 'URL is required'}), 400
+            
+        try:
+            # Try to validate the URL format
+            parsed_url = urlparse(url)
+            if not all([parsed_url.scheme, parsed_url.netloc]):
+                return jsonify({'success': False, 'error': 'Invalid URL format'}), 400
+                
+            # Try to access the URL
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                return jsonify({'success': True, 'message': 'URL is accessible'})
+            else:
+                return jsonify({'success': False, 'error': 'URL is not accessible'}), response.status_code
+                
+        except requests.RequestException as e:
+            return jsonify({'success': False, 'error': 'Failed to connect to URL'}), 400
+            
+    except Exception as e:
+        logger.error(f"URL test error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/verify-azure', methods=['POST'])
 def verify_azure_connection():
     """Verify Azure DevOps connection and credentials"""
@@ -1690,8 +2557,14 @@ def fetch_jira_items():
         from jira.jira_client import JiraClient
         jira_client = JiraClient(jira_url, jira_user, jira_token)
         
-        # Fetch recent issues (last 50)
-        issues = jira_client.get_recent_issues(limit=50)
+        # Fetch all issues filtered by desired statuses
+        desired_statuses = [
+            'To Do',
+            'Ready for QA',
+            'Ready for Qa',  # case/variant safety
+            'Ready For QA'
+        ]
+        issues = jira_client.get_recent_issues(limit=None, statuses=desired_statuses)
         
         if issues:
             # Format items for suggestions
@@ -1753,9 +2626,15 @@ def fetch_azure_items():
         
         logger.info(f"Successfully accessed Azure project: {project_info.get('name', azure_project)}")
         
-        # Fetch recent work items (last 50)
-        logger.info(f"Fetching Azure work items for project: {azure_project}")
-        work_items = azure_client.get_recent_work_items(azure_project, limit=50)
+        # Fetch all work items filtered by QA-ready/reopen states
+        logger.info(f"Fetching Azure work items for project: {azure_project} with QA-ready filters")
+        desired_states = [
+            'Ready for QA',
+            'Re-open',
+            'Reopened',
+            'Re-opened'  # include common variants
+        ]
+        work_items = azure_client.get_recent_work_items(azure_project, limit=None, states=desired_states)
         logger.info(f"Retrieved {len(work_items) if work_items else 0} Azure work items")
         
         if work_items:
@@ -1783,6 +2662,71 @@ def fetch_azure_items():
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/export-excel', methods=['POST'])
+def export_excel():
+    """Export test cases to Excel file"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        test_cases = data.get('test_cases', [])
+        status_values = data.get('status_values', {})
+        source_type = data.get('source_type', 'Unknown')
+        item_ids = data.get('item_ids', [])
+        
+        if not test_cases:
+            return jsonify({'error': 'No test cases provided'}), 400
+        
+        logger.info(f"Exporting {len(test_cases)} test cases to Excel for {source_type}")
+        
+        # Create Excel file
+        from utils.file_handler import create_excel_report
+        excel_data = create_excel_report(test_cases, status_values, source_type, item_ids)
+        
+        # Generate filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"test_cases_{source_type}_{timestamp}.xlsx"
+        
+        # Create response
+        from flask import Response
+        response = Response(
+            excel_data,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+        )
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error exporting to Excel: {str(e)}")
+        return jsonify({'error': f'Export failed: {str(e)}'}), 500
+
+# Error handlers for custom error pages
+@app.errorhandler(404)
+def not_found_error(error):
+    """Handle 404 Not Found errors"""
+    logger.warning(f"404 error: {request.url}")
+    return render_template('error.html', error_message="The page you're looking for doesn't exist. Please check the URL and try again."), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 Internal Server errors"""
+    logger.error(f"500 error: {str(error)}")
+    return render_template('error.html', error_message="Something went wrong on our end. Please try again later."), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    """Handle 403 Forbidden errors"""
+    logger.warning(f"403 error: {request.url}")
+    return render_template('error.html', error_message="You don't have permission to access this resource."), 403
+
+@app.errorhandler(400)
+def bad_request_error(error):
+    """Handle 400 Bad Request errors"""
+    logger.warning(f"400 error: {request.url}")
+    return render_template('error.html', error_message="The request was invalid. Please check your input and try again."), 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',port=5008)
