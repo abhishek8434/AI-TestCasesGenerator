@@ -1,8 +1,5 @@
-# Initialize Sentry for Jira integration
-from utils.sentry_config import init_sentry, capture_exception, capture_message, set_tag, set_context
-
-# Initialize Sentry for the Jira integration
-init_sentry("ai-test-case-generator-jira")
+# Import error logging utilities for error tracking
+from utils.error_logger import capture_exception, capture_message, set_tag, set_context
 
 import requests
 from typing import Optional, Dict, Any, List
@@ -83,15 +80,27 @@ class JiraClient:
             print(f"❌ Failed to get current user: {e}")
             return None
     
-    def get_recent_issues(self, limit: int = 50) -> List[Dict[str, Any]]:
-        """Get recent issues for suggestions"""
+    def get_recent_issues(self, limit: int = None, statuses: Optional[List[str]] = None) -> List[Dict[str, Any]]:
+        """Get recent issues for suggestions
+        :param limit: maximum number of issues to return (None for all)
+        :param statuses: optional list of status names to filter by (e.g., ["To Do", "Ready for QA"]) 
+        """
         try:
             url = f"{self.jira_url}/rest/api/3/search"
-            jql = "ORDER BY updated DESC"
+            jql_clauses = []
+            if statuses:
+                quoted_statuses = ", ".join([f'"{s}"' for s in statuses])
+                jql_clauses.append(f"status in ({quoted_statuses})")
+            # Always order by last updated
+            jql_clauses.append("ORDER BY updated DESC")
+            jql = " ".join(jql_clauses)
+            
+            # Use a large number if limit is None to get all results
+            max_results = limit if limit is not None else 1000
             
             payload = {
                 "jql": jql,
-                "maxResults": limit,
+                "maxResults": max_results,
                 "fields": ["summary", "issuetype", "status"]
             }
             
