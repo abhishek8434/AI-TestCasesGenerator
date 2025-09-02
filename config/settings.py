@@ -18,7 +18,7 @@ if not OPENAI_API_KEY:
     OPENAI_API_KEY = "missing_api_key"
 
 # Optional environment variables with default values
-BASE_URL = os.getenv("BASE_URL", "http://localhost:5000")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:5008")
 
 # Jira settings (optional, will be set through frontend)
 JIRA_URL = os.getenv("JIRA_URL", "")
