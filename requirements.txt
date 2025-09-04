@@ -12,3 +12,5 @@ pymongo
 langchain
 langchain-openai
 langchain-community
+bcrypt
+PyJWT
