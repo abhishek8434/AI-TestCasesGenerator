@@ -29,6 +29,8 @@
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
@@ -59,6 +61,52 @@
 
         .navbar-nav .nav-link:hover {
             color: #4CAA72;
+        }
+
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+            
+            .navbar-nav {
+                text-align: center;
+                padding: 1rem 0;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.25rem 0;
+            }
+            
+            .user-info {
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            
+            .user-dropdown {
+                justify-content: center;
+            }
+            
+            .dropdown-menu {
+                position: static !important;
+                transform: none !important;
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                margin-top: 0.5rem;
+            }
         }
 
         .user-info {
@@ -547,6 +595,12 @@
             border-radius: 12px;
             padding: 20px;
             transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .test-case-card:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
         }
 
         /* Status-based border colors - always visible */
@@ -935,31 +989,75 @@
 
         /* Responsive Design */
         @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .header {
+                padding: 20px 0;
+                margin-bottom: 32px;
+            }
+
             .header-content {
                 flex-direction: column;
-                gap: 20px;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .logo-section {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .main-title {
+                font-size: 1.5rem;
                 text-align: center;
             }
 
             .header-actions {
                 flex-direction: row;
-                gap: 12px;
+                gap: 16px;
                 width: 100%;
                 justify-content: center;
                 margin-left: 0;
+                margin-top: 8px;
             }
 
             .export-btn, .share-btn, .generate-btn {
                 min-width: auto;
                 flex: 1;
                 justify-content: center;
+                font-size: 0.9rem;
+                padding: 10px 12px;
             }
 
+            .metrics-section {
+                margin-bottom: 32px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            .metric-card {
+                padding: 20px 16px;
+                margin-bottom: 8px;
+            }
+
+            .metric-title {
+                font-size: 0.9rem;
+            }
+
+            .metric-value {
+                font-size: 1.5rem;
+            }
 
             .section-header {
                 flex-direction: column;
-                gap: 16px;
+                gap: 20px;
                 align-items: flex-start;
+                margin-bottom: 32px;
             }
 
             .section-actions {
@@ -975,22 +1073,170 @@
                 justify-content: flex-start;
             }
 
-            .metrics-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .test-cases-grid {
+                gap: 20px;
+            }
+
+            .test-case-card {
+                padding: 20px 16px;
+                margin-bottom: 16px;
+            }
+
+            .test-case-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .test-case-title {
+                font-size: 1rem;
+                line-height: 1.4;
+            }
+
+            .test-case-meta {
+                flex-direction: column;
+                gap: 8px;
             }
 
             .test-case-actions {
                 flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .test-case-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .status-badge {
+                align-self: flex-start;
+            }
+
+            /* Improve touch targets */
+            .btn {
+                min-height: 44px;
+                touch-action: manipulation;
+            }
+
+            .status-badge {
+                min-height: 32px;
+                padding: 8px 12px;
+            }
+
+            /* Better text readability */
+            .test-case-description {
+                font-size: 0.9rem;
+                line-height: 1.5;
+            }
+
+            .test-case-steps {
+                font-size: 0.85rem;
+            }
+
+            /* Improve form elements */
+            .form-control, .form-select {
+                min-height: 44px;
+                font-size: 16px; /* Prevents zoom on iOS */
             }
         }
 
         @media (max-width: 480px) {
-            .metrics-grid {
-                grid-template-columns: 1fr;
+            .container {
+                padding: 0 10px;
             }
 
-            .container {
-                padding: 0 16px;
+            .header {
+                padding: 16px 0;
+                margin-bottom: 28px;
+            }
+
+            .main-title {
+                font-size: 1.25rem;
+            }
+
+            .header-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .export-btn, .share-btn, .generate-btn {
+                width: 100%;
+                font-size: 0.85rem;
+                padding: 12px 16px;
+            }
+
+            .metrics-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .metric-card {
+                padding: 18px 14px;
+                margin-bottom: 12px;
+            }
+
+            .metric-title {
+                font-size: 0.8rem;
+            }
+
+            .metric-value {
+                font-size: 1.25rem;
+            }
+
+            .test-case-card {
+                padding: 18px 14px;
+                margin-bottom: 20px;
+            }
+
+            .test-case-title {
+                font-size: 0.9rem;
+            }
+
+            .test-case-actions .btn {
+                font-size: 0.85rem;
+                padding: 8px 12px;
+            }
+
+            .section-header {
+                gap: 16px;
+                margin-bottom: 24px;
+            }
+
+            .section-title {
+                font-size: 1.1rem;
+            }
+
+            /* Enhanced touch targets for small screens */
+            .btn {
+                min-height: 48px;
+                font-size: 0.9rem;
+            }
+
+            .status-badge {
+                min-height: 36px;
+                padding: 10px 14px;
+                font-size: 0.8rem;
+            }
+
+            /* Better spacing for small screens */
+            .test-case-card {
+                margin-bottom: 12px;
+            }
+
+            .test-case-meta {
+                gap: 6px;
+            }
+
+            /* Improve readability */
+            .test-case-description {
+                font-size: 0.85rem;
+                line-height: 1.6;
+            }
+
+            .test-case-steps {
+                font-size: 0.8rem;
+                line-height: 1.5;
             }
             
             .back-to-top {
@@ -1033,6 +1279,56 @@
         .modal-footer {
             border-top: 1px solid var(--border-color);
             padding: 20px 24px;
+        }
+
+        /* Responsive Modal Styles */
+        @media (max-width: 768px) {
+            .modal-dialog {
+                margin: 10px;
+                max-width: calc(100% - 20px);
+            }
+
+            .modal-header {
+                padding: 16px 20px;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .modal-footer {
+                padding: 16px 20px;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .modal-footer .btn {
+                width: 100%;
+                margin: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .modal-dialog {
+                margin: 5px;
+                max-width: calc(100% - 10px);
+            }
+
+            .modal-header {
+                padding: 12px 16px;
+            }
+
+            .modal-body {
+                padding: 16px;
+            }
+
+            .modal-footer {
+                padding: 12px 16px;
+            }
+
+            .modal-title {
+                font-size: 1.1rem;
+            }
         }
 
         /* Status Select Styles */
@@ -1159,10 +1455,18 @@
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="bi bi-robot me-2"></i>
-                AI Test Case Generator
+                <span class="d-none d-sm-inline">AI Test Case Generator</span>
+                <span class="d-inline d-sm-none">AI Test Case</span>
             </a>
             
-            <div class="navbar-nav ms-auto">
+            <!-- Mobile toggle button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Collapsible navbar content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="/">Home</a>
                 <a class="nav-link" href="/documentation">Documentation</a>
                 <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
@@ -1186,6 +1490,7 @@
                         </button>
                     </div>
                 </div>
+            </div>
             </div>
         </div>
     </nav>

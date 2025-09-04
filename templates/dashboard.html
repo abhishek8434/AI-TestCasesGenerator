@@ -57,6 +57,19 @@
             color: #4CAA72;
         }
 
+        .navbar-toggler {
+            border: none;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .navbar-toggler:focus {
+            box-shadow: none;
+        }
+
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2833, 37, 41, 0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
         .user-info {
             display: flex;
             align-items: center;
@@ -410,6 +423,37 @@
         }
 
         @media (max-width: 768px) {
+            .navbar-brand {
+                font-size: 1.25rem;
+            }
+            
+            .navbar-nav {
+                text-align: center;
+                padding: 1rem 0;
+            }
+            
+            .navbar-nav .nav-link {
+                padding: 0.75rem 1rem;
+                margin: 0.25rem 0;
+            }
+            
+            .user-info {
+                justify-content: center;
+                margin-top: 0.5rem;
+            }
+            
+            .user-dropdown {
+                justify-content: center;
+            }
+            
+            .dropdown-menu {
+                position: static !important;
+                transform: none !important;
+                box-shadow: none;
+                border: 1px solid var(--border-color);
+                margin-top: 0.5rem;
+            }
+            
             .dashboard-title {
                 font-size: 2rem;
             }
@@ -437,34 +481,43 @@
         <div class="container">
             <a class="navbar-brand" href="/">
                 <i class="bi bi-robot me-2"></i>
-                AI Test Case Generator
+                <span class="d-none d-sm-inline">AI Test Case Generator</span>
+                <span class="d-inline d-sm-none">AI Test Case</span>
             </a>
             
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/">Home</a>
-                <a class="nav-link" href="/documentation">Documentation</a>
-                <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
-                <!-- <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
-                <a class="nav-link" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
-                <div class="user-info" id="userInfoNav" style="display: none;">
-                    <div class="user-dropdown" onclick="toggleUserDropdown()">
-                        <div class="user-avatar" id="userAvatar">
-                            <i class="bi bi-person"></i>
+            <!-- Mobile toggle button -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Collapsible navbar content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="/">Home</a>
+                    <a class="nav-link" href="/documentation">Documentation</a>
+                    <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
+                    <!-- <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
+                    <a class="nav-link" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
+                    <div class="user-info" id="userInfoNav" style="display: none;">
+                        <div class="user-dropdown" onclick="toggleUserDropdown()">
+                            <div class="user-avatar" id="userAvatar">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <span class="user-name d-none d-md-inline" id="userName">User</span>
+                            <i class="bi bi-chevron-down dropdown-arrow"></i>
                         </div>
-                        <span class="user-name d-none d-md-inline" id="userName">User</span>
-                        <i class="bi bi-chevron-down dropdown-arrow"></i>
-                    </div>
-                    <div class="dropdown-menu" id="userDropdownMenu">
-                        <a href="/" class="dropdown-item">
-                            <i class="bi bi-house me-2"></i>Home
-                        </a>
-                        <a href="/analytics" class="dropdown-item">
-                            <i class="bi bi-graph-up me-2"></i>Analytics
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <button class="dropdown-item" onclick="logout()">
-                            <i class="bi bi-box-arrow-right me-2"></i>Logout
-                        </button>
+                        <div class="dropdown-menu" id="userDropdownMenu">
+                            <a href="/" class="dropdown-item">
+                                <i class="bi bi-house me-2"></i>Home
+                            </a>
+                            <a href="/analytics" class="dropdown-item">
+                                <i class="bi bi-graph-up me-2"></i>Analytics
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <button class="dropdown-item" onclick="logout()">
+                                <i class="bi bi-box-arrow-right me-2"></i>Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
