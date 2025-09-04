@@ -20,9 +20,15 @@ import re
 import logging
 import requests
 from urllib.parse import urlparse
+from threading import Lock
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
+
+# JWT configuration
+app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 
 # Add this logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -48,6 +54,31 @@ def documentation():
 def comparison():
     """Competitive analysis comparison page"""
     return render_template('comparison.html')
+
+@app.route('/signin')
+def signin():
+    """Sign in page"""
+    return render_template('signin.html')
+
+@app.route('/signup')
+def signup():
+    """Sign up page"""
+    return render_template('signup.html')
+
+@app.route('/dashboard')
+def dashboard():
+    """User dashboard page"""
+    return render_template('dashboard.html')
+
+@app.route('/reset-password')
+def reset_password():
+    """Reset password page"""
+    return render_template('reset-password.html')
+
+@app.route('/admin-dashboard')
+def admin_dashboard():
+    """Admin dashboard page"""
+    return render_template('admin-dashboard.html')
 
 @app.route('/test')
 def test():
@@ -95,16 +126,40 @@ generation_status = {
 def generate():
     try:
         logger.info("=== GENERATE ENDPOINT CALLED ===")
-        data = request.json if request.is_json else request.form
+        # Handle different request content types properly
+        data = None
+        if request.is_json:
+            try:
+                data = request.json
+                logger.info("Request processed as JSON")
+            except Exception as e:
+                logger.error(f"Failed to parse JSON request: {e}")
+                return jsonify({'error': 'Invalid JSON request'}), 400
+        else:
+            data = request.form
+            logger.info("Request processed as FormData")
+            
         logger.info(f"Request data type: {type(data)}")
-        logger.info(f"Request data: {data}")
+        logger.info(f"Request data keys: {list(data.keys()) if data else 'None'}")
+        if request.files:
+            logger.info(f"Request files: {list(request.files.keys())}")
+            for key, file in request.files.items():
+                logger.info(f"File {key}: {file.filename}, size: {len(file.read()) if hasattr(file, 'read') else 'unknown'}")
+                file.seek(0)  # Reset file pointer
         
         # Get test case types with proper fallback
         selected_types = []
         if request.is_json:
             selected_types = data.get('testCaseTypes[]', data.get('testCaseTypes', []))
         else:
-            selected_types = data.getlist('testCaseTypes[]')
+            # For FormData, handle both getlist and get methods
+            if hasattr(data, 'getlist'):
+                selected_types = data.getlist('testCaseTypes[]')
+            else:
+                # Fallback for regular dict-like objects
+                selected_types = data.get('testCaseTypes[]', [])
+                if isinstance(selected_types, str):
+                    selected_types = [selected_types]
             
         # Ensure selected_types is always a list
         if isinstance(selected_types, str):
@@ -114,8 +169,27 @@ def generate():
         if not selected_types:
             return jsonify({'error': 'Please select at least one test case type'}), 400
 
+        # Check if user is authenticated
+        current_user = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                mongo_handler = MongoHandler()
+                user_info = mongo_handler.verify_jwt_token(token)
+                if user_info and user_info.get('success'):
+                    current_user = user_info['user']
+            except Exception as e:
+                logger.warning(f"Failed to verify auth token: {str(e)}")
+                # Continue without authentication
+
         # Get source type and item IDs for tracking
-        source_type = data.get('sourceType') if data else None
+        if not data:
+            return jsonify({'error': 'No request data received'}), 400
+            
+        source_type = data.get('sourceType')
+        if not source_type:
+            return jsonify({'error': 'Source type is required'}), 400
         
         # Track generate button click with start time
         generation_start_time = datetime.utcnow()
@@ -137,6 +211,11 @@ def generate():
                 "test_case_types": selected_types,
                 "item_count": len(data.get('itemId', [])) if data and data.get('itemId') else 0
             }
+            
+            # Add user information if available
+            if current_user:
+                event_data['user_id'] = current_user.get('id')
+                event_data['user_role'] = current_user.get('role')
             mongo_handler.track_event(event_data)
         except Exception as e:
             logger.error(f"Failed to track generate button click: {str(e)}")
@@ -237,7 +316,7 @@ def generate():
                 import threading
                 print("[DEBUG] Starting async URL generation thread...")  # Immediate console output
                 
-                def _run_url_generation_async(target_url, types, result_key):
+                def _run_url_generation_async(target_url, types, result_key, user_id=None):
                     try:
                         print(f"[DEBUG ASYNC] Starting for URL: {target_url}, types: {types}")  # Immediate console output
                         logger.info("[URL ASYNC] Starting direct URL content generation")
@@ -332,7 +411,7 @@ def generate():
                                 'url': target_url,
                                 'test_case_types': types,
                                 'test_data': structured_test_data  # Use structured data for frontend display
-                            }, result_key, 'url')
+                            }, result_key, 'url', user_id)
                             logger.info(f"[URL ASYNC] Saved test case with URL key: {url_key_final}")
                         except Exception as me:
                             logger.error(f"[URL ASYNC] Failed to save test case: {me}")
@@ -367,6 +446,10 @@ def generate():
                                 "test_case_types": types,
                                 "item_count": 1
                             }
+                            
+                            # Add user information if available
+                            if user_id:
+                                event_data['user_id'] = user_id
                             mongo_handler_local.track_event(event_data)
                             logger.info(f"[URL ASYNC] Tracked URL test case generation event")
                         except Exception as tracking_error:
@@ -393,7 +476,7 @@ def generate():
                     generation_status['phase'] = 'queued'
                     generation_status['log'].append(f"Queued URL generation for {url} with types: {test_case_types}")
 
-                threading.Thread(target=_run_url_generation_async, args=(url, test_case_types, url_key), daemon=True).start()
+                threading.Thread(target=_run_url_generation_async, args=(url, test_case_types, url_key, current_user.get('id') if current_user else None), daemon=True).start()
 
                 # Immediately return so frontend can start polling progress
                 return jsonify({'url_key': url_key})
@@ -409,15 +492,25 @@ def generate():
                 return jsonify({'error': f'Error processing URL content: {str(e)}'}), 500
 
         elif source_type == 'image':
+            logger.info("=== IMAGE SOURCE TYPE DETECTED ===")
+            logger.info(f"Request files: {list(request.files.keys())}")
+            logger.info(f"Request form data: {list(request.form.keys())}")
+            
             # Initialize item_ids for image source type (empty list since images don't have item IDs)
             item_ids = []
             
             # Handle image upload
             if 'imageFile' not in request.files:
+                logger.error("No imageFile in request.files")
                 return jsonify({'error': 'No image file uploaded'}), 400
                 
             image_file = request.files['imageFile']
+            logger.info(f"Image file received: {image_file.filename}, size: {len(image_file.read()) if hasattr(image_file, 'read') else 'unknown'}")
+            # Reset file pointer after reading
+            image_file.seek(0)
+            
             if image_file.filename == '':
+                logger.error("Empty filename received")
                 return jsonify({'error': 'No selected file'}), 400
                 
             # Create unique identifier for the image
@@ -565,7 +658,7 @@ def generate():
                         'source_type': 'image',
                         'image_id': unique_id,
                         'test_data': structured_test_data  # Add structured data for frontend display
-                    }, unique_id, 'image')
+                    }, unique_id, 'image', current_user['id'] if current_user else None)
                     
                     # Track successful image test case generation with timing
                     generation_end_time = datetime.utcnow()
@@ -593,6 +686,11 @@ def generate():
                                 "test_case_types": selected_types,
                                 "item_count": 1
                             }
+                            
+                            # Add user information if available
+                            if current_user:
+                                event_data['user_id'] = current_user.get('id')
+                                event_data['user_role'] = current_user.get('role')
                             mongo_handler.track_event(event_data)
                     except Exception as e:
                         logger.error(f"Failed to track image test case generation: {str(e)}")
@@ -620,7 +718,22 @@ def generate():
                 # Reset the generation status
                 with generation_status['lock']:
                     generation_status['is_generating'] = False
-                return jsonify({'error': f'Image processing error: {str(e)}. Please ensure the image is clear and in a supported format (JPG, PNG, GIF).'}), 500
+                
+                # Log the full error for debugging
+                logger.error(f"Image processing error: {str(e)}", exc_info=True)
+                
+                # Return a more specific error message
+                error_message = f'Image processing error: {str(e)}. Please ensure the image is clear and in a supported format (JPG, PNG, GIF).'
+                
+                # Check for common error patterns and provide better messages
+                if "api key" in str(e).lower() or "authorization" in str(e).lower():
+                    error_message = "OpenAI API authentication failed. Please check your API key configuration."
+                elif "model_not_found" in str(e).lower() or "invalid_request_error" in str(e).lower():
+                    error_message = "The OpenAI model required for image processing is not available. Please check your OpenAI account access."
+                elif "quota" in str(e).lower() or "rate limit" in str(e).lower():
+                    error_message = "OpenAI API quota exceeded or rate limited. Please try again later."
+                
+                return jsonify({'error': error_message}), 500
                 
         else:
             # Existing Jira/Azure logic
@@ -847,7 +960,7 @@ def generate():
                         'test_cases': formatted_test_cases,
                         'source_type': source_type,
                         'item_ids': item_ids
-                    }, item_ids[0] if item_ids else None, source_type)
+                    }, item_ids[0] if item_ids else None, source_type, current_user['id'] if current_user else None)
                     # Expose the url_key for redirect logic
                     with generation_status['lock']:
                         generation_status['final_url_key'] = url_key
@@ -878,6 +991,11 @@ def generate():
                                 "test_case_types": selected_types,
                                 "item_count": len(item_ids)
                             }
+                            
+                            # Add user information if available
+                            if current_user:
+                                event_data['user_id'] = current_user.get('id')
+                                event_data['user_role'] = current_user.get('role')
                             mongo_handler.track_event(event_data)
                     except Exception as e:
                         logger.error(f"Failed to track test case generation: {str(e)}")
@@ -1313,6 +1431,20 @@ mongo_handler = MongoHandler()
 @app.route('/api/share', methods=['POST'])
 def share_test_case():
     try:
+        # Check if user is authenticated
+        current_user = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                auth_mongo_handler = MongoHandler()
+                user_info = auth_mongo_handler.verify_jwt_token(token)
+                if user_info and user_info.get('success'):
+                    current_user = user_info['user']
+            except Exception as e:
+                logger.warning(f"Failed to verify auth token: {str(e)}")
+                # Continue without authentication
+
         # Handle both JSON and form data for cloud compatibility
         if request.is_json:
             data = request.json
@@ -1338,7 +1470,8 @@ def share_test_case():
         if not test_data:
             return jsonify({'error': 'No test data provided'}), 400
 
-        # Ensure we have a valid MongoDB handler
+        # Create a new MongoDB handler for this request
+        mongo_handler = MongoHandler()
         if not mongo_handler:
             logger.error("MongoDB handler not initialized")
             return jsonify({'error': 'Database connection error'}), 500
@@ -1346,9 +1479,9 @@ def share_test_case():
         # Save the test case with status values
         # Use item_ids if provided, otherwise fall back to item_id
         if item_ids and len(item_ids) > 0:
-            url_key = mongo_handler.save_test_case(test_data, item_ids[0] if len(item_ids) == 1 else item_ids, source_type)
+            url_key = mongo_handler.save_test_case(test_data, item_ids[0] if len(item_ids) == 1 else item_ids, source_type, current_user['id'] if current_user else None)
         else:
-            url_key = mongo_handler.save_test_case(test_data, item_id, source_type)
+            url_key = mongo_handler.save_test_case(test_data, item_id, source_type, current_user['id'] if current_user else None)
         
         # If status values were provided, save them too
         if status_values:
@@ -1923,6 +2056,20 @@ def track_analytics():
             "test_case_types": data.get("test_case_types", []),
             "item_count": data.get("item_count", 0)
         }
+
+        # If authenticated, attach user_id for RBAC-aware analytics
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                mh = MongoHandler()
+                verification = mh.verify_jwt_token(token)
+                if verification and verification.get('success'):
+                    event_user = verification['user']
+                    event_data['user_id'] = event_user.get('id')
+                    event_data['user_role'] = event_user.get('role')
+            except Exception:
+                pass
         
         mongo_handler = MongoHandler()
         success = mongo_handler.track_event(event_data)
@@ -1954,6 +2101,20 @@ def track_session():
             "country": data.get("country"),
             "city": data.get("city")
         }
+
+        # Attach user if available
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                mh = MongoHandler()
+                verification = mh.verify_jwt_token(token)
+                if verification and verification.get('success'):
+                    user = verification['user']
+                    session_data['user_id'] = user.get('id')
+                    session_data['user_role'] = user.get('role')
+            except Exception:
+                pass
         
         mongo_handler = MongoHandler()
         success = mongo_handler.track_user_session(session_data)
@@ -1969,8 +2130,24 @@ def track_session():
 
 @app.route('/api/analytics/summary', methods=['GET'])
 def get_analytics_summary():
-    """Get analytics summary"""
+    """Get analytics summary with RBAC: admin gets system-wide, users get their own."""
     try:
+        # Verify auth token
+        auth_header = request.headers.get('Authorization')
+        mh = MongoHandler()
+        current_user = None
+        if auth_header and auth_header.startswith('Bearer '):
+            try:
+                token = auth_header.split(' ')[1]
+                user_info = mh.verify_jwt_token(token)
+                if user_info and user_info.get('success'):
+                    current_user = user_info['user']
+            except Exception:
+                pass
+
+        if not current_user:
+            return jsonify({'success': False, 'message': 'Authentication required'}), 401
+
         # Parse date filters
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
@@ -1981,15 +2158,25 @@ def get_analytics_summary():
         # Fallback to days parameter if no date range provided
         days = request.args.get('days', 30, type=int)
         
-        mongo_handler = MongoHandler()
+        mongo_handler = mh
         
-        # Pass all filters to the summary function
-        summary = mongo_handler.get_analytics_summary(
-            start_date=start_date,
-            end_date=end_date,
-            days=days,
-            source_type=source_type
-        )
+        if current_user.get('role') == 'admin':
+            # Admin: full system analytics
+            summary = mongo_handler.get_analytics_summary(
+                start_date=start_date,
+                end_date=end_date,
+                days=days,
+                source_type=source_type
+            )
+        else:
+            # Regular user: same summary schema but filtered by user_id
+            summary = mongo_handler.get_analytics_summary(
+                start_date=start_date,
+                end_date=end_date,
+                days=days,
+                source_type=source_type,
+                user_id=current_user.get('id')
+            )
         
         if summary:
             return jsonify({'success': True, 'data': summary})
@@ -2002,8 +2189,18 @@ def get_analytics_summary():
 
 @app.route('/api/analytics/detailed', methods=['GET'])
 def get_detailed_analytics():
-    """Get detailed analytics with filters"""
+    """Get detailed analytics with filters. Admin only."""
     try:
+        # RBAC: admin only
+        auth_header = request.headers.get('Authorization')
+        if not (auth_header and auth_header.startswith('Bearer ')):
+            return jsonify({'success': False, 'message': 'Authentication required'}), 401
+        mh = MongoHandler()
+        token = auth_header.split(' ')[1]
+        verification = mh.verify_jwt_token(token)
+        if not verification or not verification.get('success') or verification['user'].get('role') != 'admin':
+            return jsonify({'success': False, 'message': 'Forbidden'}), 403
+
         filters = {}
         
         # Parse date filters and normalize to full-day bounds
@@ -2052,10 +2249,63 @@ def get_detailed_analytics():
         logger.error(f"Error getting detailed analytics: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/test-cases/recent', methods=['GET'])
+def get_recent_test_cases():
+    """Get recent test cases for the authenticated user"""
+    try:
+        # Verify auth token
+        auth_header = request.headers.get('Authorization')
+        if not (auth_header and auth_header.startswith('Bearer ')):
+            return jsonify({'success': False, 'message': 'Authentication required'}), 401
+        
+        mh = MongoHandler()
+        token = auth_header.split(' ')[1]
+        user_info = mh.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get recent test cases for this user
+        test_cases = mh.get_user_test_cases(user_id, limit=10)
+        
+        if test_cases:
+            # Convert ObjectId to string for JSON serialization
+            for tc in test_cases:
+                if '_id' in tc:
+                    tc['_id'] = str(tc['_id'])
+                if 'created_at' in tc:
+                    tc['created_at'] = tc['created_at'].isoformat()
+            
+            return jsonify({
+                'success': True,
+                'test_cases': test_cases
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'test_cases': []
+            })
+            
+    except Exception as e:
+        logger.error(f"Error getting recent test cases: {str(e)}")
+        return jsonify({'success': False, 'message': 'Failed to retrieve test cases'}), 500
+
 @app.route('/api/analytics/errors', methods=['GET'])
 def get_error_analytics():
-    """Get error analytics from MongoDB"""
+    """Get error analytics from MongoDB (admin only)"""
     try:
+        # RBAC: admin only
+        auth_header = request.headers.get('Authorization')
+        if not (auth_header and auth_header.startswith('Bearer ')):
+            return jsonify({'success': False, 'message': 'Authentication required'}), 401
+        mh = MongoHandler()
+        token = auth_header.split(' ')[1]
+        verification = mh.verify_jwt_token(token)
+        if not verification or not verification.get('success') or verification['user'].get('role') != 'admin':
+            return jsonify({'success': False, 'message': 'Forbidden'}), 403
+        
         from utils.error_logger import error_logger
         
         # Get query parameters
@@ -2717,29 +2967,307 @@ def export_excel():
         logger.error(f"Error exporting to Excel: {str(e)}")
         return jsonify({'error': f'Export failed: {str(e)}'}), 500
 
+# Authentication API routes
+@app.route('/api/auth/signup', methods=['POST'])
+def signup_api():
+    """Handle user registration"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        name = data.get('name', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        # Validation
+        if not name or len(name) < 2:
+            return jsonify({'success': False, 'message': 'Name must be at least 2 characters long'}), 400
+        
+        if not email or '@' not in email:
+            return jsonify({'success': False, 'message': 'Please provide a valid email address'}), 400
+        
+        if not password or len(password) < 8:
+            return jsonify({'success': False, 'message': 'Password must be at least 8 characters long'}), 400
+        
+        # Create user
+        mongo_handler = MongoHandler()
+        result = mongo_handler.create_user(email, password, name)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Account created successfully! Please sign in.'
+            })
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 400
+            
+    except Exception as e:
+        logger.error(f"Error in signup API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred during registration'}), 500
+
+@app.route('/api/auth/signin', methods=['POST'])
+def signin_api():
+    """Handle user login"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        # Validation
+        if not email or not password:
+            return jsonify({'success': False, 'message': 'Email and password are required'}), 400
+        
+        # Authenticate user
+        mongo_handler = MongoHandler()
+        result = mongo_handler.authenticate_user(email, password)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': 'Login successful!',
+                'token': result['token'],
+                'user': result['user']
+            })
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 401
+            
+    except Exception as e:
+        logger.error(f"Error in signin API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred during login'}), 500
+
+@app.route('/api/auth/dashboard', methods=['GET'])
+def dashboard_api():
+    """Get user dashboard data"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get user's test cases
+        test_cases = mongo_handler.get_user_test_cases(user_id)
+        
+        # Calculate statistics with robust datetime handling
+        total_count = len(test_cases)
+        current_month = datetime.now().month
+        current_year = datetime.now().year
+        
+        this_month_count = 0
+        last_generated = 'Never'
+        
+        if test_cases:
+            for tc in test_cases:
+                created_at = tc.get('created_at')
+                if created_at:
+                    try:
+                        # Handle both string and datetime objects
+                        if isinstance(created_at, str):
+                            # Try parsing as ISO format
+                            parsed_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        else:
+                            # It's already a datetime object
+                            parsed_date = created_at
+                        
+                        # Check if it's from current month/year
+                        if parsed_date.month == current_month and parsed_date.year == current_year:
+                            this_month_count += 1
+                            
+                    except Exception as e:
+                        logger.warning(f"Failed to parse date for test case {tc.get('_id')}: {str(e)}")
+                        continue
+            
+            # Find the latest test case
+            try:
+                latest = max(test_cases, key=lambda x: x.get('created_at', datetime.min))
+                if latest.get('created_at'):
+                    created_at = latest['created_at']
+                    if isinstance(created_at, str):
+                        last_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    else:
+                        last_date = created_at
+                    last_generated = last_date.strftime('%B %d, %Y')
+            except Exception as e:
+                logger.warning(f"Failed to determine latest test case: {str(e)}")
+                last_generated = 'Unknown'
+        
+        stats = {
+            'total': total_count,
+            'this_month': this_month_count,
+            'last_generated': last_generated
+        }
+        
+        return jsonify({
+            'success': True,
+            'test_cases': test_cases,
+            'stats': stats
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in dashboard API: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'message': 'An error occurred while loading dashboard'}), 500
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password_api():
+    """Handle password reset request"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        email = data.get('email', '').strip()
+        
+        # Validation
+        if not email or '@' not in email:
+            return jsonify({'success': False, 'message': 'Please provide a valid email address'}), 400
+        
+        # Check if user exists
+        mongo_handler = MongoHandler()
+        user = mongo_handler.users_collection.find_one({'email': email})
+        
+        if not user:
+            # Don't reveal if user exists or not for security
+            return jsonify({
+                'success': True,
+                'message': 'If an account with that email exists, a password reset link has been sent.'
+            })
+        
+        # In a real implementation, you would:
+        # 1. Generate a secure reset token
+        # 2. Store it in the database with expiration
+        # 3. Send an email with the reset link
+        # 4. For now, we'll just return a success message
+        
+        logger.info(f"Password reset requested for email: {email}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'If an account with that email exists, a password reset link has been sent. Please check your email.'
+        })
+            
+    except Exception as e:
+        logger.error(f"Error in reset password API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred during password reset'}), 500
+
+# Admin API endpoints
+@app.route('/api/auth/system-overview', methods=['GET'])
+def system_overview_api():
+    """Get system overview (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get system overview
+        system_overview = mongo_handler.get_system_overview(user_id)
+        
+        if system_overview['success']:
+            return jsonify(system_overview)
+        else:
+            return jsonify({'success': False, 'message': system_overview['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in system overview API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading system overview'}), 500
+
+@app.route('/api/auth/recent-users', methods=['GET'])
+def recent_users_api():
+    """Get recent users (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get recent users
+        users = mongo_handler.get_all_users(user_id)
+        
+        if users['success']:
+            # Return only first 10 users for recent users
+            recent_users = users['users'][:10] if 'users' in users else []
+            return jsonify({
+                'success': True,
+                'users': recent_users
+            })
+        else:
+            return jsonify({'success': False, 'message': users['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in recent users API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading recent users'}), 500
+
 # Error handlers for custom error pages
 @app.errorhandler(404)
 def not_found_error(error):
     """Handle 404 Not Found errors"""
     logger.warning(f"404 error: {request.url}")
+    # Return JSON for API endpoints, HTML for regular pages
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'API endpoint not found'}), 404
     return render_template('error.html', error_message="The page you're looking for doesn't exist. Please check the URL and try again."), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 Internal Server errors"""
     logger.error(f"500 error: {str(error)}")
+    # Return JSON for API endpoints, HTML for regular pages
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Internal server error occurred'}), 500
     return render_template('error.html', error_message="Something went wrong on our end. Please try again later."), 500
 
 @app.errorhandler(403)
 def forbidden_error(error):
     """Handle 403 Forbidden errors"""
     logger.warning(f"403 error: {request.url}")
+    # Return JSON for API endpoints, HTML for regular pages
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Access forbidden'}), 403
     return render_template('error.html', error_message="You don't have permission to access this resource."), 403
 
 @app.errorhandler(400)
 def bad_request_error(error):
     """Handle 400 Bad Request errors"""
     logger.warning(f"400 error: {request.url}")
+    # Return JSON for API endpoints, HTML for regular pages
+    if request.path.startswith('/api/'):
+        return jsonify({'error': 'Bad request'}), 400
     return render_template('error.html', error_message="The request was invalid. Please check your input and try again."), 400
 
 @app.after_request
