@@ -3485,19 +3485,41 @@
         }
 
         // Copy share URL functionality
-        document.getElementById('copyShareUrlBtn').addEventListener('click', async function() {
-            const urlInput = document.getElementById('shareUrlInput');
-            try {
-                await navigator.clipboard.writeText(urlInput.value);
-                document.getElementById('copySuccess').classList.remove('d-none');
-                setTimeout(() => {
-                    document.getElementById('copySuccess').classList.add('d-none');
-                }, 2000);
-            } catch (err) {
-                console.error('Failed to copy:', err);
-                alert('Failed to copy URL. Please copy it manually.');
-            }
-        });
+        const copyShareUrlBtn = document.getElementById('copyShareUrlBtn');
+        if (copyShareUrlBtn) {
+            copyShareUrlBtn.addEventListener('click', async function() {
+                const urlInput = document.getElementById('shareUrlInput');
+                try {
+                    await navigator.clipboard.writeText(urlInput.value);
+                    document.getElementById('copySuccess').classList.remove('d-none');
+                    setTimeout(() => {
+                        document.getElementById('copySuccess').classList.add('d-none');
+                    }, 2000);
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    alert('Failed to copy URL. Please copy it manually.');
+                }
+            });
+        }
+
+        // Debounce function for better performance
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Debounced chart creation for better performance
+        const debouncedCreateCharts = debounce(() => {
+            createStatusChart();
+            createTypeChart();
+        }, 300);
 
         // Analytics Functions
         function showAnalytics() {
@@ -3531,25 +3553,6 @@
                 debouncedCreateCharts();
             }
         }
-
-        // Debounce function for better performance
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Debounced chart creation for better performance
-        const debouncedCreateCharts = debounce(() => {
-            createStatusChart();
-            createTypeChart();
-        }, 300);
 
         function createAnalyticsCharts() {
             debouncedCreateCharts();
