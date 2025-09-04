@@ -149,36 +149,79 @@ def generate_test_case_from_image(image_path: str, selected_types: List[str] = N
                 logger.warning(f"Skipping unknown test type: {test_type}")
                 continue
 
+            # prompt = f"""
+            # Analyze the image thoroughly and generate test cases for {test_type} (up to {config['max_count']} maximum).
+            # Focus ONLY on {config['description']}.
+            
+            # IMPORTANT: Analyze the image content thoroughly and generate the appropriate number of relevant test cases.
+            # Consider the complexity and scope of the image - generate only what's truly needed.
+            # Do not force additional test cases just to reach the maximum.
+            
+            # ANALYSIS REQUIREMENTS:
+            # - Analyze all visual elements: buttons, forms, text, images, icons, layout
+            # - Consider all possible user interactions visible in the image
+            # - Identify edge cases and boundary conditions
+            # - Consider different user roles and access levels if visible
+            # - Think about potential failure scenarios and error conditions
+            # - Analyze responsive design and cross-platform compatibility if applicable
+
+            # Use this format for each test case:
+
+            # Title: {config['prefix']}_[Number]_[Brief_Title]
+            # Scenario: [Detailed scenario description covering all aspects visible in the image]
+            # Steps to reproduce:
+            # 1. [Step 1]
+            # 2. [Step 2]
+            # ...
+            # Expected Result: [What should happen]
+            # Priority: [High/Medium/Low]
+            
+            # Ensure each test case covers a unique scenario and adds value.
+            # Focus on the most important and relevant test scenarios.
+            # """
             prompt = f"""
-            Analyze the image thoroughly and generate test cases for {test_type} (up to {config['max_count']} maximum).
-            Focus ONLY on {config['description']}.
-            
-            IMPORTANT: Analyze the image content thoroughly and generate the appropriate number of relevant test cases.
-            Consider the complexity and scope of the image - generate only what's truly needed.
-            Do not force additional test cases just to reach the maximum.
-            
-            ANALYSIS REQUIREMENTS:
-            - Analyze all visual elements: buttons, forms, text, images, icons, layout
-            - Consider all possible user interactions visible in the image
-            - Identify edge cases and boundary conditions
-            - Consider different user roles and access levels if visible
-            - Think about potential failure scenarios and error conditions
-            - Analyze responsive design and cross-platform compatibility if applicable
+            You are a senior QA engineer. Your task is to create **clear, detailed, and professional test cases** based on the provided image.
 
-            Use this format for each test case:
+            Generate test cases for {test_type} (up to {config['max_count']} maximum).  
+            Focus **exclusively** on {config['description']}.
 
-            Title: {config['prefix']}_[Number]_[Brief_Title]
-            Scenario: [Detailed scenario description covering all aspects visible in the image]
-            Steps to reproduce:
-            1. [Step 1]
-            2. [Step 2]
-            ...
-            Expected Result: [What should happen]
-            Priority: [High/Medium/Low]
-            
-            Ensure each test case covers a unique scenario and adds value.
-            Focus on the most important and relevant test scenarios.
+            ⚡ GUIDELINES:
+            - Analyze the image carefully before generating test cases.
+            - Consider usability, workflows, and potential points of failure.
+            - Only generate test cases that are **realistic, relevant, and valuable**.
+            - Do not add filler cases to reach the maximum.
+
+            🔍 ANALYSIS CHECKLIST:
+            1. Identify all visible UI elements: buttons, inputs, menus, text, images, icons, layout.
+            2. Consider different user interactions and workflows the image suggests.
+            3. Think about role-based access or permission levels if implied.
+            4. Include edge cases, error states, and unusual user behaviors.
+            5. Consider platform variations (desktop, mobile, tablet) if applicable.
+            6. Prioritize scenarios that impact **core functionality or user experience**.
+
+            ✅ STRICT FORMAT for each test case:
+
+            Title: {config['prefix']}_[SequentialNumber]_[Meaningful_Brief_Title]  
+            Scenario: [One or two sentences describing the purpose of the test]  
+            Preconditions: [Any setup, environment, or assumptions required before execution]  
+            Steps to Reproduce:  
+            1. [Step 1 in clear, action-oriented language]  
+            2. [Step 2]  
+            ...  
+            Expected Result: [Specific, measurable expected behavior]  
+            Priority: [High / Medium / Low]  
+            Test Data: [If applicable – include input values, file names, sample data, etc.]  
+
+            ⚡ RULES:
+            - Every test case must be **unique and non-redundant**.  
+            - Write in a way that a QA engineer can **immediately execute without assumptions**.  
+            - Expected results should be **precise, not vague**.  
+            - Include **positive, negative, and edge cases** where applicable.  
+            - Keep the output structured and professional.
+
             """
+
+
 
             test_cases = None
             last_error = None

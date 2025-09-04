@@ -82,21 +82,103 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             logger.warning(f"Skipping unknown test type: {test_type}")
             continue
 
+        # # Prepare the prompt based on source type
+        # base_prompt = f"""
+        # Use this format for each test case:
+
+        # Title: {config['prefix']}_[Number]_[Brief_Title]
+        # Scenario: [Detailed scenario description]
+        # Steps to reproduce:
+        # 1. [Step 1]
+        # 2. [Step 2]
+        # ...
+        # Expected Result: [What should happen]
+        # Actual Result: [To be filled during execution]
+        # Priority: [High/Medium/Low]
+        
+        # Ensure each test case covers a unique scenario and adds value.
+        # """
+
+        # if source_type == 'url':
+        #     prompt = f"""
+        #     Website URL: {url}
+        #     Content Description: {description}
+
+        #     Generate test cases for {config['description']} (up to {config['max_count']} maximum).
+        #     Focus on testing the website's functionality, user interface, and user experience.
+            
+        #     IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
+        #     Consider the complexity and scope of the content - generate only what's truly needed.
+        #     Do not force additional test cases just to reach the maximum.
+            
+        #     For each test case:
+        #     1. Use the prefix {config['prefix']}
+        #     2. Focus exclusively on {test_type} scenarios for web testing
+        #     3. Include detailed steps that a QA engineer would follow
+        #     4. Specify expected results for web interactions
+        #     5. Consider cross-browser compatibility if relevant
+        #     6. Include mobile responsiveness testing if applicable
+        #     7. Do not mix with other test types
+        #     8. Ensure each test case covers a unique scenario
+
+        #     {base_prompt}
+        #     """
+        # else:
+        #     prompt = f"""
+        #     Task Title: {summary}
+        #     Task Description: {description}
+
+        #     Generate test cases for {config['description']} (up to {config['max_count']} maximum).
+            
+        #     IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
+        #     Consider the complexity and scope of the content - generate only what's truly needed.
+        #     Do not force additional test cases just to reach the maximum.
+            
+        #     ANALYSIS REQUIREMENTS:
+        #     - Read and analyze the task description completely
+        #     - Identify all functional components mentioned
+        #     - Consider all possible user interactions
+        #     - Think about edge cases and boundary conditions
+        #     - Identify potential failure scenarios
+        #     - Consider different user roles and permissions if applicable
+            
+        #     For each test case:
+        #     1. Use the prefix {config['prefix']}
+        #     2. Focus exclusively on {test_type} scenarios
+        #     3. Include detailed steps
+        #     4. Specify expected results
+        #     5. Do not mix with other test types
+        #     6. Ensure each test case tests a unique scenario
+
+        #     {base_prompt}
+        #     """
+
+
         # Prepare the prompt based on source type
         base_prompt = f"""
-        Use this format for each test case:
+        You are an expert QA engineer. Your task is to create **clear, detailed, and professional test cases**.
 
-        Title: {config['prefix']}_[Number]_[Brief_Title]
-        Scenario: [Detailed scenario description]
-        Steps to reproduce:
-        1. [Step 1]
+        ✅ STRICT FORMAT for each test case:
+
+        Title: {config['prefix']}_[SequentialNumber]_[Meaningful_Brief_Title]
+        Scenario: [One or two lines describing the intent of the test]
+        Preconditions: [State assumptions, setup, or required data before execution]
+        Steps to Reproduce:
+        1. [Step 1 in action-oriented language]
         2. [Step 2]
         ...
-        Expected Result: [What should happen]
-        Actual Result: [To be filled during execution]
-        Priority: [High/Medium/Low]
-        
-        Ensure each test case covers a unique scenario and adds value.
+        Expected Result: [Clear, testable outcome of the steps]
+        Actual Result: [Leave as 'To be filled during execution']
+        Priority: [High / Medium / Low]
+        Test Data: [If applicable – specify input values, files, or environment details]
+
+        ⚡ RULES:
+        - Each test case must cover a **unique and valuable scenario**.
+        - Steps must be **clear, actionable, and written like instructions to a QA engineer**.
+        - Expected Results must be **specific and measurable** (not vague like “It should work”).
+        - Do NOT duplicate scenarios.
+        - Do NOT mix with other test types.
+        - Use professional QA terminology.
         """
 
         if source_type == 'url':
@@ -104,22 +186,23 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             Website URL: {url}
             Content Description: {description}
 
-            Generate test cases for {config['description']} (up to {config['max_count']} maximum).
-            Focus on testing the website's functionality, user interface, and user experience.
-            
-            IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
-            Consider the complexity and scope of the content - generate only what's truly needed.
-            Do not force additional test cases just to reach the maximum.
-            
-            For each test case:
-            1. Use the prefix {config['prefix']}
-            2. Focus exclusively on {test_type} scenarios for web testing
-            3. Include detailed steps that a QA engineer would follow
-            4. Specify expected results for web interactions
-            5. Consider cross-browser compatibility if relevant
-            6. Include mobile responsiveness testing if applicable
-            7. Do not mix with other test types
-            8. Ensure each test case covers a unique scenario
+            Generate **up to {config['max_count']} test cases** for {config['description']}.
+
+            ⚡ ANALYSIS REQUIREMENTS:
+            - Carefully review the website’s structure and functionality
+            - Think about real-world user workflows and how they may fail
+            - Consider UI, UX, and interaction edge cases
+            - Include cross-browser compatibility (Chrome, Firefox, Safari, Edge)
+            - Consider mobile responsiveness (desktop vs. mobile behavior)
+
+            ⚡ TEST CASE REQUIREMENTS:
+            1. Prefix all test case titles with {config['prefix']}
+            2. Focus **only** on {test_type} test scenarios for web testing
+            3. Write **detailed, step-by-step instructions** that can be executed by QA
+            4. Specify **exact expected results** for every step or final outcome
+            5. Ensure scenarios are **unique and non-overlapping**
+            6. Include both **happy paths and edge cases**
+            7. Add **test data** where necessary
 
             {base_prompt}
             """
@@ -128,30 +211,27 @@ def generate_test_case(description: str, summary: str = "", selected_types: List
             Task Title: {summary}
             Task Description: {description}
 
-            Generate test cases for {config['description']} (up to {config['max_count']} maximum).
-            
-            IMPORTANT: Analyze the content thoroughly and generate the appropriate number of relevant test cases.
-            Consider the complexity and scope of the content - generate only what's truly needed.
-            Do not force additional test cases just to reach the maximum.
-            
-            ANALYSIS REQUIREMENTS:
-            - Read and analyze the task description completely
-            - Identify all functional components mentioned
-            - Consider all possible user interactions
-            - Think about edge cases and boundary conditions
-            - Identify potential failure scenarios
-            - Consider different user roles and permissions if applicable
-            
-            For each test case:
-            1. Use the prefix {config['prefix']}
-            2. Focus exclusively on {test_type} scenarios
-            3. Include detailed steps
-            4. Specify expected results
-            5. Do not mix with other test types
-            6. Ensure each test case tests a unique scenario
+            Generate **up to {config['max_count']} test cases** for {config['description']}.
+
+            ⚡ ANALYSIS REQUIREMENTS:
+            - Carefully analyze the task description
+            - Identify **all functional components and user actions**
+            - Think about positive, negative, and edge case scenarios
+            - Consider different **user roles, permissions, and data inputs**
+            - Anticipate possible **failure points** or boundary conditions
+
+            ⚡ TEST CASE REQUIREMENTS:
+            1. Prefix all test case titles with {config['prefix']}
+            2. Focus **only** on {test_type} scenarios
+            3. Write **step-by-step reproducible instructions**
+            4. Provide **clear and measurable expected results**
+            5. Ensure each case is **unique and does not overlap**
+            6. Include **test data** where relevant
+            7. Include **priority level** for execution planning
 
             {base_prompt}
             """
+
 
         try:
             # Get API key
