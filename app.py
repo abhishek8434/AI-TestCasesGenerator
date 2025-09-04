@@ -3233,6 +3233,355 @@ def recent_users_api():
         logger.error(f"Error in recent users API: {str(e)}")
         return jsonify({'success': False, 'message': 'An error occurred while loading recent users'}), 500
 
+@app.route('/api/auth/all-users', methods=['GET'])
+def all_users_api():
+    """Get all users with pagination (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get pagination parameters
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
+        
+        # Get all users
+        users = mongo_handler.get_all_users_paginated(user_id, page, per_page)
+        
+        if users['success']:
+            return jsonify(users)
+        else:
+            return jsonify({'success': False, 'message': users['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in all users API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading users'}), 500
+
+@app.route('/api/auth/system-health', methods=['GET'])
+def system_health_api():
+    """Get system health status (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get system health
+        health = mongo_handler.get_system_health(user_id)
+        
+        if health['success']:
+            return jsonify(health)
+        else:
+            return jsonify({'success': False, 'message': health['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in system health API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while checking system health'}), 500
+
+@app.route('/api/auth/user-analytics', methods=['GET'])
+def user_analytics_api():
+    """Get detailed user analytics (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get user analytics
+        analytics = mongo_handler.get_detailed_user_analytics(user_id)
+        
+        if analytics['success']:
+            return jsonify(analytics)
+        else:
+            return jsonify({'success': False, 'message': analytics['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in user analytics API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading user analytics'}), 500
+
+@app.route('/api/auth/create-user', methods=['POST'])
+def create_user_api():
+    """Create a new user (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get user data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        # Create user
+        result = mongo_handler.create_user_by_admin(user_id, data)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 400
+            
+    except Exception as e:
+        logger.error(f"Error in create user API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while creating user'}), 500
+
+@app.route('/api/auth/export-data', methods=['GET'])
+def export_data_api():
+    """Export system data (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Export data
+        export_result = mongo_handler.export_system_data(user_id)
+        
+        if export_result['success']:
+            from flask import Response
+            from bson import json_util
+            # Use BSON json_util to safely serialize datetime and ObjectId types
+            payload = json_util.dumps(export_result['data'], indent=2)
+            return Response(
+                payload,
+                mimetype='application/json',
+                headers={
+                    'Content-Disposition': f'attachment; filename=system-export-{datetime.now().strftime("%Y%m%d")}.json'
+                }
+            )
+        else:
+            return jsonify({'success': False, 'message': export_result['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in export data API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while exporting data'}), 500
+
+@app.route('/api/auth/system-logs', methods=['GET'])
+def system_logs_api():
+    """Get system logs (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get system logs
+        logs = mongo_handler.get_system_logs(user_id)
+        
+        if logs['success']:
+            return jsonify(logs)
+        else:
+            return jsonify({'success': False, 'message': logs['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in system logs API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading system logs'}), 500
+
+@app.route('/api/auth/backup-system', methods=['POST'])
+def backup_system_api():
+    """Create system backup (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Create backup
+        backup_result = mongo_handler.create_system_backup(user_id)
+        
+        if backup_result['success']:
+            return jsonify(backup_result)
+        else:
+            return jsonify({'success': False, 'message': backup_result['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in backup system API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while creating backup'}), 500
+
+@app.route('/api/auth/system-settings', methods=['POST'])
+def system_settings_api():
+    """Update system settings (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        user_id = user_info['user']['id']
+        
+        # Get settings data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        # Update settings
+        result = mongo_handler.update_system_settings(user_id, data)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 400
+            
+    except Exception as e:
+        logger.error(f"Error in system settings API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while updating settings'}), 500
+
+@app.route('/api/auth/user-details/<user_id>', methods=['GET'])
+def user_details_api(user_id):
+    """Get user details (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        admin_user_id = user_info['user']['id']
+        
+        # Get user details
+        result = mongo_handler.get_user_details(admin_user_id, user_id)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 403
+            
+    except Exception as e:
+        logger.error(f"Error in user details API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while loading user details'}), 500
+
+@app.route('/api/auth/update-user/<user_id>', methods=['PUT'])
+def update_user_api(user_id):
+    """Update user (admin only)"""
+    try:
+        # Get token from Authorization header
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'message': 'Authorization token required'}), 401
+        
+        token = auth_header.split(' ')[1]
+        
+        # Verify token and get user info
+        mongo_handler = MongoHandler()
+        user_info = mongo_handler.verify_jwt_token(token)
+        
+        if not user_info or not user_info.get('success'):
+            return jsonify({'success': False, 'message': 'Invalid or expired token'}), 401
+        
+        admin_user_id = user_info['user']['id']
+        
+        # Get user data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        # Update user
+        result = mongo_handler.update_user_by_admin(admin_user_id, user_id, data)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'message': result['message']}), 400
+            
+    except Exception as e:
+        logger.error(f"Error in update user API: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while updating user'}), 500
+
 # Error handlers for custom error pages
 @app.errorhandler(404)
 def not_found_error(error):
