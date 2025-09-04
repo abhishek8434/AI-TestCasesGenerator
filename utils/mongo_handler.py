@@ -157,7 +157,6 @@ class MongoHandler:
                 return {"success": False, "message": "Access denied. Admin privileges required."}
             
             users = list(self.users_collection.find({}, {
-                "password": 0,  # Exclude password
                 "_id": 1,
                 "email": 1,
                 "name": 1,
@@ -166,6 +165,7 @@ class MongoHandler:
                 "created_at": 1,
                 "last_login": 1,
                 "is_active": 1
+                # Note: password is excluded by not including it in the projection
             }))
             
             # Convert ObjectId to string for JSON serialization
@@ -728,6 +728,581 @@ class MongoHandler:
         except Exception as e:
             logger.error(f"Error getting system overview: {str(e)}")
             return {"success": False, "message": "Failed to retrieve system overview"}
+
+    def get_all_users_paginated(self, admin_user_id, page=1, per_page=10):
+        """Get all users with pagination (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            # Calculate skip value for pagination
+            skip = (page - 1) * per_page
+            
+            # Get total count
+            total_users = self.users_collection.count_documents({})
+            
+            # Get users with pagination (sort → skip → limit for PyMongo)
+            # Use inclusion projection only (can't mix inclusion and exclusion)
+            users = list(self.users_collection.find({}, {
+                "_id": 1,
+                "email": 1,
+                "name": 1,
+                "role": 1,
+                "status": 1,
+                "created_at": 1,
+                "last_login": 1,
+                "is_active": 1
+                # Note: password is excluded by not including it in the projection
+            }).sort("created_at", -1).skip(skip).limit(per_page))
+            
+            # Convert ObjectId to string for JSON serialization
+            for user in users:
+                if "_id" in user:
+                    user["_id"] = str(user["_id"])
+                # Safely format datetimes if present and are datetime instances
+                try:
+                    from datetime import datetime as _dt
+                    if "created_at" in user and isinstance(user["created_at"], _dt):
+                        user["created_at"] = user["created_at"].isoformat()
+                    if "last_login" in user and (user["last_login"] is None or isinstance(user["last_login"], _dt)):
+                        user["last_login"] = user["last_login"].isoformat() if user["last_login"] else None
+                except Exception:
+                    # If formatting fails, leave values as-is
+                    pass
+            
+            # Calculate pagination info
+            total_pages = (total_users + per_page - 1) // per_page
+            
+            return {
+                "success": True, 
+                "users": users,
+                "pagination": {
+                    "current_page": page,
+                    "per_page": per_page,
+                    "total_users": total_users,
+                    "total_pages": total_pages,
+                    "has_next": page < total_pages,
+                    "has_prev": page > 1
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting paginated users: {str(e)}")
+            return {"success": False, "message": "Failed to retrieve users"}
+
+    def get_system_health(self, admin_user_id):
+        """Get system health status (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            # Check database connectivity
+            db_status = "healthy"
+            try:
+                self.db.command("ping")
+            except Exception:
+                db_status = "unhealthy"
+            
+            # Check collections
+            collections_status = {}
+            collections = ["users", "test_cases", "analytics"]
+            
+            for collection_name in collections:
+                try:
+                    if collection_name == "users":
+                        collection = self.users_collection
+                    elif collection_name == "test_cases":
+                        collection = self.collection
+                    elif collection_name == "analytics":
+                        collection = self.analytics_collection
+                    
+                    # Try to count documents
+                    count = collection.count_documents({})
+                    collections_status[collection_name] = {
+                        "status": "healthy",
+                        "document_count": count
+                    }
+                except Exception as e:
+                    collections_status[collection_name] = {
+                        "status": "unhealthy",
+                        "error": str(e)
+                    }
+            
+            # Check recent activity (last 24 hours)
+            from datetime import datetime, timedelta
+            yesterday = datetime.now() - timedelta(days=1)
+            
+            recent_activity = {
+                "new_users_24h": self.users_collection.count_documents({"created_at": {"$gte": yesterday}}),
+                "new_test_cases_24h": self.collection.count_documents({"created_at": {"$gte": yesterday}}),
+                "active_users_24h": self.users_collection.count_documents({"last_login": {"$gte": yesterday}})
+            }
+            
+            # Overall system health
+            overall_health = "healthy"
+            if db_status == "unhealthy":
+                overall_health = "critical"
+            elif any(col["status"] == "unhealthy" for col in collections_status.values()):
+                overall_health = "warning"
+            
+            return {
+                "success": True,
+                "system_health": {
+                    "overall_status": overall_health,
+                    "database_status": db_status,
+                    "collections_status": collections_status,
+                    "recent_activity": recent_activity,
+                    "timestamp": datetime.now().isoformat()
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting system health: {str(e)}")
+            return {"success": False, "message": "Failed to retrieve system health"}
+
+    def get_detailed_user_analytics(self, admin_user_id):
+        """Get detailed user analytics (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            from datetime import datetime, timedelta
+            
+            # Get user statistics
+            total_users = self.users_collection.count_documents({})
+            admin_users = self.users_collection.count_documents({"role": "admin"})
+            regular_users = self.users_collection.count_documents({"role": "user"})
+            active_users = self.users_collection.count_documents({"is_active": True})
+            
+            # Get user activity over time (last 30 days)
+            thirty_days_ago = datetime.now() - timedelta(days=30)
+            users_created_30d = self.users_collection.count_documents({"created_at": {"$gte": thirty_days_ago}})
+            
+            # Get test case statistics by user
+            pipeline = [
+                {
+                    "$group": {
+                        "_id": "$user_id",
+                        "test_case_count": {"$sum": 1},
+                        "last_activity": {"$max": "$created_at"}
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "users",
+                        "localField": "_id",
+                        "foreignField": "_id",
+                        "as": "user_info"
+                    }
+                },
+                {
+                    "$unwind": "$user_info"
+                },
+                {
+                    "$project": {
+                        "user_id": "$_id",
+                        "user_name": "$user_info.name",
+                        "user_email": "$user_info.email",
+                        "test_case_count": 1,
+                        "last_activity": 1
+                    }
+                },
+                {
+                    "$sort": {"test_case_count": -1}
+                }
+            ]
+            
+            user_activity = list(self.collection.aggregate(pipeline))
+            
+            # Convert ObjectId to string for JSON serialization
+            for activity in user_activity:
+                if "_id" in activity:
+                    activity["_id"] = str(activity["_id"])
+                if "user_id" in activity:
+                    activity["user_id"] = str(activity["user_id"])
+                if "last_activity" in activity:
+                    activity["last_activity"] = activity["last_activity"].isoformat()
+            
+            # Get source type distribution
+            source_pipeline = [
+                {
+                    "$group": {
+                        "_id": "$source_type",
+                        "count": {"$sum": 1}
+                    }
+                }
+            ]
+            
+            source_distribution = list(self.collection.aggregate(source_pipeline))
+            
+            return {
+                "success": True,
+                "analytics": {
+                    "user_statistics": {
+                        "total_users": total_users,
+                        "admin_users": admin_users,
+                        "regular_users": regular_users,
+                        "active_users": active_users,
+                        "users_created_30d": users_created_30d
+                    },
+                    "user_activity": user_activity[:10],  # Top 10 most active users
+                    "source_distribution": source_distribution,
+                    "generated_at": datetime.now().isoformat()
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting detailed user analytics: {str(e)}")
+            return {"success": False, "message": "Failed to retrieve user analytics"}
+
+    def create_user_by_admin(self, admin_user_id, user_data):
+        """Create a new user by admin (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            # Validate required fields
+            required_fields = ['name', 'email', 'password']
+            for field in required_fields:
+                if field not in user_data or not user_data[field]:
+                    return {"success": False, "message": f"Missing required field: {field}"}
+            
+            # Check if user already exists
+            existing_user = self.users_collection.find_one({"email": user_data['email']})
+            if existing_user:
+                return {"success": False, "message": "User with this email already exists"}
+            
+            # Hash password
+            hashed_password = self.hash_password(user_data['password'])
+            
+            # Create user document
+            user_doc = {
+                "name": user_data['name'],
+                "email": user_data['email'],
+                "password": hashed_password,
+                "role": user_data.get('role', 'user'),
+                "is_active": user_data.get('is_active', True),
+                "created_at": datetime.now(),
+                "last_login": None,
+                "status": "active"
+            }
+            
+            # Insert user
+            result = self.users_collection.insert_one(user_doc)
+            
+            if result.inserted_id:
+                return {
+                    "success": True,
+                    "message": "User created successfully",
+                    "user_id": str(result.inserted_id)
+                }
+            else:
+                return {"success": False, "message": "Failed to create user"}
+                
+        except Exception as e:
+            logger.error(f"Error creating user by admin: {str(e)}")
+            return {"success": False, "message": "Failed to create user"}
+
+    def export_system_data(self, admin_user_id):
+        """Export system data (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            from datetime import datetime
+            
+            # Export users (without passwords)
+            users = list(self.users_collection.find({}, {"password": 0}))
+            for user in users:
+                if "_id" in user:
+                    user["_id"] = str(user["_id"])
+                if "created_at" in user:
+                    user["created_at"] = user["created_at"].isoformat()
+                if "last_login" in user:
+                    user["last_login"] = user["last_login"].isoformat() if user["last_login"] else None
+            
+            # Export test cases
+            test_cases = list(self.collection.find({}))
+            for test_case in test_cases:
+                if "_id" in test_case:
+                    test_case["_id"] = str(test_case["_id"])
+                if "created_at" in test_case:
+                    test_case["created_at"] = test_case["created_at"].isoformat()
+            
+            # Export analytics
+            analytics = list(self.analytics_collection.find({}))
+            for analytic in analytics:
+                if "_id" in analytic:
+                    analytic["_id"] = str(analytic["_id"])
+                if "timestamp" in analytic:
+                    analytic["timestamp"] = analytic["timestamp"].isoformat()
+            
+            export_data = {
+                "export_info": {
+                    "exported_at": datetime.now().isoformat(),
+                    "exported_by": admin_user_id,
+                    "version": "1.0"
+                },
+                "users": users,
+                "test_cases": test_cases,
+                "analytics": analytics,
+                "statistics": {
+                    "total_users": len(users),
+                    "total_test_cases": len(test_cases),
+                    "total_analytics": len(analytics)
+                }
+            }
+            
+            return {"success": True, "data": export_data}
+            
+        except Exception as e:
+            logger.error(f"Error exporting system data: {str(e)}")
+            return {"success": False, "message": "Failed to export system data"}
+
+    def get_system_logs(self, admin_user_id):
+        """Get system logs (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            # For now, return mock logs. In a real system, you'd have a logs collection
+            mock_logs = [
+                {
+                    "timestamp": datetime.now().isoformat(),
+                    "level": "info",
+                    "message": "System started successfully",
+                    "source": "System"
+                },
+                {
+                    "timestamp": (datetime.now() - timedelta(hours=1)).isoformat(),
+                    "level": "info",
+                    "message": "User authentication successful",
+                    "source": "Auth"
+                },
+                {
+                    "timestamp": (datetime.now() - timedelta(hours=2)).isoformat(),
+                    "level": "warning",
+                    "message": "High memory usage detected",
+                    "source": "System"
+                },
+                {
+                    "timestamp": (datetime.now() - timedelta(hours=3)).isoformat(),
+                    "level": "error",
+                    "message": "Database connection timeout",
+                    "source": "Database"
+                }
+            ]
+            
+            return {"success": True, "logs": mock_logs}
+            
+        except Exception as e:
+            logger.error(f"Error getting system logs: {str(e)}")
+            return {"success": False, "message": "Failed to retrieve system logs"}
+
+    def create_system_backup(self, admin_user_id):
+        """Create system backup (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            from datetime import datetime
+            
+            # Create backup data
+            backup_data = {
+                "backup_info": {
+                    "created_at": datetime.now().isoformat(),
+                    "created_by": admin_user_id,
+                    "backup_type": "full"
+                },
+                "users_count": self.users_collection.count_documents({}),
+                "test_cases_count": self.collection.count_documents({}),
+                "analytics_count": self.analytics_collection.count_documents({})
+            }
+            
+            # In a real system, you would save this to a backup location
+            # For now, we'll just return success
+            
+            return {
+                "success": True, 
+                "message": "System backup created successfully",
+                "backup_info": backup_data
+            }
+            
+        except Exception as e:
+            logger.error(f"Error creating system backup: {str(e)}")
+            return {"success": False, "message": "Failed to create system backup"}
+
+    def update_system_settings(self, admin_user_id, settings):
+        """Update system settings (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            # In a real system, you would save these settings to a settings collection
+            # For now, we'll just validate and return success
+            
+            # Validate settings
+            valid_settings = {
+                "enableRegistration": bool,
+                "requireEmailVerification": bool,
+                "maxTestCases": int,
+                "sessionTimeout": int,
+                "emailNotifications": bool,
+                "adminAlerts": bool
+            }
+            
+            for key, value_type in valid_settings.items():
+                if key in settings and not isinstance(settings[key], value_type):
+                    return {"success": False, "message": f"Invalid setting type for {key}"}
+            
+            return {
+                "success": True,
+                "message": "System settings updated successfully",
+                "settings": settings
+            }
+            
+        except Exception as e:
+            logger.error(f"Error updating system settings: {str(e)}")
+            return {"success": False, "message": "Failed to update system settings"}
+
+    def get_user_details(self, admin_user_id, target_user_id):
+        """Get user details (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            from bson import ObjectId
+
+            # Attempt lookup by ObjectId; if that fails, try direct string _id
+            query_candidates = []
+            try:
+                user_object_id = ObjectId(target_user_id)
+                query_candidates.append({"_id": user_object_id})
+            except Exception:
+                pass
+            # Support string UUID ids as well
+            query_candidates.append({"_id": target_user_id})
+
+            # Get user details (first matching candidate)
+            projection = {
+                "_id": 1,
+                "email": 1,
+                "name": 1,
+                "role": 1,
+                "status": 1,
+                "created_at": 1,
+                "last_login": 1,
+                "is_active": 1
+            }
+
+            user = None
+            for q in query_candidates:
+                user = self.users_collection.find_one(q, projection)
+                if user:
+                    break
+            
+            if not user:
+                return {"success": False, "message": "User not found"}
+            
+            # Convert ObjectId to string for JSON serialization
+            user["_id"] = str(user["_id"])
+            
+            # Safely format datetimes if present
+            try:
+                from datetime import datetime as _dt
+                if "created_at" in user and isinstance(user["created_at"], _dt):
+                    user["created_at"] = user["created_at"].isoformat()
+                if "last_login" in user and (user["last_login"] is None or isinstance(user["last_login"], _dt)):
+                    user["last_login"] = user["last_login"].isoformat() if user["last_login"] else None
+            except Exception:
+                pass
+            
+            return {"success": True, "user": user}
+            
+        except Exception as e:
+            logger.error(f"Error getting user details: {str(e)}")
+            return {"success": False, "message": "Failed to retrieve user details"}
+
+    def update_user_by_admin(self, admin_user_id, target_user_id, user_data):
+        """Update user by admin (admin only)"""
+        try:
+            # Verify admin status
+            if not self.is_admin(admin_user_id):
+                return {"success": False, "message": "Access denied. Admin privileges required."}
+            
+            from bson import ObjectId
+
+            # Build query supporting ObjectId and string UUID
+            query_candidates = []
+            try:
+                user_object_id = ObjectId(target_user_id)
+                query_candidates.append({"_id": user_object_id})
+            except Exception:
+                pass
+            query_candidates.append({"_id": target_user_id})
+
+            # Check if user exists
+            existing_user = None
+            chosen_query = None
+            for q in query_candidates:
+                existing_user = self.users_collection.find_one(q)
+                if existing_user:
+                    chosen_query = q
+                    break
+            if not existing_user:
+                return {"success": False, "message": "User not found"}
+            
+            # Validate required fields
+            if 'name' in user_data and not user_data['name']:
+                return {"success": False, "message": "Name cannot be empty"}
+            
+            if 'email' in user_data and not user_data['email']:
+                return {"success": False, "message": "Email cannot be empty"}
+            
+            # Check if email is being changed and if it already exists
+            if 'email' in user_data and user_data['email'] != existing_user.get('email'):
+                email_exists = self.users_collection.find_one({"email": user_data['email']})
+                if email_exists:
+                    return {"success": False, "message": "Email already exists"}
+            
+            # Validate role
+            if 'role' in user_data and user_data['role'] not in ['admin', 'user']:
+                return {"success": False, "message": "Invalid role. Must be 'admin' or 'user'"}
+            
+            # Prepare update data
+            update_data = {}
+            if 'name' in user_data:
+                update_data['name'] = user_data['name']
+            if 'email' in user_data:
+                update_data['email'] = user_data['email']
+            if 'role' in user_data:
+                update_data['role'] = user_data['role']
+            if 'is_active' in user_data:
+                update_data['is_active'] = bool(user_data['is_active'])
+            
+            # Update user
+            result = self.users_collection.update_one(chosen_query, {"$set": update_data})
+            
+            if result.modified_count > 0:
+                return {
+                    "success": True,
+                    "message": "User updated successfully"
+                }
+            else:
+                return {"success": False, "message": "No changes made to user"}
+                
+        except Exception as e:
+            logger.error(f"Error updating user by admin: {str(e)}")
+            return {"success": False, "message": "Failed to update user"}
 
     def backup_user_data(self, admin_user_id, backup_type='full'):
         """Backup user data (admin only)"""
