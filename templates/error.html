@@ -535,6 +535,9 @@
                         <a href="/dashboard" class="dropdown-item">
                             <i class="bi bi-speedometer2 me-2"></i>Dashboard
                         </a>
+                        <a href="/admin-dashboard" class="dropdown-item" id="adminDashboardLink" style="display: none;">
+                            <i class="bi bi-shield-check me-2"></i>Admin Dashboard
+                        </a>
                         <div class="dropdown-divider"></div>
                         <button class="dropdown-item" onclick="logout()">
                             <i class="bi bi-box-arrow-right me-2"></i>Logout
@@ -600,6 +603,12 @@
                         userInfoNav.style.display = 'flex';
                         document.getElementById('userName').textContent = user.name;
                         document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                        
+                        // Show admin dashboard link if user is admin
+                        const adminDashboardLink = document.getElementById('adminDashboardLink');
+                        if (adminDashboardLink && user.role === 'admin') {
+                            adminDashboardLink.style.display = 'block';
+                        }
                     }
                 } catch (error) {
                     console.error('Error parsing user info:', error);

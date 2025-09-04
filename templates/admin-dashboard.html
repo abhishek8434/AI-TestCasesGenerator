@@ -17,13 +17,30 @@
             -moz-osx-font-smoothing: grayscale;
         }
         
+        /* Brand palette */
         :root {
-            --primary-color: #4cab72;
-            --secondary-color: #1d4354;
-            --accent-color: #ff6b35;
+            --primary-color: #4CAA72; /* Brand green */
+            --secondary-color: #2E7D4F; /* Dark brand green */
             --text-color: #1a202c;
             --light-bg: #f8f9fa;
+
+            /* Bootstrap brand overrides */
+            --bs-primary: var(--primary-color);
+            --bs-success: var(--primary-color);
+            --bs-link-color: var(--primary-color);
+            --bs-link-hover-color: var(--secondary-color);
         }
+
+        /* Utility overrides to force brand usage */
+        .bg-primary { background-color: var(--primary-color) !important; }
+        .text-primary { color: var(--primary-color) !important; }
+        .btn-primary { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .btn-primary:hover { background-color: var(--secondary-color); border-color: var(--secondary-color); }
+        .btn-outline-primary { color: var(--primary-color); border-color: var(--primary-color); }
+        .btn-outline-primary:hover { color: #fff; background-color: var(--primary-color); border-color: var(--primary-color); }
+        .badge.bg-primary { background-color: var(--primary-color) !important; }
+        .badge.bg-success { background-color: var(--primary-color) !important; }
+        .form-check-input:checked { background-color: var(--primary-color); border-color: var(--primary-color); }
 
         .admin-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -221,6 +238,48 @@
             margin-bottom: 0;
         }
 
+        /* Modal improvements */
+        .modal-content {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+        .table-borderless td {
+            border: none;
+            padding: 0.5rem 0;
+        }
+
+        .table-borderless td:first-child {
+            width: 40%;
+            font-weight: 600;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.375rem 0.75rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(76, 171, 114, 0.25);
+        }
+
         @media (max-width: 768px) {
             .navbar-brand {
                 font-size: 1.25rem;
@@ -298,6 +357,9 @@
                             <a href="/analytics" class="dropdown-item">
                                 <i class="bi bi-graph-up me-2"></i>Analytics
                             </a>
+                            <a href="/admin-dashboard" class="dropdown-item">
+                                <i class="bi bi-shield-check me-2"></i>Admin Dashboard
+                            </a>
                             <div class="dropdown-divider"></div>
                             <button class="dropdown-item" onclick="logout()">
                                 <i class="bi bi-box-arrow-right me-2"></i>Logout
@@ -364,12 +426,12 @@
                             </div>
                             <div class="col-md-3 mb-2">
                                 <button class="quick-action-btn w-100" onclick="systemHealth()">
-                                    <i class="bi bi-heart-pulse me-2"></i>System Health
+                                    <i class="bi bi-activity me-2"></i>System Health
                                 </button>
                             </div>
                             <div class="col-md-3 mb-2">
-                                <button class="quick-action-btn w-100" onclick="userAnalytics()">
-                                    <i class="bi bi-graph-up me-2"></i>User Analytics
+                                <button class="quick-action-btn w-100" onclick="exportData()">
+                                    <i class="bi bi-download me-2"></i>Export Data
                                 </button>
                             </div>
                             <div class="col-md-3 mb-2">
@@ -378,6 +440,28 @@
                                 </button>
                             </div>
                         </div>
+                        <!-- <div class="row mt-2">
+                            <div class="col-md-3 mb-2">
+                                <button class="quick-action-btn w-100" onclick="userAnalytics()">
+                                    <i class="bi bi-graph-up me-2"></i>User Analytics
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="quick-action-btn w-100" onclick="systemSettings()">
+                                    <i class="bi bi-gear me-2"></i>System Settings
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="quick-action-btn w-100" onclick="viewLogs()">
+                                    <i class="bi bi-file-text me-2"></i>View Logs
+                                </button>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <button class="quick-action-btn w-100" onclick="backupSystem()">
+                                    <i class="bi bi-shield-check me-2"></i>Backup System
+                                </button>
+                            </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -413,6 +497,8 @@
         </div>
     </div>
 
+    <!-- Bootstrap JS (required for modals/dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Check authentication on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -552,7 +638,7 @@
                         <button class="btn btn-sm btn-outline-primary" onclick="viewUser('${user._id}')">
                             <i class="bi bi-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-warning" onclick="editUser('${user._id}')">
+                        <button class="btn btn-sm btn-outline-success" onclick="editUser('${user._id}')">
                             <i class="bi bi-pencil"></i>
                         </button>
                     </td>
@@ -561,27 +647,242 @@
         }
 
         function viewAllUsers() {
-            alert('View All Users - Feature coming soon!');
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+            button.disabled = true;
+            
+            fetch('/api/auth/all-users?page=1&per_page=20', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showUsersModal(data.users, data.pagination);
+                } else {
+                    alert('Error loading users: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading users:', error);
+                alert('Error loading users. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        // Pagination handler used by the users modal
+        function loadUsersPage(page) {
+            const token = localStorage.getItem('authToken');
+            fetch(`/api/auth/all-users?page=${page}&per_page=20`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showUsersModal(data.users, data.pagination);
+                } else {
+                    alert('Error loading users: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                console.error('Pagination load error:', err);
+                alert('Failed to load page');
+            });
         }
 
         function systemHealth() {
-            alert('System Health Check - Feature coming soon!');
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Checking...';
+            button.disabled = true;
+            
+            fetch('/api/auth/system-health', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showSystemHealthModal(data.system_health);
+                } else {
+                    alert('Error checking system health: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking system health:', error);
+                alert('Error checking system health. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
 
         function userAnalytics() {
-            alert('User Analytics - Feature coming soon!');
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+            button.disabled = true;
+            
+            fetch('/api/auth/user-analytics', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showUserAnalyticsModal(data.analytics);
+                } else {
+                    alert('Error loading user analytics: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading user analytics:', error);
+                alert('Error loading user analytics. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
 
         function createUser() {
-            alert('Create User - Feature coming soon!');
+            showCreateUserModal();
+        }
+
+        function exportData() {
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Exporting...';
+            button.disabled = true;
+            
+            fetch('/api/auth/export-data', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `system-export-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error exporting data:', error);
+                alert('Error exporting data: ' + (error.message || 'Unknown error'));
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function systemSettings() {
+            showSystemSettingsModal();
+        }
+
+        function viewLogs() {
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Loading...';
+            button.disabled = true;
+            
+            fetch('/api/auth/system-logs', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showLogsModal(data.logs);
+                } else {
+                    alert('Error loading logs: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading logs:', error);
+                alert('Error loading logs. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function backupSystem() {
+            const token = localStorage.getItem('authToken');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Backing up...';
+            button.disabled = true;
+            
+            fetch('/api/auth/backup-system', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('System backup completed successfully!');
+                } else {
+                    alert('Error creating backup: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating backup:', error);
+                alert('Error creating backup. Please try again.');
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
         }
 
         function viewUser(userId) {
-            alert(`View User ${userId} - Feature coming soon!`);
+            showUserDetailsModal(userId);
         }
 
         function editUser(userId) {
-            alert(`Edit User ${userId} - Feature coming soon!`);
+            showEditUserModal(userId);
         }
 
         // Function to toggle user dropdown
@@ -621,6 +922,822 @@
             localStorage.removeItem('authToken');
             localStorage.removeItem('userInfo');
             window.location.href = '/';
+        }
+
+        // Modal functions
+        function showUsersModal(users, pagination) {
+            const modalHtml = `
+                <div class="modal fade" id="usersModal" tabindex="-1" aria-labelledby="usersModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="usersModalLabel">
+                                    <i class="bi bi-people me-2"></i>All Users (${pagination.total_users} total)
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-dark">
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Email</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Created</th>
+                                                <th>Last Login</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${users.map(user => `
+                                                <tr>
+                                                    <td>${user.name}</td>
+                                                    <td>${user.email}</td>
+                                                    <td><span class="badge bg-${user.role === 'admin' ? 'danger' : 'primary'}">${user.role}</span></td>
+                                                    <td><span class="badge bg-${user.is_active ? 'success' : 'secondary'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                                                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                                    <td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
+                                                    <td>
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="viewUser('${user._id}')">
+                                                            <i class="bi bi-eye"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editUser('${user._id}')">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="text-muted">
+                                        Showing ${((pagination.current_page - 1) * pagination.per_page) + 1} to ${Math.min(pagination.current_page * pagination.per_page, pagination.total_users)} of ${pagination.total_users} users
+                                    </span>
+                                    <div>
+                                        <button class="btn btn-outline-primary btn-sm" ${!pagination.has_prev ? 'disabled' : ''} onclick="loadUsersPage(${pagination.current_page - 1})">
+                                            <i class="bi bi-chevron-left"></i> Previous
+                                        </button>
+                                        <span class="mx-2">Page ${pagination.current_page} of ${pagination.total_pages}</span>
+                                        <button class="btn btn-outline-primary btn-sm" ${!pagination.has_next ? 'disabled' : ''} onclick="loadUsersPage(${pagination.current_page + 1})">
+                                            Next <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('usersModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('usersModal'));
+            modal.show();
+        }
+
+        function showSystemHealthModal(health) {
+            const statusColor = {
+                'healthy': 'success',
+                'warning': 'warning',
+                'critical': 'danger'
+            };
+            
+            const modalHtml = `
+                <div class="modal fade" id="systemHealthModal" tabindex="-1" aria-labelledby="systemHealthModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="systemHealthModalLabel">
+                                    <i class="bi bi-activity me-2"></i>System Health Status
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="alert alert-${statusColor[health.overall_status]}">
+                                            <h6 class="mb-0">
+                                                <i class="bi bi-${health.overall_status === 'healthy' ? 'check-circle' : health.overall_status === 'warning' ? 'exclamation-triangle' : 'x-circle'} me-2"></i>
+                                                Overall Status: <strong>${health.overall_status.toUpperCase()}</strong>
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-database me-2"></i>Database Status</h6>
+                                        <span class="badge bg-${health.database_status === 'healthy' ? 'success' : 'danger'}">${health.database_status}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-clock me-2"></i>Last Checked</h6>
+                                        <small class="text-muted">${new Date(health.timestamp).toLocaleString()}</small>
+                                    </div>
+                                </div>
+                                
+                                <h6><i class="bi bi-collection me-2"></i>Collections Status</h6>
+                                <div class="row mb-3">
+                                    ${Object.entries(health.collections_status).map(([name, status]) => `
+                                        <div class="col-md-4 mb-2">
+                                            <div class="card">
+                                                <div class="card-body p-2">
+                                                    <h6 class="card-title mb-1">${name.replace('_', ' ').toUpperCase()}</h6>
+                                                    <span class="badge bg-${status.status === 'healthy' ? 'success' : 'danger'}">${status.status}</span>
+                                                    <br>
+                                                    <small class="text-muted">${status.document_count} documents</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                
+                                <h6><i class="bi bi-activity me-2"></i>Recent Activity (24h)</h6>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h4 class="text-primary">${health.recent_activity.new_users_24h}</h4>
+                                            <small class="text-muted">New Users</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h4 class="text-success">${health.recent_activity.new_test_cases_24h}</h4>
+                                            <small class="text-muted">New Test Cases</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="text-center">
+                                            <h4 class="text-info">${health.recent_activity.active_users_24h}</h4>
+                                            <small class="text-muted">Active Users</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('systemHealthModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('systemHealthModal'));
+            modal.show();
+        }
+
+        function showUserAnalyticsModal(analytics) {
+            const modalHtml = `
+                <div class="modal fade" id="userAnalyticsModal" tabindex="-1" aria-labelledby="userAnalyticsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="userAnalyticsModalLabel">
+                                    <i class="bi bi-graph-up me-2"></i>User Analytics
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h4 class="text-primary">${analytics.user_statistics.total_users}</h4>
+                                                <small class="text-muted">Total Users</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h4 class="text-danger">${analytics.user_statistics.admin_users}</h4>
+                                                <small class="text-muted">Admin Users</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h4 class="text-success">${analytics.user_statistics.active_users}</h4>
+                                                <small class="text-muted">Active Users</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card text-center">
+                                            <div class="card-body">
+                                                <h4 class="text-info">${analytics.user_statistics.users_created_30d}</h4>
+                                                <small class="text-muted">New (30d)</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h6><i class="bi bi-people me-2"></i>Most Active Users</h6>
+                                <div class="table-responsive mb-4">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>User</th>
+                                                <th>Email</th>
+                                                <th>Test Cases</th>
+                                                <th>Last Activity</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${analytics.user_activity.map(user => `
+                                                <tr>
+                                                    <td>${user.user_name}</td>
+                                                    <td>${user.user_email}</td>
+                                                    <td><span class="badge bg-primary">${user.test_case_count}</span></td>
+                                                    <td>${new Date(user.last_activity).toLocaleDateString()}</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <h6><i class="bi bi-pie-chart me-2"></i>Source Type Distribution</h6>
+                                <div class="row">
+                                    ${analytics.source_distribution.map(source => `
+                                        <div class="col-md-3 mb-2">
+                                            <div class="card">
+                                                <div class="card-body p-2 text-center">
+                                                    <h6 class="mb-1">${source._id || 'Unknown'}</h6>
+                                                    <span class="badge bg-secondary">${source.count}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('userAnalyticsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('userAnalyticsModal'));
+            modal.show();
+        }
+
+        function showCreateUserModal() {
+            const modalHtml = `
+                <div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="createUserModalLabel">
+                                    <i class="bi bi-person-plus me-2"></i>Create New User
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <form id="createUserForm">
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label for="userName" class="form-label">Name</label>
+                                        <input type="text" class="form-control" id="userName" name="name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="userEmail" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="userEmail" name="email" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="userPassword" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="userPassword" name="password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="userRole" class="form-label">Role</label>
+                                        <select class="form-select" id="userRole" name="role">
+                                            <option value="user">User</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="userActive" name="is_active" checked>
+                                            <label class="form-check-label" for="userActive">
+                                                Active User
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-person-plus me-2"></i>Create User
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('createUserModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Add form submit handler
+            document.getElementById('createUserForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                createNewUser();
+            });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+            modal.show();
+        }
+
+        function createNewUser() {
+            const form = document.getElementById('createUserForm');
+            const formData = new FormData(form);
+            const userData = Object.fromEntries(formData.entries());
+            
+            // Convert checkbox value to boolean
+            userData.is_active = document.getElementById('userActive').checked;
+            
+            const token = localStorage.getItem('authToken');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Creating...';
+            submitButton.disabled = true;
+            
+            fetch('/api/auth/create-user', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User created successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('createUserModal')).hide();
+                    form.reset();
+                    // Refresh the dashboard data
+                    loadDashboardData();
+                } else {
+                    alert('Error creating user: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error creating user:', error);
+                alert('Error creating user. Please try again.');
+            })
+            .finally(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
+        }
+
+        function showSystemSettingsModal() {
+            const modalHtml = `
+                <div class="modal fade" id="systemSettingsModal" tabindex="-1" aria-labelledby="systemSettingsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="systemSettingsModalLabel">
+                                    <i class="bi bi-gear me-2"></i>System Settings
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-shield me-2"></i>Security Settings</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="enableRegistration" checked>
+                                                <label class="form-check-label" for="enableRegistration">
+                                                    Enable User Registration
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="requireEmailVerification">
+                                                <label class="form-check-label" for="requireEmailVerification">
+                                                    Require Email Verification
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6><i class="bi bi-speedometer2 me-2"></i>Performance Settings</h6>
+                                        <div class="mb-3">
+                                            <label for="maxTestCases" class="form-label">Max Test Cases per User</label>
+                                            <input type="number" class="form-control" id="maxTestCases" value="100">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="sessionTimeout" class="form-label">Session Timeout (minutes)</label>
+                                            <input type="number" class="form-control" id="sessionTimeout" value="60">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6><i class="bi bi-bell me-2"></i>Notification Settings</h6>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                                <label class="form-check-label" for="emailNotifications">
+                                                    Enable Email Notifications
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="adminAlerts" checked>
+                                                <label class="form-check-label" for="adminAlerts">
+                                                    Send Admin Alerts
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveSystemSettings()">
+                                    <i class="bi bi-check me-2"></i>Save Settings
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('systemSettingsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('systemSettingsModal'));
+            modal.show();
+        }
+
+        function showLogsModal(logs) {
+            const modalHtml = `
+                <div class="modal fade" id="logsModal" tabindex="-1" aria-labelledby="logsModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="logsModalLabel">
+                                    <i class="bi bi-file-text me-2"></i>System Logs
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <select class="form-select" id="logLevel">
+                                                <option value="all">All Levels</option>
+                                                <option value="error">Error</option>
+                                                <option value="warning">Warning</option>
+                                                <option value="info">Info</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="date" class="form-control" id="logDate">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <button class="btn btn-outline-primary" onclick="filterLogs()">
+                                                <i class="bi bi-funnel me-2"></i>Filter
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                                    <table class="table table-sm">
+                                        <thead class="table-dark sticky-top">
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Level</th>
+                                                <th>Message</th>
+                                                <th>Source</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${logs.map(log => `
+                                                <tr>
+                                                    <td><small>${new Date(log.timestamp).toLocaleString()}</small></td>
+                                                    <td><span class="badge bg-${log.level === 'error' ? 'danger' : log.level === 'warning' ? 'warning' : 'info'}">${log.level}</span></td>
+                                                    <td>${log.message}</td>
+                                                    <td><small class="text-muted">${log.source || 'System'}</small></td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('logsModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Add modal to body
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+            modal.show();
+        }
+
+        function saveSystemSettings() {
+            const settings = {
+                enableRegistration: document.getElementById('enableRegistration').checked,
+                requireEmailVerification: document.getElementById('requireEmailVerification').checked,
+                maxTestCases: parseInt(document.getElementById('maxTestCases').value),
+                sessionTimeout: parseInt(document.getElementById('sessionTimeout').value),
+                emailNotifications: document.getElementById('emailNotifications').checked,
+                adminAlerts: document.getElementById('adminAlerts').checked
+            };
+            
+            const token = localStorage.getItem('authToken');
+            
+            fetch('/api/auth/system-settings', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(settings)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Settings saved successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('systemSettingsModal')).hide();
+                } else {
+                    alert('Error saving settings: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving settings:', error);
+                alert('Error saving settings. Please try again.');
+            });
+        }
+
+        function filterLogs() {
+            // This would implement log filtering functionality
+            alert('Log filtering feature coming soon!');
+        }
+
+        function showUserDetailsModal(userId) {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`/api/auth/user-details/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const user = data.user;
+                    const modalHtml = `
+                        <div class="modal fade" id="userDetailsModal" tabindex="-1" aria-labelledby="userDetailsModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="userDetailsModalLabel">
+                                            <i class="bi bi-person me-2"></i>User Details
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6><i class="bi bi-person me-2"></i>Basic Information</h6>
+                                                <table class="table table-borderless">
+                                                    <tr><td><strong>Name:</strong></td><td>${user.name}</td></tr>
+                                                    <tr><td><strong>Email:</strong></td><td>${user.email}</td></tr>
+                                                    <tr><td><strong>Role:</strong></td><td><span class="badge bg-${user.role === 'admin' ? 'danger' : 'primary'}">${user.role}</span></td></tr>
+                                                    <tr><td><strong>Status:</strong></td><td><span class="badge bg-${user.is_active ? 'success' : 'secondary'}">${user.is_active ? 'Active' : 'Inactive'}</span></td></tr>
+                                                </table>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6><i class="bi bi-clock me-2"></i>Activity Information</h6>
+                                                <table class="table table-borderless">
+                                                    <tr><td><strong>Created:</strong></td><td>${new Date(user.created_at).toLocaleString()}</td></tr>
+                                                    <tr><td><strong>Last Login:</strong></td><td>${user.last_login ? new Date(user.last_login).toLocaleString() : 'Never'}</td></tr>
+                                                    <tr><td><strong>User ID:</strong></td><td><code>${user._id}</code></td></tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        <button type="button" class="btn btn-primary" onclick="showEditUserModal('${user._id}')">
+                                            <i class="bi bi-pencil me-2"></i>Edit User
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('userDetailsModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add modal to body
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('userDetailsModal'));
+                    modal.show();
+                } else {
+                    alert('Error loading user details: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading user details:', error);
+                alert('Error loading user details. Please try again.');
+            });
+        }
+
+        function showEditUserModal(userId) {
+            const token = localStorage.getItem('authToken');
+            
+            fetch(`/api/auth/user-details/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const user = data.user;
+                    const modalHtml = `
+                        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="editUserModalLabel">
+                                            <i class="bi bi-pencil me-2"></i>Edit User
+                                        </h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form id="editUserForm">
+                                        <div class="modal-body">
+                                            <input type="hidden" id="editUserId" value="${user._id}">
+                                            <div class="mb-3">
+                                                <label for="editUserName" class="form-label">Name</label>
+                                                <input type="text" class="form-control" id="editUserName" name="name" value="${user.name}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editUserEmail" class="form-label">Email</label>
+                                                <input type="email" class="form-control" id="editUserEmail" name="email" value="${user.email}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="editUserRole" class="form-label">Role</label>
+                                                <select class="form-select" id="editUserRole" name="role">
+                                                    <option value="user" ${user.role === 'user' ? 'selected' : ''}>User</option>
+                                                    <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="editUserActive" name="is_active" ${user.is_active ? 'checked' : ''}>
+                                                    <label class="form-check-label" for="editUserActive">
+                                                        Active User
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-check me-2"></i>Update User
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Remove existing modal if any
+                    const existingModal = document.getElementById('editUserModal');
+                    if (existingModal) {
+                        existingModal.remove();
+                    }
+                    
+                    // Add modal to body
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                    
+                    // Add form submit handler
+                    document.getElementById('editUserForm').addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        updateUser();
+                    });
+                    
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('editUserModal'));
+                    modal.show();
+                } else {
+                    alert('Error loading user details: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading user details:', error);
+                alert('Error loading user details. Please try again.');
+            });
+        }
+
+        function updateUser() {
+            const form = document.getElementById('editUserForm');
+            const formData = new FormData(form);
+            const userData = Object.fromEntries(formData.entries());
+            const userId = document.getElementById('editUserId').value;
+            
+            // Convert checkbox value to boolean
+            userData.is_active = document.getElementById('editUserActive').checked;
+            
+            const token = localStorage.getItem('authToken');
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            
+            submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Updating...';
+            submitButton.disabled = true;
+            
+            fetch(`/api/auth/update-user/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User updated successfully!');
+                    bootstrap.Modal.getInstance(document.getElementById('editUserModal')).hide();
+                    // Refresh the dashboard data
+                    loadDashboardData();
+                } else {
+                    alert('Error updating user: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error updating user:', error);
+                alert('Error updating user. Please try again.');
+            })
+            .finally(() => {
+                submitButton.innerHTML = originalText;
+                submitButton.disabled = false;
+            });
         }
     </script>
 </body>
