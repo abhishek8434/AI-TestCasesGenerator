@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Dashboard - AI-Powered Test Case Automation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4cab72;
+            --secondary-color: #f0f4f8;
+            --accent-color: #61b984;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --text-color: #1f2937;
+            --light-text: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--secondary-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #4CAA72 !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #1f2937;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #4CAA72;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .user-dropdown:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dropdown-arrow {
+            color: var(--light-text);
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .user-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: var(--border-color);
+            margin: 4px 0;
+        }
+
+        .main-container {
+            padding: 2rem 0;
+        }
+
+        .dashboard-header {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .dashboard-title {
+            color: var(--text-color);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-subtitle {
+            color: var(--light-text);
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 24px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--light-text);
+            font-weight: 500;
+        }
+
+        .test-cases-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-title {
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 171, 114, 0.3);
+            color: white;
+        }
+
+        .test-case-card {
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .test-case-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 25px rgba(76, 171, 114, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .test-case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .test-case-title {
+            font-weight: 600;
+            color: var(--text-color);
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .test-case-date {
+            color: var(--light-text);
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .test-case-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--light-text);
+            font-size: 0.9rem;
+        }
+
+        .meta-icon {
+            color: var(--primary-color);
+        }
+
+        .test-case-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-view {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-share {
+            background: var(--secondary-color);
+            color: var(--text-color);
+        }
+
+        .btn-share:hover {
+            background: var(--border-color);
+            color: var(--text-color);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--light-text);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-color);
+        }
+
+        .empty-description {
+            margin-bottom: 2rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(76, 171, 114, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-title {
+                font-size: 2rem;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .test-case-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .test-case-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>
+                AI Test Case Generator
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/documentation">Documentation</a>
+                <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
+                <!-- <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
+                <a class="nav-link" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
+                <div class="user-info" id="userInfoNav" style="display: none;">
+                    <div class="user-dropdown" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="userAvatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <span class="user-name d-none d-md-inline" id="userName">User</span>
+                        <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <a href="/" class="dropdown-item">
+                            <i class="bi bi-house me-2"></i>Home
+                        </a>
+                        <a href="/analytics" class="dropdown-item">
+                            <i class="bi bi-graph-up me-2"></i>Analytics
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <div id="alert-container"></div>
+
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Welcome Back!</h1>
+            <p class="dashboard-subtitle">Manage and view all your generated test cases</p>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-file-text"></i>
+                </div>
+                <div class="stat-number" id="totalTestCases">0</div>
+                <div class="stat-label">Total Test Cases</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-calendar-check"></i>
+                </div>
+                <div class="stat-number" id="thisMonth">0</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="stat-number" id="lastGenerated">-</div>
+                <div class="stat-label">Last Generated</div>
+            </div>
+        </div>
+
+        <div class="test-cases-section">
+            <div class="section-header">
+                <h2 class="section-title">Your Test Cases</h2>
+                <a href="/" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    Generate New Test Case
+                </a>
+            </div>
+
+            <div id="testCasesContainer">
+                <div class="text-center">
+                    <div class="loading-spinner"></div>
+                    <p class="mt-2">Loading your test cases...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            console.log('Dashboard Auth check - Token:', token ? 'exists' : 'missing', 'UserInfo:', userInfo ? 'exists' : 'missing');
+            
+            // Check if we have at least a token
+            if (!token) {
+                console.log('No auth token found - redirecting to signin');
+                window.location.href = '/signin';
+                return;
+            }
+            
+            // If we have a token but no userInfo, create a basic user object and continue
+            if (!userInfo) {
+                console.log('No userInfo found, but token exists - creating basic user object');
+                const basicUser = {
+                    name: 'User',
+                    email: '',
+                    role: 'user'
+                };
+                localStorage.setItem('userInfo', JSON.stringify(basicUser));
+                proceedWithAuth(basicUser);
+                return;
+            }
+            
+            // If we have both token and userInfo, proceed with authentication
+            try {
+                const user = JSON.parse(userInfo);
+                proceedWithAuth(user);
+            } catch (error) {
+                console.error('Error parsing user info:', error);
+                // Create a basic user object and continue
+                const basicUser = {
+                    name: 'User',
+                    email: '',
+                    role: 'user'
+                };
+                localStorage.setItem('userInfo', JSON.stringify(basicUser));
+                proceedWithAuth(basicUser);
+            }
+        }
+        
+        function proceedWithAuth(user) {
+            try {
+                // Update navbar for logged-in user
+                const signinNavLink = document.getElementById('signinNavLink');
+                const dashboardNavLink = document.getElementById('dashboardNavLink');
+                const analyticsNavLink = document.getElementById('analyticsNavLink');
+                const userInfoNav = document.getElementById('userInfoNav');
+                
+                if (signinNavLink) signinNavLink.style.display = 'none';
+                if (dashboardNavLink) dashboardNavLink.style.display = 'inline-block';
+                if (analyticsNavLink) analyticsNavLink.style.display = 'inline-block';
+                if (userInfoNav) {
+                    userInfoNav.style.display = 'flex';
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                }
+                
+                // Load dashboard data after authentication
+                loadDashboard();
+            } catch (error) {
+                console.error('Error in proceedWithAuth:', error);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userInfo');
+                window.location.href = '/signin';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            
+            alertContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        async function loadDashboard() {
+            try {
+                const token = localStorage.getItem('authToken');
+                const response = await fetch('/api/auth/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    // Token expired or invalid
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = '/signin';
+                    return;
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateStats(data.stats);
+                    updateTestCases(data.test_cases);
+                } else {
+                    showAlert(data.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Failed to load dashboard data', 'danger');
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalTestCases').textContent = stats.total || 0;
+            document.getElementById('thisMonth').textContent = stats.this_month || 0;
+            document.getElementById('lastGenerated').textContent = stats.last_generated || '-';
+        }
+
+        function updateTestCases(testCases) {
+            const container = document.getElementById('testCasesContainer');
+            
+            if (!testCases || testCases.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="bi bi-file-text"></i>
+                        </div>
+                        <h3 class="empty-title">No Test Cases Yet</h3>
+                        <p class="empty-description">
+                            You haven't generated any test cases yet. Start by creating your first test case!
+                        </p>
+                        <a href="/" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>
+                            Generate Your First Test Case
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            const testCasesHTML = testCases.map(testCase => {
+                const date = new Date(testCase.created_at).toLocaleDateString();
+                const sourceType = testCase.source_type || 'Manual';
+                const itemId = testCase.item_id || 'N/A';
+                
+                return `
+                    <div class="test-case-card" onclick="viewTestCase('${testCase._id}')">
+                        <div class="test-case-header">
+                            <h5 class="test-case-title">Test Case ${testCase._id.substring(0, 8)}</h5>
+                            <small class="test-case-date">${date}</small>
+                        </div>
+                        <div class="test-case-meta">
+                            <div class="meta-item">
+                                <i class="bi bi-tag meta-icon"></i>
+                                <span>${sourceType}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="bi bi-hash meta-icon"></i>
+                                <span>${itemId}</span>
+                            </div>
+                        </div>
+                                                 <div class="test-case-actions">
+                             <a href="/results?key=${testCase._id}" class="btn btn-sm btn-view" onclick="event.stopPropagation()">
+                                 <i class="bi bi-eye me-1"></i>
+                                 View
+                             </a>
+                             <button class="btn btn-sm btn-share" onclick="shareTestCase('${testCase._id}', event)">
+                                 <i class="bi bi-share me-1"></i>
+                                 Share
+                             </button>
+                         </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = testCasesHTML;
+        }
+
+                 function viewTestCase(testCaseId) {
+             window.open(`/results?key=${testCaseId}`, '_blank');
+         }
+
+                 function shareTestCase(testCaseId, event) {
+             event.stopPropagation();
+             
+             const shareUrl = `${window.location.origin}/results?key=${testCaseId}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'AI Generated Test Case',
+                    text: 'Check out this AI-generated test case!',
+                    url: shareUrl
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showAlert('Test case link copied to clipboard!', 'success');
+                }).catch(() => {
+                    showAlert('Failed to copy link to clipboard', 'danger');
+                });
+            }
+        }
+
+        // Function to toggle user dropdown
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                userDropdown.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                userDropdown.classList.add('active');
+            }
+        }
+
+        // Function to close user dropdown
+        function closeUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            dropdown.classList.remove('show');
+            userDropdown.classList.remove('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userInfo = document.querySelector('.user-info');
+            const dropdown = document.getElementById('userDropdownMenu');
+            
+            if (userInfo && !userInfo.contains(event.target)) {
+                closeUserDropdown();
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/';
+        }
+    </script>
+</body>
+
+</html>

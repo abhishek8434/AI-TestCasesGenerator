@@ -1339,7 +1339,8 @@
 
         .subtitle {
             text-align: center;
-            color: rgba(4, 30, 43, 0.5);
+            /* color: rgba(4, 30, 43, 0.5); */
+            color: #030303;
             margin-bottom: 0;
         }
 
@@ -1373,9 +1374,9 @@
         }
 
         h1.main-title {
-            font-size: 1.8rem;
+            font-size: 2.2rem;
             margin-bottom: 0.5rem;
-            color: #041E2B;
+            color: #4CAA72;
         }
 
         .card-body {
@@ -1495,6 +1496,38 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Authentication button styles */
+        .right-content .btn {
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .right-content .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Welcome message styles */
+        #welcomeMessage {
+            border: none;
+            background: linear-gradient(135deg, rgba(76, 171, 114, 0.1) 0%, rgba(29, 67, 84, 0.05) 100%);
+            border-left: 4px solid #4cab72;
+            color: #1a202c;
+            font-weight: 500;
+        }
+
+        #welcomeMessage .btn-outline-success {
+            border-color: #4cab72;
+            color: #4cab72;
+            font-weight: 500;
+        }
+
+        #welcomeMessage .btn-outline-success:hover {
+            background-color: #4cab72;
+            color: white;
+            transform: translateY(-1px);
         }
 
         /* Verification status styles */
@@ -1780,6 +1813,128 @@
         #itemIdField {
             position: relative;
         }
+
+        /* Navbar styles */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #4CAA72 !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #1f2937;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #4CAA72;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .user-dropdown:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4CAA72;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            color: #495057;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dropdown-arrow {
+            color: #6c757d;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .user-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 16px;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 4px 0;
+        }
     </style>
 </head>
 
@@ -1791,24 +1946,60 @@
         <i class="bi bi-arrow-up"></i>
     </button>
 
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>
+                AI Test Case Generator
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/documentation">Documentation</a>
+                <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
+                <!-- <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
+                <a class="nav-link" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
+                <div class="user-info" id="userInfoNav" style="display: none;">
+                    <div class="user-dropdown" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="userAvatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <span class="user-name d-none d-md-inline" id="userName">User</span>
+                        <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <a href="/dashboard" class="dropdown-item">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <div class="container index-page">
         <div
             class="header flex-column justify-content-between justify-content-md-start align-items-center gap-4 gap-md-0">
-            <div class="logo">
+            <!-- <div class="logo">
                 <img src="/static/assets/images/eatance--logo.svg" alt="">
-            </div>
+            </div> -->
             <div class="center-content">
                 <h1 class="main-title">AI-Powered Test Case Automation</h1>
                 <p class="subtitle">Automatically generate test cases from Jira or Azure DevOps tickets, or even images—powered by AI-driven automation for faster, smarter QA workflows.</p>
             </div>
-            <div class="right-content">
-                <a href="/analytics" class="btn btn-outline-success me-2" title="View Analytics">
-                    <i class="bi bi-graph-up"></i> Analytics Dashboard
+            <!-- <div class="right-content">
+                <a href="/signin" class="btn btn-primary me-2" title="Sign In" id="signinBtn">
+                    <i class="bi bi-person-circle"></i> Sign In
                 </a>
-                <!-- <a href="/comparison" class="btn btn-outline-primary" title="View Comparison">
+                <a href="/comparison" class="btn btn-outline-primary" title="View Comparison">
                     <i class="bi bi-bar-chart"></i> Compare Solutions
-                </a> -->
-            </div>
+                </a>
+            </div> -->
         </div>
 
         <div class="card">
@@ -1816,6 +2007,12 @@
                 <!-- General message area inside white card -->
                 <div id="generalMessage" class="general-message form-validation-error mb-4" style="display: none;">
                     <span id="generalMessageText"></span>
+                </div>
+                
+                <!-- Welcome message for logged-in users -->
+                <div id="welcomeMessage" class="alert alert-success mb-4" style="display: none; opacity: 1; transition: opacity 0.5s ease-out;">
+                    <i class="bi bi-check-circle me-2"></i>
+                    <span id="welcomeMessageText"></span>
                 </div>
                 <form id="generatorForm">
                     <div class="row mb-5">
@@ -2879,6 +3076,9 @@
         
         // Add real-time validation listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Check authentication status and update UI
+            checkAuthStatus();
+            
             // Setup hover functionality for info icons
             setupInfoIconHover();
             
@@ -3539,9 +3739,7 @@
                     console.log('Making URL fetch request with data:', data);
                     fetch('/api/generate', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: getAuthHeaders(),
                         body: JSON.stringify(data)
                     })
                         .then(response => response.json())
@@ -3579,12 +3777,27 @@
                     formData.delete('testCaseTypes[]');
                     selectedTypes.forEach(type => formData.append('testCaseTypes[]', type));
                     
-                    // Add selected items for image uploads
-                    formData.delete('itemId');
-                    selectedItems.forEach(item => formData.append('itemId', item.id));
+                    // Images don't need item IDs - they're processed individually
+                    // formData.delete('itemId');
+                    // selectedItems.forEach(item => formData.append('itemId', item.id));
 
+                    // For FormData, don't set Content-Type header - let browser set it automatically
+                    const imageHeaders = {};
+                    const token = localStorage.getItem('authToken');
+                    if (token) {
+                        imageHeaders['Authorization'] = `Bearer ${token}`;
+                    }
+                    
+                    // Debug: Log what we're sending
+                    console.log('Image upload - FormData contents:');
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`${key}:`, value);
+                    }
+                    console.log('Image upload - Headers:', imageHeaders);
+                    
                     fetch('/api/generate', {
                         method: 'POST',
+                        headers: imageHeaders,
                         body: formData
                     })
                         .then(response => response.json())
@@ -3595,11 +3808,12 @@
                                 return;
                             }
 
-                            // Store the URL key for use in redirection (add this line)
+                            // For image uploads, generation is already complete
+                            // Store the URL key and redirect immediately
                             window.generatedUrlKey = result.url_key;
-
-                            // Poll for completion
-                            checkGenerationStatus(loader, result, null);
+                            
+                            // Redirect to results page immediately - no loader hiding, no delay
+                            window.location.replace(`/results?token=${result.url_key}`);
                         })
                         .catch(error => {
                             console.error('Error:', error);
@@ -3611,9 +3825,7 @@
                     // For Jira and Azure, use JSON
                     fetch('/api/generate', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: getAuthHeaders(),
                         body: JSON.stringify(data)
                     })
                         // In the fetch response handler
@@ -4656,6 +4868,130 @@
                 generateBtn.style.border = '2px solid green';
             }
         };
+
+        // Function to check authentication status and update UI
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            const signInBtn = document.getElementById('signinBtn');
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            const welcomeMessageText = document.getElementById('welcomeMessageText');
+            
+            // Navbar elements
+            const signinNavLink = document.getElementById('signinNavLink');
+            const dashboardNavLink = document.getElementById('dashboardNavLink');
+            const analyticsNavLink = document.getElementById('analyticsNavLink');
+            const userInfoNav = document.getElementById('userInfoNav');
+            
+            if (token && userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    
+                    // Hide sign in button
+                    if (signInBtn) signInBtn.style.display = 'none';
+                    
+                    // Update navbar for logged-in user
+                    if (signinNavLink) signinNavLink.style.display = 'none';
+                    if (dashboardNavLink) dashboardNavLink.style.display = 'inline-block';
+                    if (analyticsNavLink) analyticsNavLink.style.display = 'inline-block';
+                    if (userInfoNav) {
+                        userInfoNav.style.display = 'flex';
+                        document.getElementById('userName').textContent = user.name;
+                        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                    }
+                    
+                    // Show welcome message and auto-hide after 3 seconds
+                    if (welcomeMessage && welcomeMessageText) {
+                        welcomeMessageText.textContent = `Welcome back, ${user.name}! You're logged in and can view all your test cases in the dashboard.`;
+                        welcomeMessage.style.display = 'block';
+                        welcomeMessage.style.opacity = '1';
+                        
+                        // Auto-hide after 3 seconds with fade-out effect
+                        setTimeout(() => {
+                            welcomeMessage.style.opacity = '0';
+                            setTimeout(() => {
+                                welcomeMessage.style.display = 'none';
+                            }, 500); // Wait for fade-out transition to complete
+                        }, 3000);
+                    }
+                } catch (error) {
+                    console.error('Error parsing user info:', error);
+                    // Clear invalid data
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                }
+            } else {
+                // User not logged in - show sign in button
+                if (signInBtn) signInBtn.style.display = 'inline-block';
+                
+                // Update navbar for non-logged-in user
+                if (signinNavLink) signinNavLink.style.display = 'inline-block';
+                if (dashboardNavLink) dashboardNavLink.style.display = 'none';
+                if (analyticsNavLink) analyticsNavLink.style.display = 'none';
+                if (userInfoNav) userInfoNav.style.display = 'none';
+                
+                // Hide welcome message
+                if (welcomeMessage) {
+                    welcomeMessage.style.display = 'none';
+                }
+            }
+        }
+
+        // Function to toggle user dropdown
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                userDropdown.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                userDropdown.classList.add('active');
+            }
+        }
+
+        // Function to close user dropdown
+        function closeUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            dropdown.classList.remove('show');
+            userDropdown.classList.remove('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfoNav');
+            const dropdown = document.getElementById('userDropdownMenu');
+            
+            if (userInfo && !userInfo.contains(event.target)) {
+                closeUserDropdown();
+            }
+        });
+
+        // Function to logout user
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            // Refresh the page to update the UI
+            window.location.reload();
+        }
+
+        // Helper function to get authentication headers
+        function getAuthHeaders() {
+            const token = localStorage.getItem('authToken');
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
     </script>
 
 </body>

@@ -7,13 +7,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
     <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- DateRangePicker CSS and JS -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
     <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery/latest/jquery.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
     <style>
+
+        
         /* Analytics Dashboard Styles */
         .analytics-card {
             background: white;
@@ -358,12 +365,10 @@
         .header {
             background: white;
             color: #333;
-            padding: 25px 0;
+            padding: 35px 0;
             margin-bottom: 30px;
             border-radius: 10px;
             margin: 20px;
-            border-bottom: 3px solid #4CAA72;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             position: relative;
         }
         
@@ -589,6 +594,129 @@
         .daterangepicker td.in-range {
             background-color: rgba(76, 170, 114, 0.2);
         }
+
+        /* Navbar styles */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #4CAA72 !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #1f2937;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #4CAA72;
+        }
+
+        /* User Dropdown Styles */
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .user-dropdown:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4CAA72;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            color: #495057;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dropdown-arrow {
+            color: #6c757d;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .user-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 16px;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -597,24 +725,47 @@
         <i class="bi bi-arrow-up"></i>
     </button>
 
-    <div class="header">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-3 col-4">
-                    <div class="d-flex align-items-center">
-                        <img src="/static/assets/images/eatance--logo.svg" alt="Eatance Logo">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>
+                AI Test Case Generator
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/documentation">Documentation</a>
+                <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
+                <!-- <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
+                <a class="nav-link active" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
+                <div class="user-info" id="userInfoNav" style="display: none;">
+                    <div class="user-dropdown" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="userAvatar">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <span class="user-name d-none d-md-inline" id="userName">User</span>
+                        <i class="bi bi-chevron-down dropdown-arrow"></i>
                     </div>
-                </div>
-                <div class="col-md-6 d-none d-md-block">
-                    <!-- Empty space for centering on desktop -->
-                </div>
-                <div class="col-md-3 col-8 text-end">
-                    <a href="/" class="btn btn-light">
-                        <i class="bi bi-arrow-left"></i> <span class="d-none d-sm-inline">Back to Generator</span>
-                    </a>
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <a href="/dashboard" class="dropdown-item">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                        <a href="/admin-dashboard" class="dropdown-item" id="adminDashboardLink" style="display: none;">
+                            <i class="bi bi-shield-check me-2"></i>Admin Dashboard
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+    </nav>
+
+    <div class="header">
+        
         
         <!-- Centered title and subtitle -->
         <div class="header-center">
@@ -780,8 +931,8 @@
 
         </div>
 
-        <!-- Error Analytics Section -->
-        <div class="row mb-5" id="errorStats">
+                 <!-- Error Analytics Section (admin only) -->
+         <div class="row mb-5 admin-only" id="errorStats" style="display: none;">
             <div class="col-md-12">
                 <h4 class="mb-3"><i class="bi bi-exclamation-triangle"></i> Error Analytics</h4>
             </div>
@@ -910,8 +1061,8 @@
             </div>
         </div>
 
-        <!-- Error Charts -->
-        <div class="row">
+        <!-- Error Charts (admin only) -->
+        <div class="row admin-only" style="display: none;">
             <div class="col-md-6">
                 <div class="chart-container">
                     <h5><i class="bi bi-pie-chart"></i> Error Level Distribution</h5>
@@ -936,7 +1087,7 @@
             </div>
         </div>
 
-        <div class="row">
+        <div class="row admin-only" style="display: none;">
             <div class="col-md-12">
                 <div class="chart-container">
                     <h5><i class="bi bi-exclamation-triangle"></i> Recent Errors</h5>
@@ -966,10 +1117,225 @@
 
     <script>
         let sourceTypeChart, testCaseTypeChart, dailyActivityChart, timingBySourceChart, timingByItemsChart;
+        let isAdmin = false;
         
         // Date Range Picker Variables
         let selectedStartDate = null;
         let selectedEndDate = null;
+        
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+        });
+        
+        function checkAuth() {
+            const token = localStorage.getItem('authToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            console.log('Auth check - Token:', token ? 'exists' : 'missing', 'UserInfo:', userInfo ? 'exists' : 'missing');
+            
+            // Check if we have at least a token
+            if (!token) {
+                console.log('No auth token found - redirecting to signin');
+                window.location.href = '/signin';
+                return;
+            }
+            
+            // If we have a token but no userInfo, create a basic user object and continue
+            if (!userInfo) {
+                console.log('No userInfo found, but token exists - creating basic user object');
+                const basicUser = {
+                    name: 'User',
+                    email: '',
+                    role: 'user'
+                };
+                localStorage.setItem('userInfo', JSON.stringify(basicUser));
+                proceedWithAuth(basicUser);
+                return;
+            }
+            
+            // If we have both token and userInfo, proceed with authentication
+            try {
+                const user = JSON.parse(userInfo);
+                proceedWithAuth(user);
+            } catch (error) {
+                console.error('Error parsing user info:', error);
+                // Create a basic user object and continue
+                const basicUser = {
+                    name: 'User',
+                    email: '',
+                    role: 'user'
+                };
+                localStorage.setItem('userInfo', JSON.stringify(basicUser));
+                proceedWithAuth(basicUser);
+            }
+        }
+        
+        function proceedWithAuth(user) {
+            try {
+                console.log('User authenticated:', user.name, 'Role:', user.role);
+                console.log('Full user info:', user);
+                isAdmin = (user.role === 'admin');
+                console.log('IsAdmin set to:', isAdmin);
+                
+                // Update navbar visibility - using the same pattern as index.html
+                const signinNavLink = document.getElementById('signinNavLink');
+                const dashboardNavLink = document.getElementById('dashboardNavLink');
+                const analyticsNavLink = document.getElementById('analyticsNavLink');
+                const userInfoNav = document.getElementById('userInfoNav');
+                
+                if (signinNavLink) signinNavLink.style.display = 'none';
+                if (dashboardNavLink) dashboardNavLink.style.display = 'inline-block';
+                if (analyticsNavLink) analyticsNavLink.style.display = 'inline-block';
+                if (userInfoNav) {
+                    userInfoNav.style.display = 'flex';
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                }
+                
+                // Show admin dashboard link for admin users
+                if (user.role === 'admin') {
+                    document.getElementById('adminDashboardLink').style.display = 'block';
+                }
+                
+                // Update page title to show user info
+                const pageTitle = document.querySelector('h1');
+                if (pageTitle && user.role === 'admin') {
+                    pageTitle.innerHTML += ' <small class="text-muted">(Admin View)</small>';
+                } else if (pageTitle) {
+                    pageTitle.innerHTML += ' <small class="text-muted">(User View)</small>';
+                }
+                
+                // Initialize page after authentication check
+                initializePage();
+                // Track a session view so user tiles (sessions) populate
+                trackSessionView();
+                
+                // Toggle admin-only UI visibility (error analytics etc.)
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    el.style.display = isAdmin ? '' : 'none';
+                });
+                
+                // For regular users, show fallback recent activity immediately
+                if (!isAdmin) {
+                    updateRecentActivityFallback();
+                } else {
+                    // For admin users, also show fallback if no detailed analytics
+                    setTimeout(() => {
+                        const recentActivity = document.getElementById('recentActivity');
+                        if (recentActivity && recentActivity.innerHTML.includes('Loading...')) {
+                            updateRecentActivityFallback();
+                        }
+                    }, 5000); // Fallback after 5 seconds if still loading
+                }
+            } catch (error) {
+                console.error('Error in proceedWithAuth:', error);
+                // Clear invalid data and redirect
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userInfo');
+                window.location.href = '/signin';
+            }
+        }
+        
+        // Function to toggle user dropdown
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                userDropdown.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                userDropdown.classList.add('active');
+            }
+        }
+
+        // Function to close user dropdown
+        function closeUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            dropdown.classList.remove('show');
+            userDropdown.classList.remove('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfo');
+            const dropdown = document.getElementById('userDropdownMenu');
+            
+            if (userInfo && !userInfo.contains(event.target)) {
+                closeUserDropdown();
+            }
+        });
+
+        function logout() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/';
+        }
+        
+        // Helper function to get auth headers
+        function getAuthHeaders() {
+            const token = localStorage.getItem('authToken');
+            console.log('Getting auth headers with token:', token ? token.substring(0, 20) + '...' : 'null');
+            return {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+        }
+        
+        function initializePage() {
+            // Set default dates (last 30 days)
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            // Format dates for daterangepicker
+            const startDateStr = thirtyDaysAgo.toLocaleDateString('en-US', { 
+                month: '2-digit', 
+                    day: '2-digit', 
+                    year: 'numeric' 
+                });
+            const endDateStr = today.toLocaleDateString('en-US', { 
+                month: '2-digit', 
+                    day: '2-digit', 
+                    year: 'numeric' 
+                });
+                
+            // Set initial value
+            document.getElementById('daterange').value = `${startDateStr} - ${endDateStr}`;
+            
+            // Initialize daterangepicker
+            initializeDateRangePicker();
+            
+            // Initialize smart search
+            initializeSmartSearch();
+            
+            loadAnalytics();
+        }
+
+        // Track a session/page visit for analytics (user and admin)
+        async function trackSessionView() {
+            try {
+                const sessionId = localStorage.getItem('sessionId') || (Date.now().toString(36) + Math.random().toString(36).slice(2));
+                localStorage.setItem('sessionId', sessionId);
+                await fetch('/api/analytics/session', {
+                    method: 'POST',
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        page_visited: 'analytics'
+                    })
+                });
+            } catch (e) {
+                console.warn('Session tracking failed:', e.message);
+            }
+        }
 
         function showLoadingState() {
             // Show loading for summary stats
@@ -1029,36 +1395,7 @@
             window.scrollTo(0, 0);
         });
         
-        // Initialize date range picker
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set default dates (last 30 days)
-            const today = new Date();
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(today.getDate() - 30);
-            
-            // Format dates for daterangepicker
-            const startDateStr = thirtyDaysAgo.toLocaleDateString('en-US', { 
-                month: '2-digit', 
-                    day: '2-digit', 
-                    year: 'numeric' 
-                });
-            const endDateStr = today.toLocaleDateString('en-US', { 
-                month: '2-digit', 
-                    day: '2-digit', 
-                    year: 'numeric' 
-                });
-                
-            // Set initial value
-            document.getElementById('daterange').value = `${startDateStr} - ${endDateStr}`;
-            
-            // Initialize daterangepicker
-            initializeDateRangePicker();
-            
-            // Initialize smart search
-            initializeSmartSearch();
-            
-            loadAnalytics();
-        });
+
 
         function initializeDateRangePicker() {
             $('input[name="daterange"]').daterangepicker({
@@ -1335,7 +1672,9 @@
                 
                 console.log('Fetching summary from:', summaryUrl);
                 
-                const summaryResponse = await fetch(summaryUrl);
+                const summaryResponse = await fetch(summaryUrl, {
+                    headers: getAuthHeaders()
+                });
                 if (!summaryResponse.ok) {
                     throw new Error(`Summary API failed: ${summaryResponse.status} ${summaryResponse.statusText}`);
                 }
@@ -1360,45 +1699,80 @@
                     showError('Failed to load summary data: ' + (summaryData.error || 'Unknown error'));
                 }
 
-                // Load detailed analytics with all filters
-                let detailedUrl = `/api/analytics/detailed?start_date=${startDate}&end_date=${endDate}`;
-                if (sourceType) detailedUrl += `&source_type=${sourceType}`;
-                
-                console.log('Fetching detailed analytics from:', detailedUrl);
-
-                const detailedResponse = await fetch(detailedUrl);
-                if (!detailedResponse.ok) {
-                    throw new Error(`Detailed API failed: ${detailedResponse.status} ${detailedResponse.statusText}`);
-                }
-                
-                const detailedData = await detailedResponse.json();
-                console.log('Detailed data received:', detailedData);
-                
-                if (detailedData.success) {
-                    updateRecentActivity(detailedData.data);
-                } else {
-                    console.error('Detailed API returned error:', detailedData.error);
-                    showError('Failed to load detailed data: ' + (detailedData.error || 'Unknown error'));
-                }
-
-                // Load error analytics
-                let errorUrl = `/api/analytics/errors?start_date=${startDate}&end_date=${endDate}`;
-                if (sourceType) errorUrl += `&source_type=${sourceType}`;
-                
-                console.log('Fetching error analytics from:', errorUrl);
-
-                const errorResponse = await fetch(errorUrl);
-                if (!errorResponse.ok) {
-                    console.warn(`Error analytics API failed: ${errorResponse.status} ${errorResponse.statusText}`);
-                } else {
-                    const errorData = await errorResponse.json();
-                    console.log('Error data received:', errorData);
+                // Load detailed analytics with all filters (admin only)
+                if (isAdmin) {
+                    let detailedUrl = `/api/analytics/detailed?start_date=${startDate}&end_date=${endDate}`;
+                    if (sourceType) detailedUrl += `&source_type=${sourceType}`;
                     
-                    if (errorData.success) {
-                        updateErrorStats(errorData.data);
-                        updateErrorCharts(errorData.data);
-                    } else {
-                        console.error('Error analytics API returned error:', errorData.error);
+                    console.log('Fetching detailed analytics from:', detailedUrl);
+                    console.log('Auth headers for detailed:', getAuthHeaders());
+                    try {
+                        const detailedResponse = await fetch(detailedUrl, {
+                            headers: getAuthHeaders()
+                        });
+                        console.log('Detailed analytics response status:', detailedResponse.status);
+                        
+                        if (detailedResponse.status === 403) {
+                            console.warn('Detailed analytics forbidden for current user');
+                            updateRecentActivityFallback();
+                        } else if (!detailedResponse.ok) {
+                            throw new Error(`Detailed API failed: ${detailedResponse.status} ${detailedResponse.statusText}`);
+                        } else {
+                            const detailedData = await detailedResponse.json();
+                            console.log('Detailed data received:', detailedData);
+                            if (detailedData.success) {
+                                updateRecentActivity(detailedData.data);
+                            } else {
+                                console.warn('Detailed API returned error, showing fallback activity');
+                                // Show fallback recent activity from summary data
+                                updateRecentActivityFallback();
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Detailed analytics load skipped:', e.message);
+                        // Show fallback when detailed analytics fails
+                        updateRecentActivityFallback();
+                    }
+                } else {
+                    // For regular users, show fallback recent activity
+                    console.log('Regular user - showing fallback recent activity');
+                    updateRecentActivityFallback();
+                }
+
+                // Load error analytics (admin only)
+                if (isAdmin) {
+                    let errorUrl = `/api/analytics/errors?start_date=${startDate}&end_date=${endDate}`;
+                    if (sourceType) errorUrl += `&source_type=${sourceType}`;
+                    
+                    console.log('Fetching error analytics from:', errorUrl);
+                    console.log('Auth headers:', getAuthHeaders());
+                    try {
+                        const errorResponse = await fetch(errorUrl, {
+                            headers: getAuthHeaders()
+                        });
+                        console.log('Error analytics response status:', errorResponse.status);
+                        console.log('Error analytics response headers:', errorResponse.headers);
+                        
+                        if (errorResponse.status === 403) {
+                            console.warn('Error analytics forbidden for current user');
+                            updateErrorAnalyticsNoData();
+                        } else if (errorResponse.ok) {
+                            const errorData = await errorResponse.json();
+                            console.log('Error data received:', errorData);
+                            if (errorData.success) {
+                                updateErrorStats(errorData.data);
+                                updateErrorCharts(errorData.data);
+                            } else {
+                                console.warn('Error API returned error, showing no data');
+                                updateErrorAnalyticsNoData();
+                            }
+                        } else {
+                            console.warn('Error analytics failed with status:', errorResponse.status);
+                            updateErrorAnalyticsNoData();
+                        }
+                    } catch (e) {
+                        console.warn('Error analytics load skipped:', e.message);
+                        updateErrorAnalyticsNoData();
                     }
                 }
 
@@ -1421,22 +1795,43 @@
         }
 
         function updateSummaryStats(data) {
-            document.getElementById('totalSessions').textContent = data.total_sessions.toLocaleString();
-            document.getElementById('generateClicks').textContent = data.generate_clicks.toLocaleString();
-            document.getElementById('successfulGenerations').textContent = data.successful_generations.toLocaleString();
-            document.getElementById('successRate').textContent = Math.min(data.success_rate, 100).toFixed(1);
+            // Normalize summary object shape and guard against undefined values
+            const summary = (data && typeof data === 'object') ? (data.summary || data) : {};
+            const timing = summary.generation_timing || {};
+
+            const toNumber = (val, fallback = 0) => {
+                const n = Number(val);
+                return Number.isFinite(n) ? n : fallback;
+            };
+            const formatInt = (val) => toNumber(val, 0).toLocaleString();
+            const formatFixed = (val, d = 1) => toNumber(val, 0).toFixed(d);
+
+            // Hide Total Sessions card for non-admin users
+            const totalSessionsCard = document.getElementById('totalSessions').closest('.col-md-2');
+            if (totalSessionsCard) {
+                if (isAdmin) {
+                    totalSessionsCard.style.display = '';
+                } else {
+                    totalSessionsCard.style.display = 'none';
+                }
+            }
+
+            document.getElementById('totalSessions').textContent = formatInt(summary.total_sessions);
+            document.getElementById('generateClicks').textContent = formatInt(summary.generate_clicks);
+            document.getElementById('successfulGenerations').textContent = formatInt(summary.successful_generations);
+            document.getElementById('successRate').textContent = Math.min(toNumber(summary.success_rate, 0), 100).toFixed(1);
             
             // Update timing stats
-            if (data.generation_timing) {
-                document.getElementById('avgGenerationTime').textContent = data.generation_timing.avg_generation_time.toFixed(1);
-                document.getElementById('maxGenerationTime').textContent = data.generation_timing.max_generation_time.toFixed(1);
+            if (timing && (timing.avg_generation_time !== undefined || timing.max_generation_time !== undefined)) {
+                document.getElementById('avgGenerationTime').textContent = formatFixed(timing.avg_generation_time, 1);
+                document.getElementById('maxGenerationTime').textContent = formatFixed(timing.max_generation_time, 1);
             } else {
                 document.getElementById('avgGenerationTime').textContent = '-';
                 document.getElementById('maxGenerationTime').textContent = '-';
             }
             
             // Update test cases stats
-            updateTestCasesStats(data);
+            updateTestCasesStats(summary);
         }
         
         function updateTestCasesStats(data) {
@@ -1448,8 +1843,9 @@
             let urlTestCases = 0;
             
             // Calculate test cases from source type distribution
-            if (data.source_type_distribution) {
-                data.source_type_distribution.forEach(item => {
+            const sourceDist = (data && data.source_type_distribution) ? data.source_type_distribution : [];
+            if (Array.isArray(sourceDist)) {
+                sourceDist.forEach(item => {
                     const sourceType = item._id ? item._id.toLowerCase() : '';
                     const count = item.count || 0;
                     
@@ -1476,11 +1872,11 @@
             }
             
             // Update the UI
-            document.getElementById('totalTestCases').textContent = totalTestCases.toLocaleString();
-            document.getElementById('jiraTestCases').textContent = jiraTestCases.toLocaleString();
-            document.getElementById('azureTestCases').textContent = azureTestCases.toLocaleString();
-            document.getElementById('imageTestCases').textContent = imageTestCases.toLocaleString();
-            document.getElementById('urlTestCases').textContent = urlTestCases.toLocaleString();
+            document.getElementById('totalTestCases').textContent = Number(totalTestCases).toLocaleString();
+            document.getElementById('jiraTestCases').textContent = Number(jiraTestCases).toLocaleString();
+            document.getElementById('azureTestCases').textContent = Number(azureTestCases).toLocaleString();
+            document.getElementById('imageTestCases').textContent = Number(imageTestCases).toLocaleString();
+            document.getElementById('urlTestCases').textContent = Number(urlTestCases).toLocaleString();
 
         }
 
@@ -1733,6 +2129,98 @@
                 timingByItemsCtx.style.display = 'none';
                 timingByItemsPlaceholder.style.display = 'flex';
                 timingByItemsContainer.classList.add('compact');
+            }
+        }
+
+        function updateErrorAnalyticsNoData() {
+            // Show no data for error analytics
+            document.getElementById('totalErrors').textContent = '0';
+            document.getElementById('warningErrors').textContent = '0';
+            document.getElementById('criticalErrors').textContent = '0';
+            document.getElementById('infoErrors').textContent = '0';
+            document.getElementById('exceptionErrors').textContent = '0';
+            document.getElementById('messageErrors').textContent = '0';
+            
+            // Show no data placeholders for charts
+            document.getElementById('errorLevelPlaceholder').style.display = 'flex';
+            document.getElementById('errorTypePlaceholder').style.display = 'flex';
+            document.getElementById('recentErrors').innerHTML = '<div class="no-data-message"><i class="bi bi-check-circle"></i> No recent errors</div>';
+            
+            // Hide chart canvases
+            const errorLevelChart = document.getElementById('errorLevelChart');
+            const errorTypeChart = document.getElementById('errorTypeChart');
+            if (errorLevelChart) errorLevelChart.style.display = 'none';
+            if (errorTypeChart) errorTypeChart.style.display = 'none';
+        }
+
+        function updateRecentActivityFallback() {
+            const container = document.getElementById('recentActivity');
+            const recentActivityContainer = container.closest('.chart-container');
+            
+            // Try to load recent test cases instead of analytics events
+            loadRecentTestCases(container, recentActivityContainer);
+        }
+        
+        async function loadRecentTestCases(container, recentActivityContainer) {
+            try {
+                console.log('Loading recent test cases...');
+                const response = await fetch('/api/test-cases/recent', {
+                    headers: getAuthHeaders()
+                });
+                
+                console.log('Test cases API response status:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Test cases API response data:', data);
+                    
+                    if (data.success && data.test_cases && data.test_cases.length > 0) {
+                        // Show recent test cases
+                        recentActivityContainer.classList.remove('compact');
+                        const testCasesHtml = data.test_cases.slice(0, 5).map(testCase => {
+                            const createdDate = new Date(testCase.created_at).toLocaleString();
+                            const sourceType = testCase.source_type || 'Unknown';
+                            return `
+                                <div class="activity-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="bi bi-check-circle"></i>
+                                            <strong>Test Case Generated</strong>
+                                            - ${sourceType.charAt(0).toUpperCase() + sourceType.slice(1).toLowerCase()}
+                                            ${testCase.item_id ? `(${testCase.item_id})` : ''}
+                                        </div>
+                                        <small class="text-muted">${createdDate}</small>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        
+                        container.innerHTML = testCasesHtml;
+                    } else {
+                        // No test cases found
+                        recentActivityContainer.classList.add('compact');
+                        container.innerHTML = `
+                            <div class="no-data-message">
+                                <i class="bi bi-clock-history"></i> 
+                                <div>No recent test cases found</div>
+                                <small class="text-muted">Generate your first test case to see activity here</small>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error('Failed to fetch recent test cases');
+                }
+            } catch (error) {
+                console.warn('Failed to load recent test cases:', error);
+                // Fallback to simple message
+                recentActivityContainer.classList.add('compact');
+                container.innerHTML = `
+                    <div class="no-data-message">
+                        <i class="bi bi-clock-history"></i> 
+                        <div>Recent activity data not available</div>
+                        <small class="text-muted">Try generating some test cases to see activity</small>
+                    </div>
+                `;
             }
         }
 

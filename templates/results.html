@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>AI-Powered Generated Scenarios | AI Test Case Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
-    <link rel="shortcut icon" href="/static/assets/images/favicon.png">
+    <link rel="shortcut icon" href="/static/assets/images/favicon.png?v={{ timestamp if timestamp else '1' }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #4cab72;
@@ -20,7 +26,7 @@
 
         body {
             background-color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
         }
@@ -29,6 +35,128 @@
             max-width: 1280px;
             margin: 0 auto;
             padding: 0 20px;
+        }
+
+        /* Navbar styles - matching index.html exactly */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: #4CAA72 !important;
+            font-size: 1.5rem;
+        }
+
+        .navbar-nav .nav-link {
+            color: #1f2937;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #4CAA72;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .user-dropdown {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .user-dropdown:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: #4CAA72;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-name {
+            color: #495057;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .dropdown-arrow {
+            color: #6c757d;
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .user-dropdown.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 160px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 12px 16px;
+            color: #495057;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 4px 0;
         }
 
         /* Header Styles */
@@ -804,6 +932,7 @@
             display: flex;
         }
 
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .header-content {
@@ -825,6 +954,7 @@
                 flex: 1;
                 justify-content: center;
             }
+
 
             .section-header {
                 flex-direction: column;
@@ -1021,12 +1151,45 @@
             background: #4b5563;
         }
     </style>
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
 </head>
 
 <body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-robot me-2"></i>
+                AI Test Case Generator
+            </a>
+            
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">Home</a>
+                <a class="nav-link" href="/documentation">Documentation</a>
+                <a class="nav-link" href="/signin" id="signinNavLink">Sign In</a>
+                <!--  <a class="nav-link" href="/dashboard" id="dashboardNavLink" style="display: none;">Dashboard</a> -->
+                <a class="nav-link" href="/analytics" id="analyticsNavLink" style="display: none;">Analytics</a>
+                <div class="user-info" id="userInfoNav" style="display: none;">
+                    <div class="user-dropdown" onclick="toggleUserDropdown()">
+                        <div class="user-avatar" id="userAvatar">
+                            <!-- Will be populated with first letter of username -->
+                        </div>
+                        <span class="user-name d-none d-md-inline" id="userName">User</span>
+                        <i class="bi bi-chevron-down dropdown-arrow"></i>
+                    </div>
+                    <div class="dropdown-menu" id="userDropdownMenu">
+                        <a href="/dashboard" class="dropdown-item">
+                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" onclick="logout()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
     <!-- Back to Top Button -->
     <button class="back-to-top" id="backToTop" title="Back to Top">
         <i class="bi bi-arrow-up"></i>
@@ -1038,8 +1201,8 @@
             <div class="header-content">
                 <div class="logo-section">
                     <div>
-                        <img src="/static/assets/images/eatance--logo.svg" alt="Eatance Logo">
-                        <div class="main-title">AI-Powered Generated Scenarios</div>
+                        <!-- <img src="/static/assets/images/eatance--logo.svg" alt="Eatance Logo"> -->
+                        <div class="main-title">AI-Powered Generated Test Cases</div>
                         <div class="jira-items" id="jiraItems">
                             <!-- Jira items will be populated here -->
                         </div>
@@ -1140,7 +1303,9 @@
         <div class="test-cases-section">
             <div class="section-header">
                 <div class="section-title-container">
-                    <div class="section-title">For <span id="sourceType">Jira</span>: <span id="itemIdsDisplay"></span></div>
+                    <div class="section-title" id="sourceTypeSection" style="display: none;">
+                    For <span id="sourceType">Loading...</span>: <span id="itemIdsDisplay"></span>
+                </div>
                     <div class="item-selector" id="itemSelector">
                         <!-- Item IDs will be populated here as clickable tags -->
                 </div>
@@ -1172,32 +1337,6 @@
         </div>
 
 
-    <!-- Share URL Modal -->
-    <div class="modal fade" id="shareUrlModal" tabindex="-1" aria-labelledby="shareUrlModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="shareUrlModalLabel">Share Test Cases</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Share this URL to give others access to these test cases:</p>
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" id="shareUrlInput" readonly>
-                        <button class="btn btn-outline-secondary" type="button" id="copyShareUrlBtn">
-                            <i class="bi bi-clipboard"></i> Copy
-                        </button>
-                    </div>
-                    <div id="copySuccess" class="alert alert-success d-none">
-                        URL copied to clipboard!
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -1246,6 +1385,9 @@
                 }
             }
 
+            // Initialize UI state
+            updateShareButtonState();
+
             // Load test cases (this will also update the source type and item IDs from the API)
             if (urlKey) {
                 loadTestCases();
@@ -1290,17 +1432,34 @@
         function updateSectionTitle() {
             const sourceTypeSpan = document.getElementById('sourceType');
             const itemIdsDisplay = document.getElementById('itemIdsDisplay');
+            const sourceTypeSection = document.getElementById('sourceTypeSection');
             
             if (sourceTypeSpan) {
                 sourceTypeSpan.textContent = currentSourceType;
             }
             
-            if (itemIdsDisplay && currentItems.length > 0) {
-                if (currentItems.length === 1) {
-                    itemIdsDisplay.textContent = currentItems[0];
+            if (itemIdsDisplay) {
+                if (currentItems && currentItems.length > 0) {
+                    if (currentItems.length === 1) {
+                        itemIdsDisplay.textContent = currentItems[0];
+                    } else {
+                        itemIdsDisplay.textContent = 'All items';
+                    }
                 } else {
-                    itemIdsDisplay.textContent = 'All items';
+                    // For sources without item IDs (like images), show appropriate text
+                    if (currentSourceType.toLowerCase() === 'image') {
+                        itemIdsDisplay.textContent = 'Generated from image';
+                    } else if (currentSourceType.toLowerCase() === 'url') {
+                        itemIdsDisplay.textContent = 'Generated from URL';
+                    } else {
+                        itemIdsDisplay.textContent = 'No items';
+                    }
                 }
+            }
+            
+            // Show the source type section once we have the data
+            if (sourceTypeSection) {
+                sourceTypeSection.style.display = 'block';
             }
         }
 
@@ -1856,6 +2015,9 @@
                 console.log('Final test cases array:', testCases.length, 'test cases');
                 console.log('Sample test case structure:', testCases[0]);
                 
+                // Update UI based on test cases availability
+                updateShareButtonState();
+                
                 // If we still don't have real data, try one more approach - check if there are any files in the generated directory
                 if (testCases.length === 0 || (testCases.length > 0 && testCases[0].Title === 'TC_1')) {
                     console.log('No real test cases found, trying to find actual generated files...');
@@ -1910,6 +2072,7 @@
                                 if (parsed && parsed.length > 0) {
                                     testCases = parsed;
                                     console.log('Successfully parsed AI content:', testCases.length, 'test cases');
+                                    updateShareButtonState();
                                 }
                             }
                         }
@@ -1938,6 +2101,7 @@
                                             if (firstItem.Title && firstItem.Title !== 'TC_1') {
                                                 testCases = fileData.content;
                                                 console.log('Found real test cases in upload file:', file, testCases.length, 'test cases');
+                                                updateShareButtonState();
                                                 break;
                                             }
                                         }
@@ -2829,6 +2993,12 @@
 
         async function shareTestCases() {
             try {
+                // Check if test cases are loaded
+                if (!testCases || testCases.length === 0) {
+                    alert('No test cases available to share. Please wait for the data to load or refresh the page.');
+                    return;
+                }
+
                 // Filter test cases based on selected item
                 let testCasesToShare = testCases;
                 let statusValuesToShare = statusValues;
@@ -2841,6 +3011,12 @@
                         return title.includes(`(${selectedItemId})`);
                     });
                     
+                    // Check if filtering resulted in empty array
+                    if (testCasesToShare.length === 0) {
+                        alert('No test cases found for the selected item. Please try selecting a different item or use "Show All".');
+                        return;
+                    }
+                    
                     // Filter status values for selected item only
                     statusValuesToShare = {};
                     testCasesToShare.forEach(tc => {
@@ -2852,6 +3028,12 @@
                     
                     itemIdsToShare = [selectedItemId];
                 }
+                
+                console.log('Sharing test cases:', {
+                    count: testCasesToShare.length,
+                    sample: testCasesToShare[0],
+                    itemIds: itemIdsToShare
+                });
                 
                 const response = await fetch('/api/share', {
                     method: 'POST',
@@ -2866,23 +3048,90 @@
                     })
                 });
 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
                 if (data.success) {
-                    // Show share modal
-                    document.getElementById('shareUrlInput').value = data.share_url;
-                    const shareModal = new bootstrap.Modal(document.getElementById('shareUrlModal'));
-                    shareModal.show();
+                    // Use native sharing if available, otherwise fallback to copy
+                    if (navigator.share) {
+                        navigator.share({
+                            title: 'AI Generated Test Case',
+                            text: 'Check out this AI-generated test case!',
+                            url: data.share_url
+                        }).catch((error) => {
+                            console.log('Error sharing:', error);
+                            // Fallback to copy to clipboard
+                            copyToClipboard(data.share_url);
+                        });
+                    } else {
+                        // Fallback: copy to clipboard
+                        copyToClipboard(data.share_url);
+                    }
                 } else {
-                    alert('Failed to create share URL');
+                    alert('Failed to create share URL: ' + (data.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error sharing test cases:', error);
-                alert('Failed to share test cases');
+                alert('Failed to share test cases: ' + error.message);
             }
         }
 
         function toggleFabMenu() {
             // Implement floating action button menu
+        }
+
+        function updateShareButtonState() {
+            const shareBtn = document.getElementById('shareBtn');
+            if (shareBtn) {
+                if (testCases && testCases.length > 0) {
+                    shareBtn.disabled = false;
+                    shareBtn.title = 'Share test cases';
+                    shareBtn.classList.remove('btn-secondary');
+                    shareBtn.classList.add('btn-success');
+                } else {
+                    shareBtn.disabled = true;
+                    shareBtn.title = 'No test cases available to share';
+                    shareBtn.classList.remove('btn-success');
+                    shareBtn.classList.add('btn-secondary');
+                }
+            }
+        }
+
+        // Native Share Functions
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success message
+                showAlert('Test case link copied to clipboard!', 'success');
+            }).catch(() => {
+                showAlert('Failed to copy link to clipboard', 'danger');
+            });
+        }
+
+        function showAlert(message, type) {
+            // Create a temporary alert element
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.style.minWidth = '300px';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 3000);
         }
 
 
@@ -3372,6 +3621,98 @@
                 behavior: 'smooth'
             });
         });
+
+        // Function to check authentication status and update UI - matching index.html exactly
+        function checkAuthStatus() {
+            const token = localStorage.getItem('authToken');
+            const userInfo = localStorage.getItem('userInfo');
+            
+            // Navbar elements
+            const signinNavLink = document.getElementById('signinNavLink');
+            const dashboardNavLink = document.getElementById('dashboardNavLink');
+            const analyticsNavLink = document.getElementById('analyticsNavLink');
+            const userInfoNav = document.getElementById('userInfoNav');
+            
+            if (token && userInfo) {
+                try {
+                    const user = JSON.parse(userInfo);
+                    
+                    // Update navbar for logged-in user
+                    if (signinNavLink) signinNavLink.style.display = 'none';
+                    if (dashboardNavLink) dashboardNavLink.style.display = 'inline-block';
+                    if (analyticsNavLink) analyticsNavLink.style.display = 'inline-block';
+                    if (userInfoNav) {
+                        userInfoNav.style.display = 'flex';
+                        document.getElementById('userName').textContent = user.name;
+                        document.getElementById('userAvatar').textContent = user.name.charAt(0).toUpperCase();
+                    }
+                } catch (error) {
+                    console.error('Error parsing user info:', error);
+                    // Clear invalid data
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userInfo');
+                }
+            } else {
+                // User not logged in - show sign in button
+                // Update navbar for non-logged-in user
+                if (signinNavLink) signinNavLink.style.display = 'inline-block';
+                if (dashboardNavLink) dashboardNavLink.style.display = 'none';
+                if (analyticsNavLink) analyticsNavLink.style.display = 'none';
+                if (userInfoNav) userInfoNav.style.display = 'none';
+            }
+        }
+
+        // Function to toggle user dropdown - matching index.html exactly
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+                userDropdown.classList.remove('active');
+            } else {
+                dropdown.classList.add('show');
+                userDropdown.classList.add('active');
+            }
+        }
+
+        // Function to close user dropdown
+        function closeUserDropdown() {
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            dropdown.classList.remove('show');
+            userDropdown.classList.remove('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const userInfo = document.getElementById('userInfoNav');
+            const dropdown = document.getElementById('userDropdownMenu');
+            const userDropdown = document.querySelector('.user-dropdown');
+            
+            if (!userInfo.contains(event.target)) {
+                dropdown.classList.remove('show');
+                userDropdown.classList.remove('active');
+            }
+        });
+
+        // Initialize auth status check
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+        });
+
+        // Logout function
+        function logout() {
+            // Clear authentication data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userInfo');
+            // Redirect to home page
+            window.location.href = '/';
+        }
     </script>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
