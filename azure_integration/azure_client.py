@@ -1,5 +1,6 @@
 # Import error logging utilities for error tracking
 from utils.error_logger import capture_exception, capture_message, set_tag, set_context
+from utils.error_monitor import monitor_azure_api, monitor_critical_system
 
 import os
 import requests
@@ -40,6 +41,7 @@ class AzureClient:
             print(f"❌ Invalid azure_url type: {type(self.azure_url)}, expected string")
             self.azure_url = None
 
+    @monitor_critical_system
     def fetch_azure_work_items(self, work_item_ids=None):
         if not work_item_ids:
             work_item_ids = os.getenv("AZURE_DEVOPS_WORKITEM_IDS", "").split(",")
@@ -81,7 +83,12 @@ class AzureClient:
             }
 
             try:
-                response = requests.get(url, headers=headers)
+                # Make the API call with monitoring
+                @monitor_azure_api(critical=True)
+                def make_azure_request():
+                    return requests.get(url, headers=headers)
+                
+                response = make_azure_request()
                 if response.status_code == 200:
                     work_item = response.json()
                     
