@@ -1,10 +1,12 @@
 # Import error logging utilities for error tracking
 from utils.error_logger import capture_exception, capture_message, set_tag, set_context
+from utils.error_monitor import monitor_jira_api, monitor_critical_system
 
 import requests
 from typing import Optional, Dict, Any, List
 from config.settings import JIRA_URL, JIRA_USER, JIRA_API_TOKEN
 
+@monitor_critical_system
 def fetch_issue(issue_key: str, jira_config: Optional[Dict[str, str]] = None) -> Optional[Dict[str, Any]]:
     """Fetch issue details from Jira.
 
@@ -40,12 +42,17 @@ def fetch_issue(issue_key: str, jira_config: Optional[Dict[str, str]] = None) ->
     headers = {"Accept": "application/json"}
 
     try:
-        response = requests.get(
-            url,
-            auth=(jira_user, jira_token),
-            headers=headers,
-            timeout=30
-        )
+        # Make the API call with monitoring
+        @monitor_jira_api(critical=True)
+        def make_jira_request():
+            return requests.get(
+                url,
+                auth=(jira_user, jira_token),
+                headers=headers,
+                timeout=30
+            )
+        
+        response = make_jira_request()
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
