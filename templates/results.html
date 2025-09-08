@@ -641,7 +641,7 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 12px;
+            /* margin-bottom: 12px; */
         }
 
         .test-case-id {
@@ -1352,6 +1352,25 @@
             color: #111827;
         }
 
+        /* Status timestamp styling */
+        .status-timestamp {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .status-timestamp i {
+            margin-right: 4px;
+        }
+
+        .status-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
         /* Analytics Section Styles */
         .analytics-section {
             margin-bottom: 32px;
@@ -1688,6 +1707,28 @@
         let statusChart = null;
         let typeChart = null;
         let allowedFormTypes = null; // Set from server if available
+        
+        // Status timestamps from server
+        {% if status_timestamps %}
+        // Initialize timestamps from server and ensure they're in ISO format
+        const rawTimestamps = {{ status_timestamps | tojson | safe }};
+        window.statusTimestamps = {};
+        // Convert Python datetime to ISO format if needed
+        Object.keys(rawTimestamps).forEach(key => {
+            const timestamp = rawTimestamps[key];
+            if (timestamp) {
+                // If it's already an ISO string, use it as is
+                if (typeof timestamp === 'string' && timestamp.includes('T')) {
+                    window.statusTimestamps[key] = timestamp;
+                } else {
+                    // If it's a different format, convert to ISO
+                    window.statusTimestamps[key] = new Date(timestamp).toISOString();
+                }
+            }
+        });
+        {% else %}
+        window.statusTimestamps = {};
+        {% endif %}
 
         // Scroll to top on page refresh
         window.addEventListener('beforeunload', function() {
@@ -2808,15 +2849,25 @@
                 
                 const statusClass = getStatusClass(status);
                 const testCaseId = title;
+                
+                // Get timestamp for this test case
+                const statusTimestamp = window.statusTimestamps && window.statusTimestamps[title] ? 
+                    formatTimestamp(window.statusTimestamps[title]) : null;
+                const timestampDisplay = statusTimestamp ? 
+                    `<small class="status-timestamp">
+                        <i class="bi bi-clock"></i> 
+                        Last updated: ${statusTimestamp}
+                    </small>` : '';
 
                 return `
                     <div class="test-case-card status-${statusClass}">
                         <div class="test-case-header">
                             <div class="test-case-id">${title}</div>
-                            <div class="status-badge ${statusClass}" onclick="toggleStatusDropdown('${title}', this, event)">
-                                <i class="bi ${getStatusIcon(status)}"></i>
-                                <span class="status-text">${status}</span>
-                                <i class="bi bi-chevron-down status-dropdown-icon"></i>
+                            <div class="status-container">
+                                <div class="status-badge ${statusClass}" onclick="toggleStatusDropdown('${title}', this, event)">
+                                    <i class="bi ${getStatusIcon(status)}"></i>
+                                    <span class="status-text">${status}</span>
+                                    <i class="bi bi-chevron-down status-dropdown-icon"></i>
                                 <div class="status-dropdown" id="status-dropdown-${title.replace(/[^a-zA-Z0-9]/g, '-')}" style="display: none;">
                                     <div class="status-option" onclick="event.stopPropagation(); updateStatus('${title}', 'Not Tested')">
                                         <i class="bi bi-dash-circle"></i>
@@ -2836,7 +2887,9 @@
                                     </div>
                                 </div>
                             </div>
+                            ${timestampDisplay}
                         </div>
+                    </div>
                         <div class="test-case-title">${title}</div>
                         <div class="test-case-description">${shortDescription}</div>
                         <div class="test-case-actions">
@@ -2894,6 +2947,24 @@
             }
         }
 
+        function formatTimestamp(timestamp) {
+            if (!timestamp) return null;
+            try {
+                return new Date(timestamp).toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                console.error('Error formatting timestamp:', e);
+                return timestamp;
+            }
+        }
+
         function updateMetrics(testCasesToCount = null) {
             const testCasesToUse = testCasesToCount || testCases;
             const total = testCasesToUse.length;
@@ -2918,6 +2989,14 @@
             if (testCase) {
                 testCase.Status = newStatus;
                 statusValues[testCaseId] = newStatus;
+                
+                // Update timestamp for this test case
+                if (!window.statusTimestamps) {
+                    window.statusTimestamps = {};
+                }
+                // Store timestamp with timezone offset
+                // Store timestamp in UTC format
+                window.statusTimestamps[testCaseId] = new Date().toISOString();
                 
                 // Close all dropdowns immediately
                 const allDropdowns = document.querySelectorAll('.status-dropdown');
@@ -2964,7 +3043,8 @@
                     body: JSON.stringify({
                         test_case_id: testCaseId,
                         status: status,
-                        key: urlKey
+                        key: urlKey,
+                        shared_view: false
                     })
                 });
 

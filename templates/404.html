@@ -197,43 +197,186 @@
             margin: 4px 0;
         }
 
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: rgba(40, 167, 69, 0.3);
+            border-radius: 50%;
+            animation: float-particle 15s infinite linear;
+        }
+
+        @keyframes float-particle {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Cursor trail effect */
+        .cursor-trail {
+            position: fixed;
+            width: 6px;
+            height: 6px;
+            background: rgba(40, 167, 69, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transition: all 0.1s ease;
+        }
+
         .error-container {
-            min-height: calc(100vh - 80px);
+            margin-top: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 80px);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .error-code {
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-            margin-top: 80px;
+            gap: 2rem;
+            margin-bottom: 2rem;
         }
 
-        .error-card {
-            background: white;
-            border-radius: 20px;
-            padding: 3rem;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            width: 100%;
+        .error-number {
+            font-size: 12rem;
+            font-weight: 900;
+            color: #1a4a52;
+            line-height: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
         }
 
-        .error-icon {
-            font-size: 5rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
+        .error-number:hover {
+            transform: scale(1.1) rotate(5deg);
+            color: #28a745;
+            text-shadow: 0 0 20px rgba(40, 167, 69, 0.5);
         }
 
-        .error-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--secondary-color);
-            margin-bottom: 1rem;
+        .error-number.shake {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        .detective-icon {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+            animation: float 3s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .detective-icon::before {
+            content: '';
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            top: 20px;
+            left: 30px;
+            animation: shine 2s ease-in-out infinite;
+        }
+
+        .detective-icon:hover {
+            transform: scale(1.2) rotate(15deg);
+            box-shadow: 0 15px 40px rgba(40, 167, 69, 0.5);
+        }
+
+        .detective-figure {
+            font-size: 4rem;
+            color: white;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .detective-icon:hover .detective-figure {
+            transform: scale(1.1);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes shine {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.5; }
         }
 
         .error-message {
-            font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 2rem;
+            color: #1a4a52;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            max-width: 600px;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.5s forwards;
+        }
+
+        .error-description {
+            color: #6c757d;
+            font-size: 1.1rem;
+            margin-bottom: 3rem;
             line-height: 1.6;
+            max-width: 500px;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.7s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .action-buttons {
@@ -241,52 +384,83 @@
             gap: 1rem;
             justify-content: center;
             flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 1s ease 0.9s forwards;
         }
 
-        .btn-primary {
-            background: var(--primary-color);
+        .btn-home {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 1rem 2rem;
             border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            font-weight: 600;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
             transition: all 0.3s ease;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-primary:hover {
-            background: var(--secondary-color);
-            transform: translateY(-2px);
+        .btn-home:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 35px rgba(40, 167, 69, 0.4);
+            color: white;
+            text-decoration: none;
         }
 
         .btn-outline {
             border: 2px solid var(--primary-color);
             color: var(--primary-color);
             background: transparent;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            font-weight: 600;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .btn-outline:hover {
             background: var(--primary-color);
             color: white;
-            transform: translateY(-2px);
+            transform: translateY(-3px) scale(1.05);
+            text-decoration: none;
         }
 
-        .decoration-dots {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            opacity: 0.1;
+        .fun-facts {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            max-width: 280px;
+            transform: translateX(100%);
+            transition: all 0.5s ease;
+            cursor: pointer;
+            z-index: 1001;
         }
 
-        .decoration-dots .dot {
-            width: 8px;
-            height: 8px;
-            background: var(--primary-color);
-            border-radius: 50%;
-            margin: 0.5rem;
-            display: inline-block;
+        .fun-facts.show {
+            transform: translateX(0);
+        }
+
+        .fun-facts h4 {
+            color: #1a4a52;
+            margin-bottom: 0.5rem;
+        }
+
+        .fun-facts p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-bottom: 0;
         }
     </style>
 </head>
@@ -340,48 +514,66 @@
         </div>
     </nav>
 
-    <div class="decoration-dots">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-    </div>
+    <div class="floating-particles" id="particles"></div>
 
     <div class="error-container">
-        <div class="error-card">
-            <div class="error-icon">
-                <i class="bi bi-search"></i>
+        <div class="error-code">
+            <div class="error-number" id="error1">4</div>
+            <div class="detective-icon" id="detective">
+                <div class="detective-figure">🔍</div>
             </div>
+            <div class="error-number" id="error2">4</div>
+        </div>
+
+        <h1 class="error-message" id="defaultErrorMessage" style="display: none;">
+            The test case you're looking for doesn't exist or may have been removed. 
+            This could happen if the link is outdated or the test case was deleted.
+        </h1>
+
+        <h1 class="error-message" id="aiErrorMessage" style="display: none;">
+            We apologize, but the test cases could not be generated at this time due to an issue with the AI model.
+            Please try again later. If the problem persists, contact our support team.
+        </h1>
+        
+        <p class="error-description">
+            Don't worry though, we'll help you find what you need!
+        </p>
+
+        <div class="action-buttons">
+            <a href="/" class="btn-home">
+                🏠 Back To Home
+            </a>
             
-            <h1 class="error-title">Test Case Not Found</h1>
-            
-            <p class="error-message">
-                The test case you're looking for doesn't exist or may have been removed. 
-                This could happen if the link is outdated or the test case was deleted.
-            </p>
-            
-            <div class="action-buttons">
-                <a href="/" class="btn btn-primary">
-                    <i class="bi bi-house me-2"></i>
-                    Go to Home
-                </a>
-                
-                <a href="/dashboard" class="btn btn-outline">
-                    <i class="bi bi-grid me-2"></i>
-                    View Dashboard
-                </a>
-            </div>
-            
-            <div class="mt-4">
-                <small class="text-muted">
-                    Need help? Contact support or try generating a new test case.
-                </small>
-            </div>
+            <a href="/dashboard" class="btn btn-outline">
+                <i class="bi bi-grid me-2"></i>
+                View Dashboard
+            </a>
         </div>
     </div>
 
+    <div class="fun-facts" id="funFacts">
+        <h4>Did you know?</h4>
+        <p id="factText">404 errors got their name from the room number at CERN where the original web server was located!</p>
+    </div>
+
     <script>
+        // Function to show appropriate error message based on URL parameters
+        function showErrorMessage() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const errorType = urlParams.get('error');
+            
+            const defaultErrorMessage = document.getElementById('defaultErrorMessage');
+            const aiErrorMessage = document.getElementById('aiErrorMessage');
+            
+            if (errorType === 'ai_model') {
+                defaultErrorMessage.style.display = 'none';
+                aiErrorMessage.style.display = 'block';
+            } else {
+                defaultErrorMessage.style.display = 'block';
+                aiErrorMessage.style.display = 'none';
+            }
+        }
+
         // Function to check authentication status and update UI - matching index.html exactly
         function checkAuthStatus() {
             const token = localStorage.getItem('authToken');
@@ -463,10 +655,127 @@
             }
         });
 
-        // Initialize auth status check
+        // Initialize auth status check, error message display, and interactive features
         document.addEventListener('DOMContentLoaded', function() {
             checkAuthStatus();
+            showErrorMessage();
+            createParticles();
+            
+            // Show fun facts after delay
+            setTimeout(() => {
+                document.getElementById('funFacts').classList.add('show');
+            }, 2000);
+
+            // Cycle through facts every 5 seconds
+            setInterval(showNextFact, 5000);
         });
+
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Cursor trail effect
+        const cursors = [];
+        function createCursorTrail(e) {
+            const cursor = document.createElement('div');
+            cursor.className = 'cursor-trail';
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            document.body.appendChild(cursor);
+            cursors.push(cursor);
+
+            setTimeout(() => {
+                cursor.style.opacity = '0';
+                cursor.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    if (cursor.parentNode) {
+                        cursor.parentNode.removeChild(cursor);
+                    }
+                    cursors.splice(cursors.indexOf(cursor), 1);
+                }, 100);
+            }, 200);
+
+            if (cursors.length > 10) {
+                const oldCursor = cursors.shift();
+                if (oldCursor.parentNode) {
+                    oldCursor.parentNode.removeChild(oldCursor);
+                }
+            }
+        }
+
+        // Fun facts
+        const facts = [
+            "404 errors got their name from the room number at CERN where the original web server was located!",
+            "The first website ever created is still online at info.cern.ch",
+            "Google's 404 page includes a hidden easter egg game!",
+            "404 is the most common HTTP error code on the web",
+            "Some websites have made their 404 pages so creative they've become destinations!"
+        ];
+
+        let factIndex = 0;
+
+        function showNextFact() {
+            const factText = document.getElementById('factText');
+            factText.style.opacity = '0';
+            setTimeout(() => {
+                factText.textContent = facts[factIndex];
+                factText.style.opacity = '1';
+                factIndex = (factIndex + 1) % facts.length;
+            }, 300);
+        }
+
+        // Error number interactions
+        document.getElementById('error1').addEventListener('click', function() {
+            this.classList.add('shake');
+            setTimeout(() => this.classList.remove('shake'), 500);
+        });
+
+        document.getElementById('error2').addEventListener('click', function() {
+            this.classList.add('shake');
+            setTimeout(() => this.classList.remove('shake'), 500);
+        });
+
+        // Detective icon interaction
+        let detectiveClicks = 0;
+        document.getElementById('detective').addEventListener('click', function() {
+            detectiveClicks++;
+            const figure = this.querySelector('.detective-figure');
+            
+            if (detectiveClicks === 1) {
+                figure.textContent = '🕵️';
+            } else if (detectiveClicks === 2) {
+                figure.textContent = '💀';
+            } else if (detectiveClicks === 3) {
+                figure.textContent = '😟';
+            } else if (detectiveClicks === 4) {
+                figure.textContent = '😩';
+            } else if (detectiveClicks === 5) {
+                figure.textContent = '😮';
+            } else if (detectiveClicks === 6) {
+                figure.textContent = '😵';
+                this.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #feca57 100%)';
+                setTimeout(() => {
+                    figure.textContent = '🔍';
+                    this.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    detectiveClicks = 0;
+                }, 2000);
+            }
+        });
+
+        // Fun facts click interaction
+        document.getElementById('funFacts').addEventListener('click', showNextFact);
+
+        // Add cursor trail
+        document.addEventListener('mousemove', createCursorTrail);
 
         // Logout function
         function logout() {
