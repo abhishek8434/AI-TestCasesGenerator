@@ -435,6 +435,114 @@ class MongoHandler:
             logger.error(f"Error resetting password by admin: {str(e)}")
             return {"success": False, "message": "Failed to reset password"}
 
+    def create_password_reset_token(self, email):
+        """Create a password reset token for the given email"""
+        try:
+            import secrets
+            import hashlib
+            from datetime import datetime, timedelta
+            
+            # Generate a secure random token
+            token = secrets.token_urlsafe(32)
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            
+            # Set expiration time (1 hour from now)
+            expires_at = datetime.utcnow() + timedelta(hours=1)
+            
+            # Store the token in the database
+            reset_data = {
+                "email": email,
+                "token_hash": token_hash,
+                "expires_at": expires_at,
+                "created_at": datetime.utcnow(),
+                "used": False
+            }
+            
+            # Insert into password_reset_tokens collection
+            result = self.db.password_reset_tokens.insert_one(reset_data)
+            
+            if result.inserted_id:
+                logger.info(f"Password reset token created for email: {email}")
+                return {"success": True, "token": token, "expires_at": expires_at}
+            else:
+                return {"success": False, "message": "Failed to create reset token"}
+                
+        except Exception as e:
+            logger.error(f"Error creating password reset token: {str(e)}")
+            return {"success": False, "message": "Failed to create reset token"}
+
+    def verify_password_reset_token(self, token):
+        """Verify a password reset token and return user email if valid"""
+        try:
+            import hashlib
+            from datetime import datetime
+            
+            # Hash the provided token
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            
+            # Find the token in the database
+            reset_record = self.db.password_reset_tokens.find_one({
+                "token_hash": token_hash,
+                "used": False,
+                "expires_at": {"$gt": datetime.utcnow()}
+            })
+            
+            if reset_record:
+                return {"success": True, "email": reset_record["email"]}
+            else:
+                return {"success": False, "message": "Invalid or expired reset token"}
+                
+        except Exception as e:
+            logger.error(f"Error verifying password reset token: {str(e)}")
+            return {"success": False, "message": "Failed to verify reset token"}
+
+    def use_password_reset_token(self, token, new_password):
+        """Use a password reset token to change password"""
+        try:
+            import hashlib
+            from datetime import datetime
+            
+            # Hash the provided token
+            token_hash = hashlib.sha256(token.encode()).hexdigest()
+            
+            # Find the token in the database
+            reset_record = self.db.password_reset_tokens.find_one({
+                "token_hash": token_hash,
+                "used": False,
+                "expires_at": {"$gt": datetime.utcnow()}
+            })
+            
+            if not reset_record:
+                return {"success": False, "message": "Invalid or expired reset token"}
+            
+            email = reset_record["email"]
+            
+            # Hash the new password
+            salt = bcrypt.gensalt()
+            hashed_new_password = bcrypt.hashpw(new_password.encode('utf-8'), salt)
+            
+            # Update the user's password
+            user_result = self.users_collection.update_one(
+                {"email": email},
+                {"$set": {"password": hashed_new_password}}
+            )
+            
+            if user_result.modified_count > 0:
+                # Mark the token as used
+                self.db.password_reset_tokens.update_one(
+                    {"_id": reset_record["_id"]},
+                    {"$set": {"used": True, "used_at": datetime.utcnow()}}
+                )
+                
+                logger.info(f"Password reset successfully for email: {email}")
+                return {"success": True, "message": "Password reset successfully"}
+            else:
+                return {"success": False, "message": "User not found"}
+                
+        except Exception as e:
+            logger.error(f"Error using password reset token: {str(e)}")
+            return {"success": False, "message": "Failed to reset password"}
+
     def search_users(self, admin_user_id, query, limit=20):
         """Search users by name or email (admin only)"""
         try:
@@ -5374,6 +5482,15 @@ class MongoHandler:
             # Log the request details
             logger.info(f"Updating status for test case with identifier '{test_case_id}' in document {url_key}")
             
+            # Debug: Log the document structure
+            logger.info(f"Document structure: {list(doc.keys())}")
+            if 'test_data' in doc:
+                logger.info(f"test_data type: {type(doc['test_data'])}")
+                if isinstance(doc['test_data'], dict):
+                    logger.info(f"test_data keys: {list(doc['test_data'].keys())}")
+                elif isinstance(doc['test_data'], list):
+                    logger.info(f"test_data list length: {len(doc['test_data'])}")
+            
             # Always update the central status dictionary first for reliable syncing
             # This ensures all views (main and shared) use the same status values
             title_found = False
@@ -5381,12 +5498,19 @@ class MongoHandler:
             # Check if we already know this is a title (most common case)
             if test_case_id and '.' not in test_case_id and '/' not in test_case_id:
                 # Update the status dictionary directly using the test_case_id as title
+                # Also store timestamp for this specific test case status update
+                current_time = datetime.utcnow()
                 self.collection.update_one(
                     {"url_key": url_key},
-                    {"$set": {f"status.{test_case_id}": status}}
+                    {
+                        "$set": {
+                            f"status.{test_case_id}": status,
+                            f"status_timestamps.{test_case_id}": current_time
+                        }
+                    }
                 )
                 title_found = True
-                logger.info(f"Updated central status dictionary for title: {test_case_id}")
+                logger.info(f"Updated central status dictionary for title: {test_case_id} with timestamp: {current_time}")
             
             # Check if this is a shared view update
             is_shared_view = False
@@ -5394,7 +5518,38 @@ class MongoHandler:
                 is_shared_view = True
                 logger.info(f"Shared view update detected for {url_key}")
             
-            if is_shared_view:
+            # Check if this is a URL-based test case structure (test_data.test_data array)
+            is_url_structure = False
+            if 'test_data' in doc and isinstance(doc['test_data'], dict) and 'test_data' in doc['test_data'] and isinstance(doc['test_data']['test_data'], list):
+                is_url_structure = True
+                logger.info(f"URL structure update detected for {url_key}")
+            
+            if is_url_structure:
+                # For URL structure, we need to update the status in the status dictionary
+                # The test cases are parsed and stored in test_data.test_data array, but status is in root status dict
+                logger.info(f"Updating status for URL structure: {test_case_id} = {status}")
+                
+                # Update the status dictionary (this is the primary storage for URL structure)
+                # Also store timestamp for this specific test case status update
+                current_time = datetime.utcnow()
+                result = self.collection.update_one(
+                    {"url_key": url_key},
+                    {
+                        "$set": {
+                            f"status.{test_case_id}": status,
+                            f"status_timestamps.{test_case_id}": current_time
+                        }
+                    }
+                )
+                
+                if result.modified_count > 0:
+                    logger.info(f"Successfully updated status for URL structure: {test_case_id}")
+                    return True
+                else:
+                    logger.warning(f"Failed to update status for URL structure: {test_case_id}")
+                    return False
+                    
+            elif is_shared_view:
                 # For shared views, test_data is a list of test case objects
                 test_cases = doc['test_data']
                 
@@ -5413,9 +5568,15 @@ class MongoHandler:
                         
                         # Also update the status in the status dictionary for syncing
                         if not title_found:
+                            current_time = datetime.utcnow()
                             self.collection.update_one(
                                 {"url_key": url_key},
-                                {"$set": {f"status.{title}": status}}
+                                {
+                                    "$set": {
+                                        f"status.{title}": status,
+                                        f"status_timestamps.{title}": current_time
+                                    }
+                                }
                             )
                         
                         found = True

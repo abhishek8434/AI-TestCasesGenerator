@@ -1,6 +1,6 @@
 """
 Centralized error logging configuration for the AI Test Case Generator application.
-This module provides error tracking functionality using MongoDB instead of Sentry.
+This module provides error tracking functionality using MongoDB and email notifications.
 """
 
 import logging
@@ -77,7 +77,7 @@ class ErrorLogger:
 
     def capture_exception(self, exception: Exception, context: Optional[Dict[str, Any]] = None):
         """
-        Capture an exception with additional context.
+        Capture an exception with additional context and send email notification for critical errors.
         
         Args:
             exception: The exception to capture
@@ -98,6 +98,9 @@ class ErrorLogger:
             level="error",
             context=error_context
         )
+        
+        # Send email notification for critical errors
+        self._send_critical_error_notification(exception, error_context)
 
     def capture_message(self, message: str, level: str = "info", context: Optional[Dict[str, Any]] = None):
         """
@@ -169,6 +172,60 @@ class ErrorLogger:
             return ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
         except:
             return "Unable to extract traceback"
+    
+    def _send_critical_error_notification(self, exception: Exception, context: Dict[str, Any]):
+        """Send email notification for critical errors"""
+        try:
+            # Import here to avoid circular imports
+            from utils.email_notifier import send_critical_error_notification
+            
+            # Determine if this is a critical error that should trigger email notification
+            critical_error_types = [
+                'ConnectionError', 'TimeoutError', 'SSLError', 'HTTPError',
+                'APIError', 'AuthenticationError', 'PermissionError', 'OSError',
+                'MemoryError', 'SystemError', 'RuntimeError'
+            ]
+            
+            # Check if it's a critical error type or contains critical keywords
+            exception_type = type(exception).__name__
+            exception_message = str(exception).lower()
+            
+            critical_keywords = [
+                'critical', 'fatal', 'system down', 'service unavailable',
+                'authentication failed', 'permission denied', 'connection refused',
+                'timeout', 'memory', 'disk space', 'database', 'api key'
+            ]
+            
+            is_critical = (
+                exception_type in critical_error_types or
+                any(keyword in exception_message for keyword in critical_keywords) or
+                context.get('level') == 'critical'
+            )
+            
+            if is_critical:
+                # Determine error type for email subject
+                if 'api' in exception_message or 'http' in exception_message:
+                    error_type = "API_FAILURE"
+                elif 'database' in exception_message or 'mongodb' in exception_message:
+                    error_type = "DATABASE_ERROR"
+                elif 'authentication' in exception_message or 'permission' in exception_message:
+                    error_type = "AUTHENTICATION_ERROR"
+                else:
+                    error_type = "SYSTEM_ERROR"
+                
+                # Send email notification
+                send_critical_error_notification(
+                    error_type=error_type,
+                    error_message=str(exception),
+                    context=context,
+                    exception=exception
+                )
+                
+                logger.info(f"Critical error notification sent for: {exception_type}")
+                
+        except Exception as e:
+            # Don't let email notification failures break the error logging
+            logger.error(f"Failed to send critical error notification: {str(e)}")
 
     def get_error_summary(self, days: int = 30, level: Optional[str] = None, 
                          start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
