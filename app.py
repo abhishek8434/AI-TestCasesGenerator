@@ -75,6 +75,22 @@ def reset_password():
     """Reset password page"""
     return render_template('reset-password.html')
 
+@app.route('/reset-password-confirm')
+def reset_password_confirm():
+    """Password reset confirmation page"""
+    token = request.args.get('token')
+    if not token:
+        return render_template('reset-password.html', error='Invalid or missing reset token')
+    
+    # Verify the token
+    mongo_handler = MongoHandler()
+    token_result = mongo_handler.verify_password_reset_token(token)
+    
+    if not token_result['success']:
+        return render_template('reset-password.html', error='Invalid or expired reset token')
+    
+    return render_template('reset-password-confirm.html', token=token, email=token_result['email'])
+
 @app.route('/admin-dashboard')
 def admin_dashboard():
     """Admin dashboard page"""
@@ -84,6 +100,75 @@ def admin_dashboard():
 def test():
     logger.info("=== TEST ENDPOINT CALLED ===")
     return jsonify({'message': 'Server is working!', 'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')})
+
+@app.route('/test-email')
+def test_email():
+    """Test email notification system"""
+    try:
+        from utils.email_notifier import test_email_configuration
+        
+        success = test_email_configuration()
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Test email sent successfully!',
+                'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to send test email. Check email configuration.',
+                'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error testing email configuration: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error testing email: {str(e)}',
+            'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+        }), 500
+
+@app.route('/test-error-notification')
+def test_error_notification():
+    """Test critical error notification system"""
+    try:
+        from utils.email_notifier import send_critical_error_notification
+        
+        # Simulate a critical error
+        test_error = Exception("This is a test critical error for email notification system")
+        
+        success = send_critical_error_notification(
+            error_type="TEST_ERROR",
+            error_message="Test critical error notification",
+            context={
+                "test": True,
+                "endpoint": "/test-error-notification",
+                "timestamp": datetime.now().isoformat()
+            },
+            exception=test_error
+        )
+        
+        if success:
+            return jsonify({
+                'status': 'success',
+                'message': 'Test error notification sent successfully!',
+                'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+            })
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': 'Failed to send test error notification. Check email configuration.',
+                'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+            }), 500
+            
+    except Exception as e:
+        logger.error(f"Error testing error notification: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Error testing notification: {str(e)}',
+            'timestamp': datetime.now().strftime('%Y%m%d%H%M%S')
+        }), 500
 
 @app.route('/results')
 def results():
@@ -96,7 +181,10 @@ def results():
         url_params = mongo_handler.get_url_data(short_key)
         logger.info(f"Retrieved URL params from MongoDB: {url_params}")
         if url_params:
-            return render_template('results.html', url_params=url_params)
+            # Get the full document to access status timestamps
+            document = mongo_handler.collection.find_one({"_id": short_key})
+            status_timestamps = document.get('status_timestamps', {}) if document else {}
+            return render_template('results.html', url_params=url_params, status_timestamps=status_timestamps)
         else:
             logger.warning(f"No data found for key/token: {short_key}")
             # Return error page instead of falling back to long URL
@@ -1397,7 +1485,8 @@ def update_status():
                 {
                     "$set": {
                         f"status.{test_case_id}": status,
-                        "status_updated_at": datetime.now()
+                        f"status_timestamps.{test_case_id}": datetime.utcnow(),
+                        "status_updated_at": datetime.utcnow()
                     }
                 }
             )
@@ -1646,9 +1735,13 @@ def view_shared_test_case(url_key):
         # Apply any status values that might exist
         if 'status' in test_case and isinstance(test_case['status'], dict) and isinstance(test_case['test_data'], list):
             status_dict = test_case['status']
+            status_timestamps = test_case.get('status_timestamps', {})
             for tc in test_case['test_data']:
                 if 'Title' in tc and tc['Title'] in status_dict:
                     tc['Status'] = status_dict[tc['Title']]
+                    # Add timestamp information
+                    if tc['Title'] in status_timestamps:
+                        tc['StatusUpdatedAt'] = status_timestamps[tc['Title']]
         
         # Return JSON or HTML based on the format parameter
         if want_json:
@@ -2404,11 +2497,11 @@ def notify_status_change():
             {"url_key": url_key},
             {
                 "$set": {
-                    "status_updated_at": datetime.now(),
+                    "status_updated_at": datetime.utcnow(),
                     "last_status_change": {
                         "test_case_id": test_case_id,
                         "status": status,
-                        "timestamp": datetime.now()
+                        "timestamp": datetime.utcnow()
                     }
                 }
             }
@@ -3146,11 +3239,34 @@ def reset_password_api():
                 'message': 'If an account with that email exists, a password reset link has been sent.'
             })
         
-        # In a real implementation, you would:
-        # 1. Generate a secure reset token
-        # 2. Store it in the database with expiration
-        # 3. Send an email with the reset link
-        # 4. For now, we'll just return a success message
+        # Generate a secure reset token
+        token_result = mongo_handler.create_password_reset_token(email)
+        
+        if not token_result['success']:
+            logger.error(f"Failed to create reset token for {email}: {token_result.get('message', 'Unknown error')}")
+            return jsonify({
+                'success': True,
+                'message': 'If an account with that email exists, a password reset link has been sent.'
+            })
+        
+        # Send password reset email
+        try:
+            from utils.email_notifier import send_password_reset_email
+            
+            email_sent = send_password_reset_email(
+                email=email,
+                reset_token=token_result['token'],
+                expires_at=token_result['expires_at']
+            )
+            
+            if email_sent:
+                logger.info(f"Password reset email sent successfully to: {email}")
+            else:
+                logger.error(f"Failed to send password reset email to: {email}")
+                
+        except Exception as email_error:
+            logger.error(f"Error sending password reset email to {email}: {str(email_error)}")
+            # Don't fail the request if email sending fails
         
         logger.info(f"Password reset requested for email: {email}")
         
@@ -3161,6 +3277,54 @@ def reset_password_api():
             
     except Exception as e:
         logger.error(f"Error in reset password API: {str(e)}")
+        capture_exception(e, {"endpoint": "/api/auth/reset-password", "email": data.get('email', '') if data else ''})
+        return jsonify({'success': False, 'message': 'An error occurred during password reset'}), 500
+
+@app.route('/api/auth/reset-password-confirm', methods=['POST'])
+def reset_password_confirm_api():
+    """Handle password reset confirmation"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        token = data.get('token', '').strip()
+        new_password = data.get('new_password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        # Validation
+        if not token:
+            return jsonify({'success': False, 'message': 'Reset token is required'}), 400
+        
+        if not new_password:
+            return jsonify({'success': False, 'message': 'New password is required'}), 400
+        
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'message': 'Password must be at least 6 characters long'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
+        
+        # Use the reset token to change password
+        mongo_handler = MongoHandler()
+        result = mongo_handler.use_password_reset_token(token, new_password)
+        
+        if result['success']:
+            logger.info(f"Password reset successfully completed for token: {token[:10]}...")
+            return jsonify({
+                'success': True,
+                'message': 'Password reset successfully. You can now sign in with your new password.'
+            })
+        else:
+            logger.warning(f"Password reset failed for token: {token[:10]}... - {result.get('message', 'Unknown error')}")
+            return jsonify({
+                'success': False,
+                'message': result.get('message', 'Failed to reset password')
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error in reset password confirm API: {str(e)}")
+        capture_exception(e, {"endpoint": "/api/auth/reset-password-confirm", "token": data.get('token', '')[:10] if data else ''})
         return jsonify({'success': False, 'message': 'An error occurred during password reset'}), 500
 
 # Admin API endpoints
