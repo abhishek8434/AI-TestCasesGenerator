@@ -1,5 +1,6 @@
 # Import error logging utilities for error tracking
 from utils.error_logger import capture_exception, capture_message, set_tag, set_context
+from utils.error_monitor import monitor_openai_api, monitor_critical_system
 
 import requests
 from bs4 import BeautifulSoup
@@ -9,6 +10,7 @@ import logging
 from typing import Optional, List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain.callbacks.tracers.langchain import LangChainTracer
+from openai import OpenAI
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -17,6 +19,7 @@ logger = logging.getLogger(__name__)
 # Set up LangSmith tracer
 tracer = LangChainTracer(project_name="openai-cost-tracking")
 
+@monitor_critical_system
 def get_openai_api_key():
     """Get OpenAI API key from settings"""
     try:
@@ -24,6 +27,52 @@ def get_openai_api_key():
         return OPENAI_API_KEY
     except Exception as e:
         logger.error(f"Error loading OpenAI API key: {e}")
+        capture_exception(e, {"function": "get_openai_api_key"})
+        return None
+
+@monitor_critical_system
+def get_openrouter_config():
+    """Get OpenRouter configuration from settings"""
+    try:
+        from config.settings import OPENROUTER_API_KEY, OPENROUTER_SITE_URL, OPENROUTER_SITE_NAME
+        return {
+            "api_key": OPENROUTER_API_KEY,
+            "site_url": OPENROUTER_SITE_URL,
+            "site_name": OPENROUTER_SITE_NAME
+        }
+    except Exception as e:
+        logger.error(f"Error loading OpenRouter configuration: {e}")
+        capture_exception(e, {"function": "get_openrouter_config"})
+        return None
+
+@monitor_openai_api(critical=True)
+def make_openrouter_call(messages: List[Dict[str, str]], config: Dict[str, str]) -> Optional[str]:
+    """Make API call to OpenRouter as fallback"""
+    try:
+        if not config or not config.get("api_key"):
+            logger.error("OpenRouter API key not available")
+            return None
+            
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=config["api_key"],
+        )
+
+        completion = client.chat.completions.create(
+            extra_headers={
+                "HTTP-Referer": config["site_url"],
+                "X-Title": config["site_name"],
+            },
+            extra_body={},
+            model="deepseek/deepseek-chat-v3.1:free",
+            messages=messages
+        )
+        
+        return completion.choices[0].message.content
+        
+    except Exception as e:
+        logger.error(f"Error making OpenRouter API call: {e}")
+        capture_exception(e, {"function": "make_openrouter_call"})
         return None
 
 def get_url_test_type_config(test_type: str) -> dict:
@@ -32,32 +81,32 @@ def get_url_test_type_config(test_type: str) -> dict:
         "dashboard_functional": {
             "prefix": "TC_FUNC",
             "description": "functional test cases focusing on valid inputs, form submissions, and expected behaviors",
-            "max_count": 20
+            "max_count": 50
         },
         "dashboard_negative": {
             "prefix": "TC_NEG",
             "description": "negative test cases focusing on invalid inputs, error handling, and edge cases",
-            "max_count": 20
+            "max_count": 50
         },
         "dashboard_ui": {
             "prefix": "TC_UI",
             "description": "UI test cases focusing on visual elements, layout, and user interface components",
-            "max_count": 15
+            "max_count": 50
         },
         "dashboard_ux": {
             "prefix": "TC_UX",
             "description": "user experience test cases focusing on user interaction, workflow, and accessibility",
-            "max_count": 15
+            "max_count": 50
         },
         "dashboard_compatibility": {
             "prefix": "TC_COMPAT",
             "description": "compatibility test cases across different browsers, devices, and screen sizes",
-            "max_count": 15
+            "max_count": 50
         },
         "dashboard_performance": {
             "prefix": "TC_PERF",
             "description": "performance test cases focusing on load times, responsiveness, and optimization",
-            "max_count": 15
+            "max_count": 50
         }
     }
     return base_configs.get(test_type, {})
@@ -345,16 +394,22 @@ def generate_url_test_cases(url: str, selected_types: List[str]) -> Optional[str
                 )
                 
                 logger.info(f"Sending request to OpenAI for {test_type} test cases")
-                response = current_llm.invoke([
-                    {
-                        "role": "system",
-                        "content": f"You are a senior QA engineer specializing in web testing. Generate the appropriate number of {test_type} test cases (up to {config['max_count']} maximum) for the provided website by analyzing the website complexity and generating only what's truly needed. Use {config['prefix']} as the prefix and focus on the actual elements found on the page. Focus on quality and relevance over quantity."
-                    },
-                    {"role": "user", "content": prompt}
-                ])
+                
+                # Make the API call with monitoring
+                @monitor_openai_api(critical=True)
+                def make_openai_call():
+                    return current_llm.invoke([
+                        {
+                            "role": "system",
+                            "content": f"You are a senior QA engineer specializing in web testing. Generate the appropriate number of {test_type} test cases (up to {config['max_count']} maximum) for the provided website by analyzing the website complexity and generating only what's truly needed. Use {config['prefix']} as the prefix and focus on the actual elements found on the page. Focus on quality and relevance over quantity."
+                        },
+                        {"role": "user", "content": prompt}
+                    ])
+                
+                response = make_openai_call()
                 test_cases = response.content.strip()
                 if test_cases:
-                    logger.info(f"Generated {test_type} test cases successfully")
+                    logger.info(f"Generated {test_type} test cases successfully using OpenAI")
                     # Add a section header for each test type to help with parsing
                     test_cases_with_header = f"TEST TYPE: {test_type}\n\n{test_cases}"
                     all_test_cases.append(test_cases_with_header)
@@ -362,15 +417,46 @@ def generate_url_test_cases(url: str, selected_types: List[str]) -> Optional[str
                     logger.warning(f"Received empty response for {test_type} test cases")
 
             except Exception as e:
-                logger.error(f"Error generating {test_type} test cases: {str(e)}")
-                # Capture error in MongoDB
-                capture_exception(e, {
-                    "test_type": test_type,
-                    "config": config,
-                    "url": url,
-                    "website_data_keys": list(website_data.keys())
-                })
-                continue
+                logger.error(f"OpenAI API failed for {test_type} test cases: {str(e)}")
+                logger.info(f"Attempting fallback to OpenRouter for {test_type} test cases")
+                
+                # Try OpenRouter fallback
+                try:
+                    openrouter_config = get_openrouter_config()
+                    if not openrouter_config or not openrouter_config.get("api_key"):
+                        logger.error("OpenRouter configuration not available for fallback")
+                        raise ValueError("No fallback API available")
+                    
+                    # Prepare messages for OpenRouter
+                    messages = [
+                        {
+                            "role": "system",
+                            "content": f"You are a senior QA engineer specializing in web testing. Generate the appropriate number of {test_type} test cases (up to {config['max_count']} maximum) for the provided website by analyzing the website complexity and generating only what's truly needed. Use {config['prefix']} as the prefix and focus on the actual elements found on the page. Focus on quality and relevance over quantity."
+                        },
+                        {"role": "user", "content": prompt}
+                    ]
+                    
+                    test_cases = make_openrouter_call(messages, openrouter_config)
+                    if test_cases:
+                        logger.info(f"Generated {test_type} test cases successfully using OpenRouter fallback")
+                        # Add a section header for each test type to help with parsing
+                        test_cases_with_header = f"TEST TYPE: {test_type} (Generated via OpenRouter)\n\n{test_cases}"
+                        all_test_cases.append(test_cases_with_header)
+                    else:
+                        logger.error(f"OpenRouter fallback also failed for {test_type} test cases")
+                        raise ValueError("Both OpenAI and OpenRouter failed")
+                        
+                except Exception as fallback_error:
+                    logger.error(f"Fallback to OpenRouter also failed for {test_type} test cases: {str(fallback_error)}")
+                    # Capture error in MongoDB
+                    capture_exception(e, {
+                        "test_type": test_type,
+                        "config": config,
+                        "url": url,
+                        "website_data_keys": list(website_data.keys()),
+                        "fallback_error": str(fallback_error)
+                    })
+                    continue
             
             logger.info(f"Completed generation for test type: {test_type}")
 
