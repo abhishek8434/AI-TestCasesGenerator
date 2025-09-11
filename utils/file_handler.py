@@ -267,6 +267,82 @@ def create_excel_report(test_cases: List[Dict], status_values: Dict, source_type
         logger.error(f"Error creating Excel report: {e}")
         raise e
 
+def _validate_and_clean_test_case(test_case: Dict) -> Dict:
+    """Validate and clean up test case data to ensure quality and consistency"""
+    try:
+        # Clean up title
+        if test_case.get('Title'):
+            test_case['Title'] = test_case['Title'].strip().replace('**', '').strip()
+        
+        # Clean up scenario
+        if test_case.get('Scenario'):
+            scenario = test_case['Scenario'].strip()
+            if scenario and scenario != 'No scenario provided':
+                # Remove excessive whitespace and normalize
+                scenario = re.sub(r'\s+', ' ', scenario)
+                test_case['Scenario'] = scenario
+            else:
+                test_case['Scenario'] = 'No scenario provided'
+        else:
+            test_case['Scenario'] = 'No scenario provided'
+        
+        # Clean up steps
+        if test_case.get('Steps'):
+            steps = test_case['Steps']
+            if isinstance(steps, list):
+                # Clean up each step
+                cleaned_steps = []
+                for step in steps:
+                    if step and step.strip():
+                        cleaned_step = step.strip().replace('**', '').strip()
+                        # Remove leading numbers and bullets
+                        cleaned_step = re.sub(r'^\s*\d+\.\s*', '', cleaned_step)
+                        cleaned_step = re.sub(r'^\s*[-*]\s*', '', cleaned_step)
+                        if cleaned_step:
+                            cleaned_steps.append(cleaned_step)
+                test_case['Steps'] = cleaned_steps if cleaned_steps else 'No steps provided'
+            elif isinstance(steps, str) and steps.strip():
+                # Clean up string steps
+                steps = steps.strip().replace('**', '').strip()
+                steps = re.sub(r'\s+', ' ', steps)
+                test_case['Steps'] = steps
+            else:
+                test_case['Steps'] = 'No steps provided'
+        else:
+            test_case['Steps'] = 'No steps provided'
+        
+        # Clean up expected result
+        if test_case.get('Expected Result'):
+            expected = test_case['Expected Result'].strip()
+            if expected and expected != 'No expected result provided':
+                expected = re.sub(r'\s+', ' ', expected)
+                test_case['Expected Result'] = expected
+            else:
+                test_case['Expected Result'] = 'No expected result provided'
+        else:
+            test_case['Expected Result'] = 'No expected result provided'
+        
+        # Clean up actual result
+        if test_case.get('Actual Result'):
+            actual = test_case['Actual Result'].strip()
+            if actual:
+                actual = re.sub(r'\s+', ' ', actual)
+                test_case['Actual Result'] = actual
+        
+        # Ensure status is set
+        if not test_case.get('Status'):
+            test_case['Status'] = 'Not Tested'
+        
+        # Clean up priority
+        if test_case.get('Priority'):
+            test_case['Priority'] = test_case['Priority'].strip().replace('**', '').strip()
+        
+        return test_case
+        
+    except Exception as e:
+        logger.warning(f"Error validating test case: {str(e)}")
+        return test_case
+
 def extract_test_type_sections(test_cases: str) -> Dict[str, str]:
     """Extract sections from test cases content based on TEST TYPE markers.
     
@@ -348,15 +424,31 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                         if re.match(r'TC_[A-Z]+_\d+', first_line):
                             test_case['Title'] = first_line.replace('**', '').strip()
                 
-                # Extract scenario - handle multiple formats
+                # Extract scenario - handle multiple formats with enhanced multi-line support
                 scenario_match = re.search(r'Scenario:\s*(.*?)(?:\n\s*Preconditions:|\n\s*Steps to reproduce:|\n\s*Expected Result:|$)', block, re.DOTALL)
                 if scenario_match:
-                    test_case['Scenario'] = scenario_match.group(1).strip().replace('**', '').strip()
+                    scenario_text = scenario_match.group(1).strip().replace('**', '').strip()
+                    # Clean up multi-line scenarios
+                    scenario_text = re.sub(r'\n\s*\n', ' ', scenario_text)  # Replace multiple newlines with single space
+                    scenario_text = re.sub(r'\s+', ' ', scenario_text)  # Normalize whitespace
+                    test_case['Scenario'] = scenario_text
                 else:
                     # Try **Test Scenario:** format
                     test_scenario_match = re.search(r'\*\*Test Scenario:\*\*\s*(.*?)(?:\n\s*\*\*Test Steps:|\n\s*\*\*Expected Result:|$)', block, re.DOTALL)
                     if test_scenario_match:
-                        test_case['Scenario'] = test_scenario_match.group(1).strip().replace('**', '').strip()
+                        scenario_text = test_scenario_match.group(1).strip().replace('**', '').strip()
+                        # Clean up multi-line scenarios
+                        scenario_text = re.sub(r'\n\s*\n', ' ', scenario_text)
+                        scenario_text = re.sub(r'\s+', ' ', scenario_text)
+                        test_case['Scenario'] = scenario_text
+                    else:
+                        # Try alternative scenario patterns
+                        alt_scenario_match = re.search(r'Description:\s*(.*?)(?:\n\s*Steps to reproduce:|\n\s*Expected Result:|$)', block, re.DOTALL)
+                        if alt_scenario_match:
+                            scenario_text = alt_scenario_match.group(1).strip().replace('**', '').strip()
+                            scenario_text = re.sub(r'\n\s*\n', ' ', scenario_text)
+                            scenario_text = re.sub(r'\s+', ' ', scenario_text)
+                            test_case['Scenario'] = scenario_text
                 
                 # Extract preconditions
                 preconditions_match = re.search(r'Preconditions:\s*(.*?)(?:\n\s*Steps to reproduce:|\n\s*Expected Result:|$)', block, re.DOTALL)
@@ -408,15 +500,31 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                         else:
                             logger.warning(f"No steps found with any pattern in block: {block[:200]}...")
                 
-                # Extract expected result - handle multiple formats
+                # Extract expected result - handle multiple formats with enhanced multi-line support
                 expected_match = re.search(r'Expected Result:\s*(.*?)(?:\n\s*Actual Result:|\n\s*Status:|\n\s*Priority:|$)', block, re.DOTALL)
                 if expected_match:
-                    test_case['Expected Result'] = expected_match.group(1).strip().replace('**', '').strip()
+                    expected_text = expected_match.group(1).strip().replace('**', '').strip()
+                    # Clean up multi-line expected results
+                    expected_text = re.sub(r'\n\s*\n', ' ', expected_text)  # Replace multiple newlines with single space
+                    expected_text = re.sub(r'\s+', ' ', expected_text)  # Normalize whitespace
+                    test_case['Expected Result'] = expected_text
                 else:
                     # Try **Expected Result:** format
                     test_expected_match = re.search(r'\*\*Expected Result:\*\*\s*(.*?)(?:\n\s*\*\*Actual Result:|\n\s*\*\*Priority:|$)', block, re.DOTALL)
                     if test_expected_match:
-                        test_case['Expected Result'] = test_expected_match.group(1).strip().replace('**', '').strip()
+                        expected_text = test_expected_match.group(1).strip().replace('**', '').strip()
+                        # Clean up multi-line expected results
+                        expected_text = re.sub(r'\n\s*\n', ' ', expected_text)
+                        expected_text = re.sub(r'\s+', ' ', expected_text)
+                        test_case['Expected Result'] = expected_text
+                    else:
+                        # Try alternative expected result patterns
+                        alt_expected_match = re.search(r'Expected Outcome:\s*(.*?)(?:\n\s*Actual Result:|\n\s*Status:|\n\s*Priority:|$)', block, re.DOTALL)
+                        if alt_expected_match:
+                            expected_text = alt_expected_match.group(1).strip().replace('**', '').strip()
+                            expected_text = re.sub(r'\n\s*\n', ' ', expected_text)
+                            expected_text = re.sub(r'\s+', ' ', expected_text)
+                            test_case['Expected Result'] = expected_text
                 
                 # Extract status if present as its own line
                 status_match = re.search(r'\n\s*Status:\s*(.*?)(?:\n|$)', block)
@@ -436,8 +544,10 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                 if priority_match:
                     test_case['Priority'] = priority_match.group(1).strip().replace('**', '').strip()
                 
-                # Only add test case if it has a title
+                # Only add test case if it has a title and validate data quality
                 if test_case.get('Title'):
+                    # Validate and clean up test case data
+                    test_case = _validate_and_clean_test_case(test_case)
                     test_data.append(test_case)
                     logger.debug(f"Extracted test case: {test_case['Title']}")
                     logger.debug(f"Test case fields: {list(test_case.keys())}")
