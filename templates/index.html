@@ -4798,25 +4798,12 @@
 
                     // In the checkGenerationStatus function
                     if (!status.is_generating) {
-                        // Check if generation failed
-                        if (status.phase === 'error') {
-                            updateLoader(100);
-                            showNotification('Generation failed: ' + (status.log[status.log.length - 1] || 'Unknown error'), 'error');
-                            if (loader) loader.style.display = 'none';
-                            return;
-                        }
-                        
                         // Smoothly animate to 100%
                         const finalAnimation = setInterval(() => {
                             if (currentProgress >= 100) {
                                 clearInterval(finalAnimation);
                                 // Use the final URL key from status if available, otherwise fall back to stored key
                                 const finalUrlKey = status.final_url_key || window.generatedUrlKey;
-                                if (!finalUrlKey) {
-                                    showNotification('Generation completed but no results available. Please try again.', 'error');
-                                    if (loader) loader.style.display = 'none';
-                                    return;
-                                }
                                 console.log('Redirecting to results with key:', finalUrlKey);
                                 window.location.href = `/results?token=${finalUrlKey}`;
                                 return;
@@ -4830,13 +4817,8 @@
                     // Also update the timeout redirect
                     if (retryCount >= maxRetries) {
                         updateLoader(100);
-                        const finalUrlKey = status.final_url_key || window.generatedUrlKey;
-                        if (!finalUrlKey) {
-                            showNotification('Generation timed out and no results available. Please try again.', 'error');
-                            if (loader) loader.style.display = 'none';
-                            return;
-                        }
                         alert('Generation is taking too long. You will be redirected to the results page.');
+                        const finalUrlKey = status.final_url_key || window.generatedUrlKey;
                         console.log('Timeout redirect to results with key:', finalUrlKey);
                         window.location.href = `/results?token=${finalUrlKey}`;
                         return;
