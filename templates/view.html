@@ -2105,6 +2105,15 @@
                         if (Array.isArray(steps)) {
                             return steps.map((step, index) => `${index + 1}. ${step}`).join('<br>');
                         } else if (typeof steps === 'string') {
+                            // Clean up string steps and format them properly
+                            const stepLines = steps.split('\n').filter(line => line.trim());
+                            if (stepLines.length > 1) {
+                                return stepLines.map((line, index) => {
+                                    // Remove leading numbers and bullets
+                                    const cleanLine = line.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[-*]\s*/, '').trim();
+                                    return `${index + 1}. ${cleanLine}`;
+                                }).join('<br>');
+                            }
                             return steps;
                         }
                         

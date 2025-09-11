@@ -2865,13 +2865,17 @@
                     }
                 }
                 
-                // Extract data with better field mapping
-                const title = testCase.Title || testCase['Test Case ID'] || testCase.title || testCase.name || testCase.id || `TC_${index + 1}`;
-                const scenario = testCase.Scenario || testCase.scenario || testCase.Description || testCase.description || testCase.desc || 'No scenario provided';
-                let steps = testCase.Steps || testCase['Steps to reproduce'] || testCase.steps || testCase['Test Steps'] || testCase['test_steps'] || 'No steps provided';
+                // Enhanced data extraction with comprehensive field mapping
+                const title = testCase.Title || testCase['Test Case ID'] || testCase.title || testCase.name || testCase.id || testCase['test_case_id'] || `TC_${index + 1}`;
                 
-                // If no direct steps field, check if steps are merged into preconditions
-                if (steps === 'No steps provided') {
+                // Enhanced scenario extraction
+                let scenario = testCase.Scenario || testCase.scenario || testCase.Description || testCase.description || testCase.desc || testCase['Test Scenario'] || testCase['test_scenario'] || '';
+                
+                // Enhanced steps extraction with multiple fallback strategies
+                let steps = testCase.Steps || testCase['Steps to reproduce'] || testCase.steps || testCase['Test Steps'] || testCase['test_steps'] || testCase['Steps to Reproduce'] || '';
+                
+                // If no direct steps field, check if steps are merged into preconditions or other fields
+                if (!steps || steps === '') {
                     const preconditions = testCase.Preconditions || testCase.preconditions || testCase['preconditions'] || '';
                     if (preconditions && preconditions.includes('Steps to Reproduce:')) {
                         const parts = preconditions.split('Steps to Reproduce:');
@@ -2879,16 +2883,37 @@
                             steps = parts[1].trim();
                         }
                     }
+                    
+                    // Check if steps are in the content field
+                    if (!steps && testCase.content) {
+                        const content = testCase.content;
+                        if (content.includes('Steps to reproduce:') || content.includes('Steps to Reproduce:')) {
+                            const stepMatch = content.match(/(?:Steps to reproduce:|Steps to Reproduce:)\s*([\s\S]*?)(?=Expected Result:|$)/i);
+                            if (stepMatch) {
+                                steps = stepMatch[1].trim();
+                            }
+                        }
+                    }
                 }
                 
-                // Debug logging
+                // Enhanced expected result extraction
+                const expectedResult = testCase['Expected Result'] || testCase.expectedResult || testCase['Expected result'] || testCase['expected_result'] || testCase['Expected Outcome'] || testCase['expected_outcome'] || '';
+                
+                // Debug logging with enhanced information
                 console.log(`Test Case ${index + 1}:`, testCase);
-                console.log(`Steps for ${title}:`, steps);
-                const expectedResult = testCase['Expected Result'] || testCase.expectedResult || testCase['Expected result'] || testCase['expected_result'] || 'No expected result provided';
+                console.log(`Title: ${title}`);
+                console.log(`Scenario: ${scenario}`);
+                console.log(`Steps: ${steps}`);
+                console.log(`Expected Result: ${expectedResult}`);
                 const actualResult = testCase['Actual Result'] || testCase.actualResult || testCase['Actual result'] || testCase['actual_result'] || '';
                 const priority = testCase['Priority'] || testCase.priority || testCase['priority'] || '';
                 const testData = testCase['Test Data'] || testCase.testData || testCase['test_data'] || '';
                 const status = testCase.Status || testCase.status || 'Not Tested';
+                
+                // Apply intelligent fallbacks for missing data
+                const finalScenario = scenario && scenario.trim() !== '' ? scenario : 'No scenario provided';
+                const finalSteps = steps && steps !== '' && steps !== 'No steps provided' ? steps : 'No steps provided';
+                const finalExpectedResult = expectedResult && expectedResult.trim() !== '' ? expectedResult : 'No expected result provided';
                 
                 // Create a short description from scenario
                 const shortDescription = scenario.length > 100 ? scenario.substring(0, 100) + '...' : scenario;
@@ -2937,7 +2962,7 @@
                         </div>
                     </div>
                         <div class="test-case-title">${title}</div>
-                        <div class="test-case-description">${shortDescription}</div>
+                        <div class="test-case-description">${finalScenario.length > 100 ? finalScenario.substring(0, 100) + '...' : finalScenario}</div>
                         <div class="test-case-actions">
                             <button type="button" class="action-btn" onclick="toggleDetails('${title}', this, event)">
                                 <i class="bi bi-chevron-down"></i>
@@ -2948,15 +2973,15 @@
                             <div class="details-content">
                                 <div class="detail-section">
                                     <strong>Scenario:</strong>
-                                    <p>${scenario}</p>
+                                    <p>${finalScenario}</p>
                                 </div>
                                 <div class="detail-section">
                                     <strong>Steps to Reproduce:</strong>
-                                    <div>${formatSteps(steps)}</div>
+                                    <div>${formatSteps(finalSteps)}</div>
                                 </div>
                                 <div class="detail-section">
                                     <strong>Expected Result:</strong>
-                                    <p>${expectedResult}</p>
+                                    <p>${finalExpectedResult}</p>
                                 </div>
                                 <div class="detail-section">
                                     <strong>Actual Result:</strong>
@@ -3319,20 +3344,35 @@
             return null;
         }
 
-        // Function to parse traditional text format
+        // Enhanced function to parse traditional text format with better multi-line support
         function parseTraditionalTextFormat(text) {
-            console.log('Attempting to parse traditional text format');
+            console.log('Attempting to parse traditional text format with enhanced parsing');
             
             const testCases = [];
             const lines = text.split('\n');
             let currentTestCase = null;
+            let currentField = null;
+            let currentContent = [];
             
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i].trim();
                 
+                // Skip empty lines but continue collecting content
+                if (!line) {
+                    if (currentField && currentContent.length > 0) {
+                        currentContent.push('');
+                    }
+                    continue;
+                }
+                
+                // Check for field headers
                 if (line.startsWith('Title:')) {
                     // Save previous test case if exists
                     if (currentTestCase) {
+                        // Save any pending content
+                        if (currentField && currentContent.length > 0) {
+                            currentTestCase[currentField] = currentContent.join('\n').trim();
+                        }
                         testCases.push(currentTestCase);
                     }
                     
@@ -3345,34 +3385,99 @@
                         'Actual Result': '',
                         Status: 'Not Tested'
                     };
+                    currentField = null;
+                    currentContent = [];
+                    
                 } else if (line.startsWith('Scenario:') && currentTestCase) {
-                    currentTestCase.Scenario = line.substring(10).trim();
-                } else if (line.startsWith('Steps to reproduce:') && currentTestCase) {
-                    // Collect all steps until we hit another field
-                    let steps = [];
-                    let j = i + 1;
-                    while (j < lines.length && !lines[j].trim().startsWith('Expected Result:') && !lines[j].trim().startsWith('Actual Result:')) {
-                        const stepLine = lines[j].trim();
-                        if (stepLine) {
-                            steps.push(stepLine);
-                        }
-                        j++;
+                    // Save previous field content
+                    if (currentField && currentContent.length > 0) {
+                        currentTestCase[currentField] = currentContent.join('\n').trim();
                     }
-                    currentTestCase.Steps = steps.join('\n');
-                    i = j - 1; // Adjust index
+                    
+                    currentField = 'Scenario';
+                    currentContent = [line.substring(10).trim()];
+                    
+                } else if (line.startsWith('Steps to reproduce:') && currentTestCase) {
+                    // Save previous field content
+                    if (currentField && currentContent.length > 0) {
+                        currentTestCase[currentField] = currentContent.join('\n').trim();
+                    }
+                    
+                    currentField = 'Steps';
+                    currentContent = [];
+                    
                 } else if (line.startsWith('Expected Result:') && currentTestCase) {
-                    currentTestCase['Expected Result'] = line.substring(16).trim();
+                    // Save previous field content
+                    if (currentField && currentContent.length > 0) {
+                        currentTestCase[currentField] = currentContent.join('\n').trim();
+                    }
+                    
+                    currentField = 'Expected Result';
+                    currentContent = [line.substring(16).trim()];
+                    
                 } else if (line.startsWith('Actual Result:') && currentTestCase) {
-                    currentTestCase['Actual Result'] = line.substring(14).trim();
+                    // Save previous field content
+                    if (currentField && currentContent.length > 0) {
+                        currentTestCase[currentField] = currentContent.join('\n').trim();
+                    }
+                    
+                    currentField = 'Actual Result';
+                    currentContent = [line.substring(14).trim()];
+                    
+                } else if (line.startsWith('Priority:') && currentTestCase) {
+                    // Save previous field content
+                    if (currentField && currentContent.length > 0) {
+                        currentTestCase[currentField] = currentContent.join('\n').trim();
+                    }
+                    
+                    currentField = 'Priority';
+                    currentContent = [line.substring(9).trim()];
+                    
+                } else if (currentField && currentTestCase) {
+                    // Continue collecting content for current field
+                    currentContent.push(line);
                 }
             }
             
-            // Add the last test case
+            // Save any pending content and add the last test case
             if (currentTestCase) {
+                if (currentField && currentContent.length > 0) {
+                    currentTestCase[currentField] = currentContent.join('\n').trim();
+                }
                 testCases.push(currentTestCase);
             }
             
-            console.log('Parsed test cases from text format:', testCases);
+            // Post-process to clean up and validate data
+            testCases.forEach(tc => {
+                // Clean up steps formatting
+                if (tc.Steps) {
+                    // Convert numbered steps to array if they're in string format
+                    if (typeof tc.Steps === 'string') {
+                        const stepLines = tc.Steps.split('\n').filter(line => line.trim());
+                        const numberedSteps = stepLines.map(line => {
+                            // Remove leading numbers and bullets
+                            return line.replace(/^\s*\d+\.\s*/, '').replace(/^\s*[-*]\s*/, '').trim();
+                        }).filter(step => step);
+                        
+                        if (numberedSteps.length > 0) {
+                            tc.Steps = numberedSteps;
+                        }
+                    }
+                }
+                
+                // Ensure we have meaningful content, not just empty strings
+                if (tc.Scenario && tc.Scenario.trim() === '') {
+                    tc.Scenario = 'No scenario provided';
+                }
+                if (tc.Steps && (tc.Steps === '' || (Array.isArray(tc.Steps) && tc.Steps.length === 0))) {
+                    tc.Steps = 'No steps provided';
+                }
+                if (tc['Expected Result'] && tc['Expected Result'].trim() === '') {
+                    tc['Expected Result'] = 'No expected result provided';
+                }
+            });
+            
+            console.log('Enhanced parsed test cases from text format:', testCases);
             return testCases;
         }
 

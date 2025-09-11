@@ -3983,6 +3983,15 @@
                     
                     // Fetch and store recent items for suggestions
                     await fetchJiraItems(jiraUrl, jiraUser, jiraToken);
+                    
+                    // Automatically display the loaded items
+                    const storedItems = localStorage.getItem('jiraItems');
+                    if (storedItems) {
+                        const items = JSON.parse(storedItems);
+                        if (items.length > 0) {
+                            displayAllItemsWithRefresh(items, 'jira', false);
+                        }
+                    }
                 } else {
                     statusDiv.innerHTML = '<div class="verify-status error"><i class="bi bi-x-circle-fill"></i> Connection failed: ' + (result.error || 'Unknown error') + '</div>';
                     statusDiv.style.display = 'block';
@@ -4073,6 +4082,15 @@
                     
                     // Fetch and store recent items for suggestions
                     await fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                    
+                    // Automatically display the loaded items
+                    const storedItems = localStorage.getItem('azureItems');
+                    if (storedItems) {
+                        const items = JSON.parse(storedItems);
+                        if (items.length > 0) {
+                            displayAllItemsWithRefresh(items, 'azure', false);
+                        }
+                    }
                 } else {
                     statusDiv.innerHTML = '<div class="verify-status error"><i class="bi bi-x-circle-fill"></i> Connection failed: ' + (result.error || 'Unknown error') + '</div>';
                     statusDiv.style.display = 'block';
@@ -4606,13 +4624,13 @@
                 console.log('Form data cleared for switch to:', newSourceType);
                 
                 // Re-fetch items for the new source type if connection is verified
-                setTimeout(() => {
-                    reFetchItemsForSourceType(newSourceType);
+                setTimeout(async () => {
+                    await reFetchItemsForSourceType(newSourceType);
                 }, 100);
             }
         }
 
-        function reFetchItemsForSourceType(sourceType) {
+        async function reFetchItemsForSourceType(sourceType) {
             if (sourceType === 'jira') {
                 // Check if Jira is verified and re-fetch items
                 const verifyBtn = document.getElementById('verifyJiraBtn');
@@ -4622,7 +4640,16 @@
                     const jiraUser = document.getElementById('jiraUser').value.trim();
                     const jiraToken = document.getElementById('jiraToken').value.trim();
                     if (jiraUrl && jiraUser && jiraToken) {
-                        fetchJiraItems(jiraUrl, jiraUser, jiraToken);
+                        fetchJiraItems(jiraUrl, jiraUser, jiraToken).then(() => {
+                            // Display loaded items
+                            const storedItems = localStorage.getItem('jiraItems');
+                            if (storedItems) {
+                                const items = JSON.parse(storedItems);
+                                if (items.length > 0) {
+                                    displayAllItemsWithRefresh(items, 'jira', false);
+                                }
+                            }
+                        });
                     }
                 }
             } else if (sourceType === 'azure') {
@@ -4643,7 +4670,15 @@
                     });
                     
                     if (azureUrl && azureOrg && azureProject && azurePat) {
-                        fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                        await fetchAzureItems(azureUrl, azureOrg, azureProject, azurePat);
+                        // Display loaded items
+                        const storedItems = localStorage.getItem('azureItems');
+                        if (storedItems) {
+                            const items = JSON.parse(storedItems);
+                            if (items.length > 0) {
+                                displayAllItemsWithRefresh(items, 'azure', false);
+                            }
+                        }
                     } else {
                         console.log('Missing Azure credentials, trying to get from localStorage');
                         // Try to get credentials from localStorage
@@ -4652,7 +4687,15 @@
                             const credentials = JSON.parse(storedCredentials);
                             console.log('Azure credentials from localStorage:', credentials);
                             if (credentials.url && credentials.org && credentials.project && credentials.pat) {
-                                fetchAzureItems(credentials.url, credentials.org, credentials.project, credentials.pat);
+                                await fetchAzureItems(credentials.url, credentials.org, credentials.project, credentials.pat);
+                                // Display loaded items
+                                const storedItems = localStorage.getItem('azureItems');
+                                if (storedItems) {
+                                    const items = JSON.parse(storedItems);
+                                    if (items.length > 0) {
+                                        displayAllItemsWithRefresh(items, 'azure', false);
+                                    }
+                                }
                             }
                         }
                     }
