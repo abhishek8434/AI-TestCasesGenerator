@@ -811,7 +811,7 @@ def generate():
                 logger.error(f"Image processing error: {str(e)}", exc_info=True)
                 
                 # Return a more specific error message
-                error_message = f'Image processing error: {str(e)}. Please ensure the image is clear and in a supported format (JPG, PNG, GIF).'
+                error_message = f'Image processing error: {str(e)}. Please ensure the image is clear and in a supported format (JPG, PNG, JPEG).'
                 
                 # Check for common error patterns and provide better messages
                 if "api key" in str(e).lower() or "authorization" in str(e).lower():
@@ -1297,6 +1297,293 @@ def download_file(filename):
         return response
     except Exception as e:
         logger.error(f"Error downloading file: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/files/<url_key>')
+def get_files_for_url_key(url_key):
+    """Get list of files associated with a URL key"""
+    try:
+        logger.info(f"Requested files for URL key: {url_key}")
+        
+        # Get the document from MongoDB
+        mongo_handler = MongoHandler()
+        doc = mongo_handler.collection.find_one({"url_key": url_key})
+        
+        if not doc:
+            logger.error(f"No document found for URL key: {url_key}")
+            return jsonify({'error': 'Document not found'}), 404
+        
+        files = []
+        
+        # Check if the document has files information
+        if 'test_data' in doc and isinstance(doc['test_data'], dict):
+            test_data = doc['test_data']
+            
+            # Check for files in the test_data
+            if 'files' in test_data and isinstance(test_data['files'], dict):
+                for item_id, file_info in test_data['files'].items():
+                    if isinstance(file_info, dict):
+                        if 'excel' in file_info:
+                            files.append(file_info['excel'])
+                        if 'txt' in file_info:
+                            files.append(file_info['txt'])
+            
+            # Also check for direct file references
+            if 'files' in test_data and isinstance(test_data['files'], list):
+                files.extend(test_data['files'])
+        
+        # If no files found in document, try to find files based on source type and item_id
+        if not files:
+            source_type = doc.get('source_type', '')
+            item_id = doc.get('item_id', '')
+            
+            if source_type and item_id:
+                # Generate possible file names based on the source type and item_id
+                base_dir = os.path.join(os.path.dirname(__file__), 'tests', 'generated')
+                
+                if os.path.exists(base_dir):
+                    # Look for files that match the item_id pattern
+                    for filename in os.listdir(base_dir):
+                        if item_id in filename and (filename.endswith('.xlsx') or filename.endswith('.txt')):
+                            files.append(filename)
+        
+        logger.info(f"Found {len(files)} files for URL key {url_key}: {files}")
+        
+        return jsonify({'files': files})
+        
+    except Exception as e:
+        logger.error(f"Error getting files for URL key {url_key}: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai-content/<url_key>')
+def get_ai_content(url_key):
+    """Get AI-generated content for a URL key"""
+    try:
+        logger.info(f"Requested AI content for URL key: {url_key}")
+        
+        # Get the document from MongoDB
+        mongo_handler = MongoHandler()
+        doc = mongo_handler.collection.find_one({"url_key": url_key})
+        
+        if not doc:
+            logger.error(f"No document found for URL key: {url_key}")
+            return jsonify({'error': 'Document not found'}), 404
+        
+        # Check if the document has test_cases content
+        if 'test_data' in doc and isinstance(doc['test_data'], dict):
+            test_data = doc['test_data']
+            
+            # Look for test_cases in the test_data
+            if 'test_cases' in test_data:
+                content = test_data['test_cases']
+                if isinstance(content, str):
+                    return jsonify({'content': content})
+                elif isinstance(content, list):
+                    # If it's a list, join the content
+                    return jsonify({'content': '\n\n'.join([str(item) for item in content])})
+        
+        # If no test_cases found, try to get from files
+        if 'test_data' in doc and isinstance(doc['test_data'], dict):
+            test_data = doc['test_data']
+            
+            if 'files' in test_data and isinstance(test_data['files'], dict):
+                for item_id, file_info in test_data['files'].items():
+                    if isinstance(file_info, dict) and 'txt' in file_info:
+                        # Try to read the text file
+                        try:
+                            base_dir = os.path.join(os.path.dirname(__file__), 'tests', 'generated')
+                            file_path = os.path.join(base_dir, file_info['txt'])
+                            
+                            if os.path.exists(file_path):
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                return jsonify({'content': content})
+                        except Exception as e:
+                            logger.warning(f"Could not read file {file_info['txt']}: {e}")
+        
+        logger.warning(f"No AI content found for URL key: {url_key}")
+        return jsonify({'error': 'No AI content found'}), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting AI content for URL key {url_key}: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/results/<url_key>/test-cases')
+def get_test_cases_for_url_key(url_key):
+    """Get test cases data for a URL key"""
+    try:
+        logger.info(f"Requested test cases for URL key: {url_key}")
+        
+        # Get the document from MongoDB
+        mongo_handler = MongoHandler()
+        doc = mongo_handler.collection.find_one({"url_key": url_key})
+        
+        if not doc:
+            logger.error(f"No document found for URL key: {url_key}")
+            return jsonify({'error': 'Document not found'}), 404
+        
+        # Check if the document has test_data
+        if 'test_data' in doc and isinstance(doc['test_data'], list):
+            # If test_data is already a list of test cases, return it directly
+            return jsonify({'test_cases': doc['test_data']})
+        
+        # If test_data is a dict, look for structured test cases
+        if 'test_data' in doc and isinstance(doc['test_data'], dict):
+            test_data = doc['test_data']
+            
+            # First check if test_data has a test_data field that's a list
+            if 'test_data' in test_data and isinstance(test_data['test_data'], list) and len(test_data['test_data']) > 0:
+                return jsonify({'test_cases': test_data['test_data']})
+            
+            # Look for files and try to extract test cases from Excel files
+            if 'files' in test_data and isinstance(test_data['files'], dict):
+                for item_id, file_info in test_data['files'].items():
+                    if isinstance(file_info, dict) and 'excel' in file_info:
+                        # Try to read the Excel file and extract test cases
+                        try:
+                            base_dir = os.path.join(os.path.dirname(__file__), 'tests', 'generated')
+                            file_path = os.path.join(base_dir, file_info['excel'])
+                            
+                            if os.path.exists(file_path):
+                                import pandas as pd
+                                df = pd.read_excel(file_path)
+                                
+                                # Convert to records and handle NaN values
+                                records = []
+                                for index, row in df.iterrows():
+                                    record = {}
+                                    for column in df.columns:
+                                        value = row[column]
+                                        if pd.isna(value):
+                                            record[column] = None
+                                        else:
+                                            record[column] = value
+                                    records.append(record)
+                                
+                                if records:
+                                    return jsonify({'test_cases': records})
+                        except Exception as e:
+                            logger.warning(f"Could not read Excel file {file_info['excel']}: {e}")
+            
+            # If no files found, try to parse the test_cases string if it exists
+            if 'test_cases' in test_data and isinstance(test_data['test_cases'], str):
+                # Try to parse the test cases string using the traditional format parser
+                try:
+                    from utils.file_handler import parse_traditional_format, extract_test_type_sections
+                    
+                    # First try to extract sections if TEST TYPE markers exist
+                    sections = extract_test_type_sections(test_data['test_cases'])
+                    if sections:
+                        # Parse each section separately
+                        all_parsed_cases = []
+                        for section_name, section_content in sections.items():
+                            section_cases = parse_traditional_format(section_content, default_section=section_name)
+                            all_parsed_cases.extend(section_cases)
+                        
+                        if all_parsed_cases:
+                            return jsonify({'test_cases': all_parsed_cases})
+                    else:
+                        # If no sections found, try parsing the whole string
+                        parsed_cases = parse_traditional_format(test_data['test_cases'])
+                        if parsed_cases:
+                            return jsonify({'test_cases': parsed_cases})
+                except Exception as e:
+                    logger.warning(f"Could not parse test cases string: {e}")
+        
+        logger.warning(f"No test cases found for URL key: {url_key}")
+        return jsonify({'error': 'No test cases found'}), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting test cases for URL key {url_key}: {str(e)}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai-tests/<url_key>')
+def get_ai_tests_for_url_key(url_key):
+    """Get AI test cases for a URL key"""
+    try:
+        logger.info(f"Requested AI tests for URL key: {url_key}")
+        
+        # Get the document from MongoDB
+        mongo_handler = MongoHandler()
+        doc = mongo_handler.collection.find_one({"url_key": url_key})
+        
+        if not doc:
+            logger.error(f"No document found for URL key: {url_key}")
+            return jsonify({'error': 'Document not found'}), 404
+        
+        # Check if the document has test_data
+        if 'test_data' in doc and isinstance(doc['test_data'], list):
+            # If test_data is already a list of test cases, return it directly
+            return jsonify({'test_cases': doc['test_data']})
+        
+        # If test_data is a dict, look for structured test cases
+        if 'test_data' in doc and isinstance(doc['test_data'], dict):
+            test_data = doc['test_data']
+            
+            # First check if test_data has a test_data field that's a list
+            if 'test_data' in test_data and isinstance(test_data['test_data'], list) and len(test_data['test_data']) > 0:
+                return jsonify({'test_cases': test_data['test_data']})
+            
+            # Look for files and try to extract test cases from Excel files
+            if 'files' in test_data and isinstance(test_data['files'], dict):
+                for item_id, file_info in test_data['files'].items():
+                    if isinstance(file_info, dict) and 'excel' in file_info:
+                        # Try to read the Excel file and extract test cases
+                        try:
+                            base_dir = os.path.join(os.path.dirname(__file__), 'tests', 'generated')
+                            file_path = os.path.join(base_dir, file_info['excel'])
+                            
+                            if os.path.exists(file_path):
+                                import pandas as pd
+                                df = pd.read_excel(file_path)
+                                
+                                # Convert to records and handle NaN values
+                                records = []
+                                for index, row in df.iterrows():
+                                    record = {}
+                                    for column in df.columns:
+                                        value = row[column]
+                                        if pd.isna(value):
+                                            record[column] = None
+                                        else:
+                                            record[column] = value
+                                    records.append(record)
+                                
+                                if records:
+                                    return jsonify({'test_cases': records})
+                        except Exception as e:
+                            logger.warning(f"Could not read Excel file {file_info['excel']}: {e}")
+            
+            # If no files found, try to parse the test_cases string if it exists
+            if 'test_cases' in test_data and isinstance(test_data['test_cases'], str):
+                # Try to parse the test cases string using the traditional format parser
+                try:
+                    from utils.file_handler import parse_traditional_format, extract_test_type_sections
+                    
+                    # First try to extract sections if TEST TYPE markers exist
+                    sections = extract_test_type_sections(test_data['test_cases'])
+                    if sections:
+                        # Parse each section separately
+                        all_parsed_cases = []
+                        for section_name, section_content in sections.items():
+                            section_cases = parse_traditional_format(section_content, default_section=section_name)
+                            all_parsed_cases.extend(section_cases)
+                        
+                        if all_parsed_cases:
+                            return jsonify({'test_cases': all_parsed_cases})
+                    else:
+                        # If no sections found, try parsing the whole string
+                        parsed_cases = parse_traditional_format(test_data['test_cases'])
+                        if parsed_cases:
+                            return jsonify({'test_cases': parsed_cases})
+                except Exception as e:
+                    logger.warning(f"Could not parse test cases string: {e}")
+        
+        logger.warning(f"No AI tests found for URL key: {url_key}")
+        return jsonify({'error': 'No AI tests found'}), 404
+        
+    except Exception as e:
+        logger.error(f"Error getting AI tests for URL key {url_key}: {str(e)}", exc_info=True)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/content/<path:filename>')
