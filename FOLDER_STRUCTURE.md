@@ -57,7 +57,7 @@ AI-TestCaseGenerator-linkissue/
 │   ├── 📄 file_handler.py            # File operations and parsing
 │   ├── 📄 logger.py                  # Logging configuration
 │   ├── 📄 mongo_handler.py           # MongoDB database operations
-│   └── 📄 sentry_config.py           # Sentry error tracking
+│   └── 📄 error_logger.py            # MongoDB error logging
 │
 ├── 📁 myenv/                         # Python virtual environment
 └── 📁 .git/                          # Git repository data
@@ -208,8 +208,8 @@ AI-TestCaseGenerator-linkissue/
   - Error tracking
   - Debug information
 
-#### `utils/sentry_config.py`
-- **Purpose**: Sentry error tracking
+#### `utils/error_logger.py`
+- **Purpose**: MongoDB error logging
 - **Features**:
   - Error monitoring
   - Performance tracking

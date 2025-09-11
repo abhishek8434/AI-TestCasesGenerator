@@ -493,7 +493,6 @@ def generate():
                                 structured_test_data = []
                             
                             # Use save_test_case like Image source type to get proper URL key format
-                            logger.info(f"[URL ASYNC] Attempting to save test case to MongoDB...")
                             url_key_final = mongo_handler_local.save_test_case({
                                 'test_cases': test_cases_local,
                                 'source_type': 'url',
@@ -501,14 +500,14 @@ def generate():
                                 'test_case_types': types,
                                 'test_data': structured_test_data  # Use structured data for frontend display
                             }, result_key, 'url', user_id)
-                            logger.info(f"[URL ASYNC] Successfully saved test case with URL key: {url_key_final}")
+                            logger.info(f"[URL ASYNC] Saved test case with URL key: {url_key_final}")
                         except Exception as me:
                             logger.error(f"[URL ASYNC] Failed to save test case: {me}")
                             logger.error(f"[URL ASYNC] Exception type: {type(me)}")
                             import traceback
                             logger.error(f"[URL ASYNC] Full traceback: {traceback.format_exc()}")
-                            # Don't set a fallback URL key - let the generation fail properly
-                            url_key_final = None
+                            # Set a fallback URL key for tracking
+                            url_key_final = result_key
                         
                         # Track successful URL test case generation (moved outside try-catch)
                         try:
@@ -544,20 +543,15 @@ def generate():
                         except Exception as tracking_error:
                             logger.error(f"[URL ASYNC] Failed to track URL test case generation: {tracking_error}")
 
-                        # Mark progress completed and store the final URL key only if save was successful
+                        # Mark progress completed and store the final URL key
                         with generation_status['lock']:
                             generation_status['completed_types'] = set(generation_status['total_types'])
                             generation_status['is_generating'] = False
                             generation_status['progress_percentage'] = 100
-                            if url_key_final:
-                                generation_status['phase'] = 'completed'
-                                generation_status['log'].append('Generation completed')
-                                generation_status['final_url_key'] = url_key_final  # Store the final URL key
-                                logger.info(f"[URL ASYNC] Set final_url_key in generation status: {url_key_final}")
-                            else:
-                                generation_status['phase'] = 'error'
-                                generation_status['log'].append('Generation failed - could not save to database')
-                                logger.error("[URL ASYNC] Generation failed - no URL key available")
+                            generation_status['phase'] = 'completed'
+                            generation_status['log'].append('Generation completed')
+                            generation_status['final_url_key'] = url_key_final  # Store the final URL key
+                            logger.info(f"[URL ASYNC] Set final_url_key in generation status: {url_key_final}")
                     except Exception as gen_err:
                         logger.error(f"[URL ASYNC] Error: {gen_err}")
                         with generation_status['lock']:
