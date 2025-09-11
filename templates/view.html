@@ -1637,7 +1637,7 @@
                             }
 
                             // Include Status in the desired order
-                            const desiredOrder = ['Title', 'Scenario', 'Steps', 'Expected Result', 'Status'];
+                            const desiredOrder = ['Title', 'Scenario', 'Preconditions', 'Steps', 'Expected Result', 'Actual Result', 'Status'];
                             
                             // Get current status values from DOM
                             const currentStatusValues = collectStatusValues();
@@ -1889,6 +1889,7 @@
 
                                 content += `Title: ${testCase.Title || ''}\n\n`;
                                 content += `Scenario: ${testCase.Scenario || ''}\n\n`;
+                                content += `Preconditions: ${testCase['Preconditions'] || 'Not specified'}\n\n`;
                                 content += 'Steps to reproduce:\n\n';
 
                                 // Handle Steps field with special care for different formats
@@ -1910,13 +1911,12 @@
                                 }
 
                                 content += `Expected Result: ${testCase['Expected Result'] || ''}\n\n`;
+                                content += `Actual Result: ${testCase['Actual Result'] || 'To be filled during execution'}\n\n`;
                                 
                                 // Add current Status if available
                                 const testCaseId = testCase['Title'] || '';
                                 const status = currentStatusValues[testCaseId] || testCase['Status'] || '';
                                 content += `Status: ${status || 'Not set'}\n\n`;
-                                
-                                content += `Priority: ${testCase.Priority || 'Not specified'}\n`;
                             });
 
                             downloadFile(content, 'test_cases.txt', 'text/plain');
@@ -2027,12 +2027,20 @@
                                             <p>${scenario}</p>
                                         </div>
                                         <div class="detail-section">
+                                            <strong>Preconditions:</strong>
+                                            <p>${testCase['Preconditions'] || 'Not specified'}</p>
+                                        </div>
+                                        <div class="detail-section">
                                             <strong>Steps to Reproduce:</strong>
                                             <div>${formatSteps(testCase.Steps)}</div>
                                         </div>
                                         <div class="detail-section">
                                             <strong>Expected Result:</strong>
                                             <p>${testCase['Expected Result'] || 'Not provided'}</p>
+                                        </div>
+                                        <div class="detail-section">
+                                            <strong>Actual Result:</strong>
+                                            <p>${testCase['Actual Result'] || 'To be filled during execution'}</p>
                                         </div>
                                         <div class="detail-section">
                                             <strong>Status:</strong>
@@ -2424,7 +2432,7 @@
                     // Updated table creation to include Status dropdown
                     function createTestCaseTable(content) {
                         // Include Status in desired order
-                        const desiredOrder = ['Title', 'Scenario', 'Steps', 'Expected Result', 'Status'];
+                        const desiredOrder = ['Title', 'Scenario', 'Preconditions', 'Steps', 'Expected Result', 'Actual Result', 'Status'];
                         const table = document.createElement('table');
                         table.className = 'table table-striped table-bordered';
                         table.setAttribute('data-loaded', 'true');

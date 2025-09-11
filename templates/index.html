@@ -4769,7 +4769,7 @@
         }
 
         async function checkGenerationStatus(loader, result, itemIds) {
-            const maxRetries = 60; // 2 minutes (60 polls * 2 seconds)
+            const maxRetries = 600; // 10 minutes (600 polls * 1 second) - increased for better reliability
             let retryCount = 0;
             let previousCompletedTypes = 0;
             let currentProgress = 0;
@@ -4791,6 +4791,7 @@
                     console.log('Phase:', status.phase, 'Current type:', status.current_test_type);
                     console.log('Final URL key from status:', status.final_url_key);
                     console.log('Window generated URL key:', window.generatedUrlKey);
+                    console.log('Retry count:', retryCount, 'Max retries:', maxRetries);
                     if (status.log && status.log.length) {
                         console.log('Recent log:', status.log[status.log.length - 1]);
                     }
@@ -4803,6 +4804,7 @@
                                 clearInterval(finalAnimation);
                                 // Use the final URL key from status if available, otherwise fall back to stored key
                                 const finalUrlKey = status.final_url_key || window.generatedUrlKey;
+                                console.log('Redirecting to results with key:', finalUrlKey);
                                 window.location.href = `/results?token=${finalUrlKey}`;
                                 return;
                             }
@@ -4817,6 +4819,7 @@
                         updateLoader(100);
                         alert('Generation is taking too long. You will be redirected to the results page.');
                         const finalUrlKey = status.final_url_key || window.generatedUrlKey;
+                        console.log('Timeout redirect to results with key:', finalUrlKey);
                         window.location.href = `/results?token=${finalUrlKey}`;
                         return;
                     }

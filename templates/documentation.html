@@ -373,7 +373,7 @@
         .cta-button {
             display: inline-block;
             background-color: var(--primary-color);
-            color: var(--white-color);
+            color: var(--white-color) !important;
             padding: 14px 32px;
             text-decoration: none;
             border-radius: 50px;
@@ -382,8 +382,15 @@
             transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
         }
         
+        .cta-button:link,
+        .cta-button:visited {
+            color: var(--white-color) !important;
+            text-decoration: none;
+        }
+        
         .cta-button:hover {
-            background-color: #3a8a5f; /* consistent green hover */
+            background-color: #3a8a5f !important; /* consistent green hover */
+            color: var(--white-color) !important; /* ensure text stays white */
             transform: translateY(-2px);
             box-shadow: 0 8px 18px rgba(76, 171, 114, 0.35);
         }

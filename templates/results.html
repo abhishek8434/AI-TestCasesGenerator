@@ -2671,6 +2671,8 @@
                         let steps = '';
                         let expectedResult = '';
                         let actualResult = '';
+                        let priority = '';
+                        let testData = '';
                         let status = 'Not Tested';
                         let type = '';
                         
@@ -2696,7 +2698,22 @@
                         else if (tc.steps) steps = tc.steps;
                         else if (tc['Test Steps']) steps = tc['Test Steps'];
                         else if (tc['test_steps']) steps = tc['test_steps'];
-                        else steps = 'No steps provided';
+                        else {
+                            // If no direct steps field, check if steps are merged into preconditions
+                            const preconditions = tc.Preconditions || tc.preconditions || tc['preconditions'] || '';
+                            if (preconditions && preconditions.includes('Steps to Reproduce:')) {
+                                const parts = preconditions.split('Steps to Reproduce:');
+                                if (parts[1]) {
+                                    steps = parts[1].trim();
+                                } else {
+                                    steps = 'No steps provided';
+                                }
+                            } else {
+                                steps = 'No steps provided';
+                            }
+                        }
+                        
+                        console.log(`Steps extraction for ${title}:`, steps);
                         
                         // Try to extract expected result - check all possible field names
                         if (tc['Expected Result']) expectedResult = tc['Expected Result'];
@@ -2711,6 +2728,18 @@
                         else if (tc['Actual result']) actualResult = tc['Actual result'];
                         else if (tc['actual_result']) actualResult = tc['actual_result'];
                         else actualResult = '';
+                        
+                        // Try to extract priority - check all possible field names
+                        if (tc['Priority']) priority = tc['Priority'];
+                        else if (tc.priority) priority = tc.priority;
+                        else if (tc['priority']) priority = tc['priority'];
+                        else priority = '';
+                        
+                        // Try to extract test data - check all possible field names
+                        if (tc['Test Data']) testData = tc['Test Data'];
+                        else if (tc.testData) testData = tc.testData;
+                        else if (tc['test_data']) testData = tc['test_data'];
+                        else testData = '';
                         
                         // Try to extract status - check all possible field names
                         if (tc.Status) status = tc.Status;
@@ -2839,9 +2868,26 @@
                 // Extract data with better field mapping
                 const title = testCase.Title || testCase['Test Case ID'] || testCase.title || testCase.name || testCase.id || `TC_${index + 1}`;
                 const scenario = testCase.Scenario || testCase.scenario || testCase.Description || testCase.description || testCase.desc || 'No scenario provided';
-                const steps = testCase.Steps || testCase['Steps to reproduce'] || testCase.steps || testCase['Test Steps'] || testCase['test_steps'] || 'No steps provided';
+                let steps = testCase.Steps || testCase['Steps to reproduce'] || testCase.steps || testCase['Test Steps'] || testCase['test_steps'] || 'No steps provided';
+                
+                // If no direct steps field, check if steps are merged into preconditions
+                if (steps === 'No steps provided') {
+                    const preconditions = testCase.Preconditions || testCase.preconditions || testCase['preconditions'] || '';
+                    if (preconditions && preconditions.includes('Steps to Reproduce:')) {
+                        const parts = preconditions.split('Steps to Reproduce:');
+                        if (parts[1]) {
+                            steps = parts[1].trim();
+                        }
+                    }
+                }
+                
+                // Debug logging
+                console.log(`Test Case ${index + 1}:`, testCase);
+                console.log(`Steps for ${title}:`, steps);
                 const expectedResult = testCase['Expected Result'] || testCase.expectedResult || testCase['Expected result'] || testCase['expected_result'] || 'No expected result provided';
                 const actualResult = testCase['Actual Result'] || testCase.actualResult || testCase['Actual result'] || testCase['actual_result'] || '';
+                const priority = testCase['Priority'] || testCase.priority || testCase['priority'] || '';
+                const testData = testCase['Test Data'] || testCase.testData || testCase['test_data'] || '';
                 const status = testCase.Status || testCase.status || 'Not Tested';
                 
                 // Create a short description from scenario
@@ -2893,7 +2939,7 @@
                         <div class="test-case-title">${title}</div>
                         <div class="test-case-description">${shortDescription}</div>
                         <div class="test-case-actions">
-                            <button type="button" class="action-btn" onclick="toggleDetails('${title}', this)">
+                            <button type="button" class="action-btn" onclick="toggleDetails('${title}', this, event)">
                                 <i class="bi bi-chevron-down"></i>
                                 View Details
                             </button>
@@ -2912,12 +2958,10 @@
                                     <strong>Expected Result:</strong>
                                     <p>${expectedResult}</p>
                                 </div>
-                                ${actualResult ? `
                                 <div class="detail-section">
                                     <strong>Actual Result:</strong>
-                                    <p>${actualResult}</p>
+                                    <p>${actualResult || 'To be filled during execution'}</p>
                                 </div>
-                                ` : ''}
                                 <div class="detail-section">
                                     <strong>Status:</strong>
                                     <span class="badge ${getStatusClass(status)}">${status}</span>
@@ -2980,7 +3024,7 @@
             document.getElementById('untestedTests').textContent = untested;
         }
 
-        function updateStatus(testCaseId, newStatus) {
+        window.updateStatus = function(testCaseId, newStatus) {
             // Prevent event bubbling to avoid conflicts
             event.stopPropagation();
             
@@ -3056,9 +3100,9 @@
             }
         }
 
-                function toggleDetails(testCaseId, buttonElement) {
+                window.toggleDetails = function(testCaseId, buttonElement, event) {
             // Prevent default behavior to avoid page scroll
-            event.preventDefault();
+            if (event) event.preventDefault();
             
             const detailsId = `details-${testCaseId.replace(/[^a-zA-Z0-9]/g, '-')}`;
             const detailsElement = document.getElementById(detailsId);
@@ -3081,7 +3125,7 @@
             }
         }
 
-        function toggleStatusDropdown(testCaseId, badgeElement, event) {
+        window.toggleStatusDropdown = function(testCaseId, badgeElement, event) {
             // Prevent event bubbling
             event.stopPropagation();
             
@@ -3191,6 +3235,8 @@
                     let steps = '';
                     let expectedResult = '';
                     let actualResult = '';
+                    let priority = '';
+                    let testData = '';
                     let status = 'Not Tested';
                     
                     // Try to extract title
@@ -3211,7 +3257,20 @@
                     if (tc.Steps) steps = tc.Steps;
                     else if (tc['Steps to reproduce']) steps = tc['Steps to reproduce'];
                     else if (tc.steps) steps = tc.steps;
-                    else steps = 'No steps provided';
+                    else {
+                        // If no direct steps field, check if steps are merged into preconditions
+                        const preconditions = tc.Preconditions || tc.preconditions || tc['preconditions'] || '';
+                        if (preconditions && preconditions.includes('Steps to Reproduce:')) {
+                            const parts = preconditions.split('Steps to Reproduce:');
+                            if (parts[1]) {
+                                steps = parts[1].trim();
+                            } else {
+                                steps = 'No steps provided';
+                            }
+                        } else {
+                            steps = 'No steps provided';
+                        }
+                    }
                     
                     // Try to extract expected result
                     if (tc['Expected Result']) expectedResult = tc['Expected Result'];
@@ -3225,19 +3284,33 @@
                     else if (tc['Actual result']) actualResult = tc['Actual result'];
                     else actualResult = '';
                     
+                    // Try to extract priority
+                    if (tc['Priority']) priority = tc['Priority'];
+                    else if (tc.priority) priority = tc.priority;
+                    else if (tc['priority']) priority = tc['priority'];
+                    else priority = '';
+                    
+                    // Try to extract test data
+                    if (tc['Test Data']) testData = tc['Test Data'];
+                    else if (tc.testData) testData = tc.testData;
+                    else if (tc['test_data']) testData = tc['test_data'];
+                    else testData = '';
+                    
                     // Try to extract status
                     if (tc.Status) status = tc.Status;
                     else if (tc.status) status = tc.status;
                     else status = 'Not Tested';
                     
-                    return {
-                        Title: title,
-                        Scenario: scenario,
-                        Steps: steps,
-                        'Expected Result': expectedResult,
-                        'Actual Result': actualResult,
-                        Status: status
-                    };
+                        return {
+                            Title: title,
+                            Scenario: scenario,
+                            Steps: steps,
+                            'Expected Result': expectedResult,
+                            'Actual Result': actualResult,
+                            'Priority': priority,
+                            'Test Data': testData,
+                            Status: status
+                        };
                 });
                 
                 return validatedTestCases;
@@ -3303,7 +3376,7 @@
             return testCases;
         }
 
-        async function exportTestCases() {
+        window.exportTestCases = async function() {
             // Show loading state
             const exportBtn = document.getElementById('exportBtn');
             const originalText = exportBtn.innerHTML;
@@ -3410,7 +3483,7 @@
             return steps || '';
         }
 
-        async function shareTestCases() {
+        window.shareTestCases = async function() {
             try {
                 // Check if test cases are loaded
                 if (!testCases || testCases.length === 0) {
@@ -3602,7 +3675,7 @@
         }, 300);
 
         // Analytics Functions
-        function showAnalytics() {
+        window.showAnalytics = function() {
             document.getElementById('analyticsSection').style.display = 'block';
             createAnalyticsCharts();
             
@@ -3613,7 +3686,7 @@
             }, 250));
         }
 
-        function hideAnalytics() {
+        window.hideAnalytics = function() {
             document.getElementById('analyticsSection').style.display = 'none';
             
             // Clean up charts to free memory
@@ -4086,7 +4159,7 @@
         }
 
         // Function to toggle user dropdown - matching index.html exactly
-        function toggleUserDropdown() {
+        window.toggleUserDropdown = function() {
             const dropdown = document.getElementById('userDropdownMenu');
             const userDropdown = document.querySelector('.user-dropdown');
             
@@ -4133,7 +4206,7 @@
         });
 
         // Logout function
-        function logout() {
+        window.logout = function() {
             // Clear authentication data
             localStorage.removeItem('authToken');
             localStorage.removeItem('userInfo');
