@@ -106,7 +106,7 @@ def save_excel_report(test_cases: str, base_name: str) -> Optional[str]:
             df['Section'] = df['Section'].fillna('General')
             
         # Ensure all required columns exist
-        required_columns = ['Title', 'Scenario', 'Steps', 'Expected Result', 'Actual Result', 'Status', 'Priority']
+        required_columns = ['Title', 'Scenario', 'Preconditions', 'Steps', 'Expected Result', 'Actual Result', 'Status', 'Priority']
         for col in required_columns:
             if col not in df.columns:
                 df[col] = ''
@@ -119,7 +119,7 @@ def save_excel_report(test_cases: str, base_name: str) -> Optional[str]:
         df = df.fillna('')
 
         # Reorder columns, starting with the most important ones
-        column_order = ['Section', 'Title', 'Scenario', 'Steps', 'Expected Result', 'Status', 'Actual Result', 'Priority']
+        column_order = ['Section', 'Title', 'Scenario', 'Preconditions', 'Steps', 'Expected Result', 'Status', 'Actual Result', 'Priority']
         # Add any additional columns that might be present
         for col in df.columns:
             if col not in column_order:
@@ -315,10 +315,11 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
     current_steps = []
 
     logger.info(f"Parsing test cases with default section: {default_section}")
+    logger.info(f"Raw test case content (first 500 chars): {test_cases[:500]}")
     
     # Special handling for test cases without clear delimiters - try to extract full test case blocks
-    if ("Title:" in test_cases and "Steps to reproduce:" in test_cases) or ("Steps to reproduce:" in test_cases and re.search(r'TC_[A-Z]+_\d+', test_cases)):
-        logger.info("Detected standard test case format with Title and Steps to reproduce")
+    if ("Title:" in test_cases and "Steps to reproduce:" in test_cases) or ("Steps to reproduce:" in test_cases and re.search(r'TC_[A-Z]+_\d+', test_cases)) or ("**Test Case ID:**" in test_cases and "**Test Steps:**" in test_cases):
+        logger.info("Detected test case format")
         # Split by blank lines to find test case boundaries
         # This handles cases where test cases are separated by blank lines
         test_case_blocks = re.split(r'\n\s*\n', test_cases)
@@ -327,27 +328,45 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
             if not block or len(block) < 10:  # Skip empty or very short blocks
                 continue
                 
-            # Check if this looks like a test case - either has Title: or starts with TC_ pattern
-            if "Title:" in block or re.match(r'TC_[A-Z]+_\d+', block.strip()):
+            # Check if this looks like a test case - either has Title:, **Test Case ID:**, or starts with TC_ pattern
+            if "Title:" in block or "**Test Case ID:**" in block or re.match(r'TC_[A-Z]+_\d+', block.strip()):
                 test_case = {}
                 test_case['Section'] = default_section
                 
-                # Extract title - handle both "Title:" format and direct TC_ pattern
+                # Extract title - handle multiple formats
                 title_match = re.search(r'Title:\s*(.*?)(?:\n|$)', block)
                 if title_match:
                     test_case['Title'] = title_match.group(1).strip().replace('**', '').strip()
                 else:
-                    # Try to extract title from the first line if it starts with TC_ pattern
-                    first_line = block.split('\n')[0].strip()
-                    if re.match(r'TC_[A-Z]+_\d+', first_line):
-                        test_case['Title'] = first_line.replace('**', '').strip()
+                    # Try **Test Case ID:** format
+                    test_case_id_match = re.search(r'\*\*Test Case ID:\*\*\s*(.*?)(?:\n|$)', block)
+                    if test_case_id_match:
+                        test_case['Title'] = test_case_id_match.group(1).strip().replace('**', '').strip()
+                    else:
+                        # Try to extract title from the first line if it starts with TC_ pattern
+                        first_line = block.split('\n')[0].strip()
+                        if re.match(r'TC_[A-Z]+_\d+', first_line):
+                            test_case['Title'] = first_line.replace('**', '').strip()
                 
-                # Extract scenario
-                scenario_match = re.search(r'Scenario:\s*(.*?)(?:\n|$)', block)
+                # Extract scenario - handle multiple formats
+                scenario_match = re.search(r'Scenario:\s*(.*?)(?:\n\s*Preconditions:|\n\s*Steps to reproduce:|\n\s*Expected Result:|$)', block, re.DOTALL)
                 if scenario_match:
                     test_case['Scenario'] = scenario_match.group(1).strip().replace('**', '').strip()
+                else:
+                    # Try **Test Scenario:** format
+                    test_scenario_match = re.search(r'\*\*Test Scenario:\*\*\s*(.*?)(?:\n\s*\*\*Test Steps:|\n\s*\*\*Expected Result:|$)', block, re.DOTALL)
+                    if test_scenario_match:
+                        test_case['Scenario'] = test_scenario_match.group(1).strip().replace('**', '').strip()
                 
-                # Extract steps - improved regex to handle multi-line steps
+                # Extract preconditions
+                preconditions_match = re.search(r'Preconditions:\s*(.*?)(?:\n\s*Steps to reproduce:|\n\s*Expected Result:|$)', block, re.DOTALL)
+                if preconditions_match:
+                    test_case['Preconditions'] = preconditions_match.group(1).strip().replace('**', '').strip()
+                    logger.info(f"Found preconditions: {test_case['Preconditions'][:100]}...")
+                else:
+                    logger.warning(f"No preconditions found in block: {block[:200]}...")
+                
+                # Extract steps - handle multiple formats
                 steps_match = re.search(r'(?:\*\*)?Steps to reproduce:(?:\*\*)?\s*\n([\s\S]*?)(?=\n\s*(?:\*\*)?Expected Result:|$)', block, re.DOTALL)
                 if steps_match:
                     steps_text = steps_match.group(1).strip()
@@ -363,12 +382,41 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                         test_case['Steps'] = steps
                         logger.info(f"Extracted {len(test_case['Steps'])} steps using line-by-line format")
                 else:
-                    logger.warning(f"No steps found in block: {block[:200]}...")
+                    # Try **Test Steps:** format
+                    test_steps_match = re.search(r'\*\*Test Steps:\*\*\s*\n([\s\S]*?)(?=\n\s*\*\*Expected Result:|$)', block, re.DOTALL)
+                    if test_steps_match:
+                        steps_text = test_steps_match.group(1).strip()
+                        logger.info(f"Found test steps text: {steps_text[:200]}...")
+                        # Try to split steps by numbered lines or bullet points
+                        step_lines = re.findall(r'(?:^|\n)\s*(?:\d+\.\s*|\*\s*|\-\s*)(.*?)(?=\n\s*(?:\d+\.\s*|\*\s*|\-\s*)|$)', steps_text, re.MULTILINE)
+                        if step_lines:
+                            test_case['Steps'] = [step.strip().replace('**', '').strip() for step in step_lines if step.strip()]
+                            logger.info(f"Extracted {len(test_case['Steps'])} steps using numbered format")
+                        else:
+                            # If no clear step delimiters, split by newlines and filter out empty lines
+                            steps = [step.strip().replace('**', '').strip() for step in steps_text.split('\n') if step.strip()]
+                            test_case['Steps'] = steps
+                            logger.info(f"Extracted {len(test_case['Steps'])} steps using line-by-line format")
+                    else:
+                        logger.warning(f"No steps found in block: {block[:200]}...")
+                        # Try alternative step patterns
+                        alt_steps_match = re.search(r'Steps:\s*(.*?)(?:\n\s*Expected Result:|$)', block, re.DOTALL)
+                        if alt_steps_match:
+                            steps_text = alt_steps_match.group(1).strip()
+                            logger.info(f"Found steps with alternative pattern: {steps_text[:200]}...")
+                            test_case['Steps'] = [steps_text]
+                        else:
+                            logger.warning(f"No steps found with any pattern in block: {block[:200]}...")
                 
-                # Extract expected result (stop before Actual Result, Status, or Priority)
+                # Extract expected result - handle multiple formats
                 expected_match = re.search(r'Expected Result:\s*(.*?)(?:\n\s*Actual Result:|\n\s*Status:|\n\s*Priority:|$)', block, re.DOTALL)
                 if expected_match:
                     test_case['Expected Result'] = expected_match.group(1).strip().replace('**', '').strip()
+                else:
+                    # Try **Expected Result:** format
+                    test_expected_match = re.search(r'\*\*Expected Result:\*\*\s*(.*?)(?:\n\s*\*\*Actual Result:|\n\s*\*\*Priority:|$)', block, re.DOTALL)
+                    if test_expected_match:
+                        test_case['Expected Result'] = test_expected_match.group(1).strip().replace('**', '').strip()
                 
                 # Extract status if present as its own line
                 status_match = re.search(r'\n\s*Status:\s*(.*?)(?:\n|$)', block)
@@ -392,6 +440,9 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                 if test_case.get('Title'):
                     test_data.append(test_case)
                     logger.debug(f"Extracted test case: {test_case['Title']}")
+                    logger.debug(f"Test case fields: {list(test_case.keys())}")
+                    logger.debug(f"Scenario: {test_case.get('Scenario', 'NOT FOUND')}")
+                    logger.debug(f"Steps: {test_case.get('Steps', 'NOT FOUND')}")
                 
         if test_data:
             logger.info(f"Extracted {len(test_data)} test cases using block parsing")
@@ -440,6 +491,13 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
             current_test['Scenario'] = scenario_match.group(1).strip().replace('**', '').strip()
             continue
             
+        # Handle preconditions
+        preconditions_match = re.match(r'^(?:\*\*)?Preconditions:(?:\*\*)?\s*(.*?)$', line)
+        if preconditions_match and current_test:
+            current_test['Preconditions'] = preconditions_match.group(1).strip().replace('**', '').strip()
+            logger.info(f"Found preconditions in line-by-line: {current_test['Preconditions'][:100]}...")
+            continue
+            
         # Handle steps header - support multiple variations
         steps_match = re.match(r'^(?:\*\*)?Steps(?: to reproduce)?:(?:\*\*)?', line)
         if steps_match and current_test:
@@ -461,6 +519,7 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                 if er_match:
                     current_test['Expected Result'] = er_match.group(1).strip().replace('**', '').strip()
                 continue
+                
                 
             # Support various step formats (1. Step, - Step, * Step, etc.)
             step_match = re.match(r'^(?:(\d+)\.|\-|\*)\s*(.*?)$', line)
@@ -512,6 +571,8 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
                 current_test['Actual Result'] += ' ' + line
             elif 'Expected Result' in current_test:
                 current_test['Expected Result'] += ' ' + line
+            elif 'Preconditions' in current_test:
+                current_test['Preconditions'] += ' ' + line
             elif 'Scenario' in current_test:
                 current_test['Scenario'] += ' ' + line
 
@@ -520,6 +581,10 @@ def parse_traditional_format(test_cases: str, default_section: str = "General") 
         if collecting_steps:
             current_test['Steps'] = current_steps
         test_data.append(current_test)
+        logger.debug(f"Final test case: {current_test.get('Title', 'NO TITLE')}")
+        logger.debug(f"Final test case fields: {list(current_test.keys())}")
+        logger.debug(f"Final Scenario: {current_test.get('Scenario', 'NOT FOUND')}")
+        logger.debug(f"Final Steps: {current_test.get('Steps', 'NOT FOUND')}")
         
     logger.info(f"Extracted {len(test_data)} test cases using line-by-line parsing")
     return test_data
